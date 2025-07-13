@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>เกม XO สุดยอด! (Unbeatable AI)</title>
     <link href="https://fonts.googleapis.com/css2?family=Mitr:wght@400;700&display=swap" rel="stylesheet">
+    <!-- เพิ่ม Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <style>
         body {
             font-family: 'Mitr', sans-serif;
@@ -49,6 +52,7 @@
             border: 2px solid rgba(255, 255, 255, 0.5);
             transform: scale(1);
             animation: popIn 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            position: relative;
         }
 
         @keyframes popIn {
@@ -66,36 +70,11 @@
 
         .game-info {
             font-size: 1.5em;
-            margin-bottom: 15px;
+            margin-bottom: 25px;
             color: #4a69bd;
             min-height: 30px;
             font-weight: 700;
             text-shadow: 1px 1px 2px rgba(0,0,0,0.05);
-        }
-
-        .stats-container {
-            display: flex;
-            justify-content: space-around;
-            margin-bottom: 20px;
-            background: rgba(255, 255, 255, 0.7);
-            padding: 10px;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-
-        .stat-item {
-            text-align: center;
-        }
-
-        .stat-value {
-            font-size: 1.3em;
-            font-weight: bold;
-            color: #2c3e50;
-        }
-
-        .stat-label {
-            font-size: 0.8em;
-            color: #7f8c8d;
         }
 
         .game-board {
@@ -103,7 +82,7 @@
             grid-template-columns: repeat(3, 110px);
             grid-template-rows: repeat(3, 110px);
             gap: 10px;
-            margin: 20px auto;
+            margin: 30px auto;
             width: 350px;
             background-color: #ecf0f1;
             padding: 10px;
@@ -188,7 +167,7 @@
             font-size: 1.2em;
             cursor: pointer;
             transition: all 0.3s ease;
-            margin-top: 20px;
+            margin-top: 30px;
             box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
             letter-spacing: 0.5px;
             font-weight: 700;
@@ -235,6 +214,94 @@
             100% { transform: translateY(100vh) rotateZ(720deg); opacity: 0.8; }
         }
 
+        /* เมนูสถิติ */
+        .menu-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 1.8em;
+            cursor: pointer;
+            z-index: 10;
+            color: #1a5276;
+        }
+
+        .stats-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 99;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.4s ease, visibility 0.4s ease;
+        }
+
+        .stats-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .stats-modal {
+            background: #fff;
+            padding: 30px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            transform: translateY(-50px);
+            opacity: 0;
+            animation: modalPopUp 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards;
+        }
+
+        .stats-modal h2 {
+            color: #1a5276;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .stats-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .stats-label {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .stats-value {
+            font-weight: bold;
+            color: #4a69bd;
+        }
+
+        .close-stats {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .close-stats:hover {
+            background-color: #c0392b;
+            transform: translateY(-2px);
+        }
+
         @media (max-width: 500px) {
             .container { padding: 25px 30px; width: 95%; }
             h1 { font-size: 2.5em; }
@@ -246,30 +313,15 @@
             .cell { width: 90px; height: 90px; font-size: 4em; }
             .reset-button { padding: 12px 25px; font-size: 1.1em; }
             .game-over-modal h2 { font-size: 2.5em; }
-            .stats-container { flex-direction: column; gap: 10px; }
         }
     </style>
 </head>
 <body>
+    <div class="menu-button" id="menuButton">☰</div>
+    
     <div class="container">
         <h1>เกม XO สุดยอด!</h1>
         <div class="game-info" id="gameInfo"></div>
-        
-        <div class="stats-container">
-            <div class="stat-item">
-                <div class="stat-value" id="playerWins">0</div>
-                <div class="stat-label">คุณชนะ</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-value" id="botWins">0</div>
-                <div class="stat-label">บอทชนะ</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-value" id="draws">0</div>
-                <div class="stat-label">เสมอ</div>
-            </div>
-        </div>
-        
         <div class="game-board" id="gameBoard">
             <div class="cell" data-index="0"></div>
             <div class="cell" data-index="1"></div>
@@ -285,6 +337,26 @@
         <button class="reset-button" id="resetButton">เริ่มเกมใหม่</button>
     </div>
 
+    <!-- เมนูสถิติ -->
+    <div class="stats-overlay" id="statsOverlay">
+        <div class="stats-modal">
+            <h2>สถิติเกม XO</h2>
+            <div class="stats-item">
+                <span class="stats-label">ผู้เล่นชนะ:</span>
+                <span class="stats-value" id="globalPlayerWins">0</span>
+            </div>
+            <div class="stats-item">
+                <span class="stats-label">บอทชนะ:</span>
+                <span class="stats-value" id="globalBotWins">0</span>
+            </div>
+            <div class="stats-item">
+                <span class="stats-label">เกมเสมอ:</span>
+                <span class="stats-value" id="globalDraws">0</span>
+            </div>
+            <button class="close-stats" id="closeStats">ปิด</button>
+        </div>
+    </div>
+
     <div class="game-over-overlay" id="gameOverOverlay">
         <div class="game-over-modal">
             <h2 id="gameOverMessage"></h2>
@@ -295,6 +367,21 @@
     <div class="confetti-container" id="confettiContainer"></div>
 
     <script>
+        // กำหนดค่า Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyDZx3v3J5Z5X5X5X5X5X5X5X5X5X5X5X5X",
+            authDomain: "xo-game-stats.firebaseapp.com",
+            databaseURL: "https://xo-game-stats-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "xo-game-stats",
+            storageBucket: "xo-game-stats.appspot.com",
+            messagingSenderId: "123456789012",
+            appId: "1:123456789012:web:5X5X5X5X5X5X5X5X5X5X5X"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
         const cells = document.querySelectorAll('.cell');
         const gameBoard = document.getElementById('gameBoard');
         const gameInfo = document.getElementById('gameInfo');
@@ -305,10 +392,13 @@
         const confettiContainer = document.getElementById('confettiContainer');
         const winningLine = document.getElementById('winningLine');
         
-        // องค์ประกอบสถิติ
-        const playerWinsElement = document.getElementById('playerWins');
-        const botWinsElement = document.getElementById('botWins');
-        const drawsElement = document.getElementById('draws');
+        // องค์ประกอบเมนูสถิติ
+        const menuButton = document.getElementById('menuButton');
+        const statsOverlay = document.getElementById('statsOverlay');
+        const closeStats = document.getElementById('closeStats');
+        const globalPlayerWins = document.getElementById('globalPlayerWins');
+        const globalBotWins = document.getElementById('globalBotWins');
+        const globalDraws = document.getElementById('globalDraws');
 
         const winningConditions = [
             [0, 1, 2], [3, 4, 5], [6, 7, 8],
@@ -322,56 +412,43 @@
         const player = 'X';
         const bot = 'O';
         
-        // สถิติ
-        let stats = {
-            playerWins: 0,
-            botWins: 0,
-            draws: 0
-        };
-
-        // โหลดสถิติจาก localStorage เมื่อเริ่มเกม
-        function loadStats() {
-            const savedStats = localStorage.getItem('xoStats');
-            if (savedStats) {
-                stats = JSON.parse(savedStats);
-                updateStatsDisplay();
-            }
+        // โหลดสถิติจาก Firebase
+        function loadGlobalStats() {
+            const statsRef = database.ref('gameStats');
+            statsRef.on('value', (snapshot) => {
+                const data = snapshot.val() || { playerWins: 0, botWins: 0, draws: 0 };
+                globalPlayerWins.textContent = data.playerWins;
+                globalBotWins.textContent = data.botWins;
+                globalDraws.textContent = data.draws;
+            });
         }
         
-        // บันทึกสถิติลง localStorage
-        function saveStats() {
-            localStorage.setItem('xoStats', JSON.stringify(stats));
-        }
-        
-        // อัพเดทการแสดงผลสถิติ
-        function updateStatsDisplay() {
-            playerWinsElement.textContent = stats.playerWins;
-            botWinsElement.textContent = stats.botWins;
-            drawsElement.textContent = stats.draws;
-        }
-        
-        // อัพเดทสถิติตามผลลัพธ์
-        function updateStats(result) {
-            switch(result) {
-                case 'player':
-                    stats.playerWins++;
-                    break;
-                case 'bot':
-                    stats.botWins++;
-                    break;
-                case 'draw':
-                    stats.draws++;
-                    break;
-            }
-            updateStatsDisplay();
-            saveStats();
+        // อัพเดทสถิติใน Firebase
+        function updateGlobalStats(result) {
+            const statsRef = database.ref('gameStats');
+            
+            statsRef.transaction((currentStats) => {
+                if (currentStats) {
+                    if (result === 'player') currentStats.playerWins++;
+                    if (result === 'bot') currentStats.botWins++;
+                    if (result === 'draw') currentStats.draws++;
+                } else {
+                    currentStats = {
+                        playerWins: result === 'player' ? 1 : 0,
+                        botWins: result === 'bot' ? 1 : 0,
+                        draws: result === 'draw' ? 1 : 0
+                    };
+                }
+                return currentStats;
+            });
         }
 
         function initializeGame() {
             board = ['', '', '', '', '', '', '', '', ''];
             gameActive = true;
             
-            currentPlayer = bot; 
+            // สุ่มผู้เล่นเริ่มต้น
+            currentPlayer = Math.random() < 0.5 ? player : bot;
             
             cells.forEach(cell => {
                 cell.textContent = '';
@@ -384,10 +461,14 @@
             hideGameOverScreen();
             clearConfetti();
             
-            gameBoard.classList.add('locked');
-            gameInfo.textContent = `บอทกำลังเริ่ม... 🤔`;
-
-            setTimeout(botMove, 800);
+            if (currentPlayer === bot) {
+                gameBoard.classList.add('locked');
+                gameInfo.textContent = `บอทกำลังเริ่ม... 🤔`;
+                setTimeout(botMove, 800);
+            } else {
+                gameBoard.classList.remove('locked');
+                gameInfo.textContent = `ตาของคุณ: ${currentPlayer}`;
+            }
         }
         
         cells.forEach(cell => {
@@ -425,7 +506,7 @@
         function changePlayer() {
             currentPlayer = (currentPlayer === player) ? bot : player;
             if(gameActive && currentPlayer === player) {
-                 gameInfo.textContent = `ตาของ: ${currentPlayer}`;
+                 gameInfo.textContent = `ตาของคุณ: ${currentPlayer}`;
             }
         }
 
@@ -464,10 +545,8 @@
                     showGameOverScreen(message);
                     if (winner === player) {
                         triggerConfetti();
-                        updateStats('player');
-                    } else {
-                        updateStats('bot');
                     }
+                    updateGlobalStats(winner === player ? 'player' : 'bot');
                 }, 600);
                 return true;
             }
@@ -477,7 +556,7 @@
                 gameBoard.classList.add('locked');
                 gameInfo.textContent = `เสมอ! 🤝`;
                 showGameOverScreen(`เกมเสมอ!`);
-                updateStats('draw');
+                updateGlobalStats('draw');
                 return true;
             }
             
@@ -617,11 +696,20 @@
             confettiContainer.innerHTML = '';
         }
 
+        // เปิด/ปิดเมนูสถิติ
+        menuButton.addEventListener('click', () => {
+            statsOverlay.classList.add('active');
+        });
+
+        closeStats.addEventListener('click', () => {
+            statsOverlay.classList.remove('active');
+        });
+
         resetButton.addEventListener('click', initializeGame);
         playAgainButton.addEventListener('click', initializeGame);
 
         // โหลดสถิติเมื่อเริ่มเกม
-        loadStats();
+        loadGlobalStats();
         initializeGame();
 
     </script>
