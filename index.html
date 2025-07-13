@@ -3,17 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>เกม XO สุดยอด!</title>
+    <title>เกม XO สุดยอด! (Unbeatable AI)</title>
     <link href="https://fonts.googleapis.com/css2?family=Mitr:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        /* สไตล์ CSS (ส่วนใหญ่เหมือนเดิม) */
         body {
             font-family: 'Mitr', sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%); /* ท้องฟ้าสดใส */
+            background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
             margin: 0;
             color: #333;
             overflow: hidden;
@@ -58,7 +57,7 @@
         }
 
         h1 {
-            color: #1a5276; /* สีน้ำเงินเข้ม */
+            color: #1a5276;
             margin-bottom: 25px;
             font-size: 3em;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.15);
@@ -68,7 +67,7 @@
         .game-info {
             font-size: 1.5em;
             margin-bottom: 25px;
-            color: #4a69bd; /* น้ำเงินกลาง */
+            color: #4a69bd;
             min-height: 30px;
             font-weight: 700;
             text-shadow: 1px 1px 2px rgba(0,0,0,0.05);
@@ -85,7 +84,7 @@
             padding: 10px;
             border-radius: 20px;
             box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.15);
-            position: relative; /* <-- สำคัญมากสำหรับเส้นที่ชนะ */
+            position: relative;
         }
         
         .game-board.locked {
@@ -144,7 +143,6 @@
             to { transform: scale(1.08); box-shadow: 0 12px 30px rgba(255, 234, 167, 0.9); }
         }
         
-        /* ✨ สไตล์สำหรับเส้นขีดฆ่าเมื่อชนะ (ใหม่) ✨ */
         .winning-line {
             position: absolute;
             background-color: #e74c3c;
@@ -152,12 +150,12 @@
             border-radius: 5px;
             transform-origin: center center;
             box-shadow: 0 0 15px 5px rgba(231, 76, 60, 0.5);
-            display: none; /* ซ่อนไว้ก่อน */
+            display: none;
             transition: all 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
         }
 
         .reset-button {
-            background-color: #f39c12; /* ส้ม */
+            background-color: #f39c12;
             color: white;
             padding: 15px 30px;
             border: none;
@@ -172,12 +170,11 @@
         }
 
         .reset-button:hover {
-            background-color: #e67e22; /* ส้มเข้ม */
+            background-color: #e67e22;
             transform: translateY(-5px) scale(1.02);
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.25);
         }
 
-        /* ส่วนของ Game Over (เหมือนเดิม) */
         .game-over-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0, 0, 0, 0.7); display: flex; justify-content: center;
@@ -206,7 +203,6 @@
             box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
         }
 
-        /* ส่วนของ Confetti (เหมือนเดิม) */
         .confetti-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; z-index: 99; }
         .confetti { position: absolute; width: 10px; height: 10px; background-color: #f00; animation: fall 3s ease-out forwards; opacity: 0; border-radius: 50%; }
         @keyframes fall {
@@ -214,7 +210,6 @@
             100% { transform: translateY(100vh) rotateZ(720deg); opacity: 0.8; }
         }
 
-        /* Responsive Design (เหมือนเดิม) */
         @media (max-width: 500px) {
             .container { padding: 25px 30px; width: 95%; }
             h1 { font-size: 2.5em; }
@@ -269,22 +264,25 @@
         const winningLine = document.getElementById('winningLine');
 
         const winningConditions = [
-            [0, 1, 2], [3, 4, 5], [6, 7, 8], // แนวนอน
-            [0, 3, 6], [1, 4, 7], [2, 5, 8], // แนวตั้ง
-            [0, 4, 8], [2, 4, 6]            // แนวทแยง
+            [0, 1, 2], [3, 4, 5], [6, 7, 8],
+            [0, 3, 6], [1, 4, 7], [2, 5, 8],
+            [0, 4, 8], [2, 4, 6]
         ];
 
         let board;
         let currentPlayer;
         let gameActive;
+        const player = 'X';
+        const bot = 'O';
 
         function initializeGame() {
             board = ['', '', '', '', '', '', '', '', ''];
-            currentPlayer = 'X';
             gameActive = true;
             
-            gameInfo.textContent = `ตาของ: ${currentPlayer}`;
-            gameBoard.classList.remove('locked');
+            // --- MODIFICATION START ---
+            // ตั้งค่าให้บอทเริ่มก่อน
+            currentPlayer = bot; 
+            
             cells.forEach(cell => {
                 cell.textContent = '';
                 cell.classList.remove('x', 'o', 'win');
@@ -295,6 +293,14 @@
 
             hideGameOverScreen();
             clearConfetti();
+            
+            // ล็อกบอร์ดและแสดงข้อความว่าบอทกำลังเริ่ม
+            gameBoard.classList.add('locked');
+            gameInfo.textContent = `บอทกำลังเริ่ม... 🤔`;
+
+            // ให้บอทเดินตาแรกหลังจาก 800ms
+            setTimeout(botMove, 800);
+            // --- MODIFICATION END ---
         }
         
         cells.forEach(cell => {
@@ -305,43 +311,42 @@
             const clickedCell = e.target;
             const clickedCellIndex = parseInt(clickedCell.dataset.index);
 
-            // 🛑 ตรวจสอบสถานะการล็อคที่นี่เป็นอันดับแรกและสำคัญที่สุด
             if (gameBoard.classList.contains('locked') || board[clickedCellIndex] !== '' || !gameActive) {
                 return;
             }
 
-            // --- Player's Move ---
             makeMove(clickedCell, clickedCellIndex, currentPlayer);
             
             if (checkResult()) {
                 return;
             }
             
-            // --- Bot's Turn ---
             changePlayer();
             
-            // 🔒 ล็อคบอร์ดทันทีหลังจากผู้เล่นเดิน เพื่อป้องกันการคลิกซ้ำ
             gameBoard.classList.add('locked');
             gameInfo.textContent = `บอทกำลังคิด... 🤔`;
 
             setTimeout(botMove, 800);
         }
 
-        function makeMove(cellElement, index, player) {
-            board[index] = player;
-            cellElement.textContent = player;
-            cellElement.classList.add(player.toLowerCase());
+        function makeMove(cellElement, index, activePlayer) {
+            board[index] = activePlayer;
+            cellElement.textContent = activePlayer;
+            cellElement.classList.add(activePlayer.toLowerCase());
         }
         
         function changePlayer() {
-            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
-            gameInfo.textContent = `ตาของ: ${currentPlayer}`;
+            currentPlayer = (currentPlayer === player) ? bot : player;
+            if(gameActive && currentPlayer === player) {
+                 gameInfo.textContent = `ตาของ: ${currentPlayer}`;
+            }
         }
 
         function checkResult() {
             let roundWon = false;
             let winningCombo = [];
             let winningConditionIndex = -1;
+            let winner = null;
 
             for (let i = 0; i < winningConditions.length; i++) {
                 const winCondition = winningConditions[i];
@@ -353,6 +358,7 @@
                 
                 if (a === b && b === c) {
                     roundWon = true;
+                    winner = a;
                     winningCombo = winCondition;
                     winningConditionIndex = i;
                     break;
@@ -361,24 +367,24 @@
 
             if (roundWon) {
                 gameActive = false;
-                gameBoard.classList.add('locked'); // ล็อคบอร์ดถาวรเมื่อเกมจบ
+                gameBoard.classList.add('locked');
                 winningCombo.forEach(index => cells[index].classList.add('win'));
                 drawWinningLine(winningConditionIndex);
                 
                 setTimeout(() => {
-                    gameInfo.textContent = `ผู้เล่น ${currentPlayer} ชนะ! 🎉`;
-                    showGameOverScreen(`ผู้เล่น ${currentPlayer} ชนะ!`);
-                    triggerConfetti();
+                    const message = (winner === player) ? `คุณชนะ!` : `บอทชนะ!`;
+                    gameInfo.textContent = message + ' 🎉';
+                    showGameOverScreen(message);
+                    if (winner === player) triggerConfetti();
                 }, 600);
                 return true;
             }
 
             if (!board.includes('')) {
                 gameActive = false;
-                gameBoard.classList.add('locked'); // ล็อคบอร์ดถาวรเมื่อเกมจบ
+                gameBoard.classList.add('locked');
                 gameInfo.textContent = `เสมอ! 🤝`;
                 showGameOverScreen(`เกมเสมอ!`);
-                triggerConfetti();
                 return true;
             }
             
@@ -390,98 +396,104 @@
 
             const move = findBestMove();
             const cellElement = cells[move];
-            makeMove(cellElement, move, 'O');
+            makeMove(cellElement, move, bot);
             
             if (checkResult()) {
                 return;
             }
-
-            changePlayer();
             
-            // 🔓 ปลดล็อคบอร์ดเพื่อให้ผู้เล่นสามารถเดินตาต่อไปได้
+            // ไม่ต้องใช้ setTimeout ที่นี่แล้ว เพราะจะทำให้ delay สองชั้น
+            // ฟังก์ชัน changePlayer จะถูกเรียกและบอร์ดจะถูกปลดล็อกทันที
+            // เพื่อให้ผู้เล่นสามารถเล่นตาของตัวเองได้
+            changePlayer();
             gameBoard.classList.remove('locked');
         }
 
         function findBestMove() {
-            // 1. ชนะได้ให้ชนะเลย
-            for (let i = 0; i < winningConditions.length; i++) {
-                const [a, b, c] = winningConditions[i];
-                if (board[a] === 'O' && board[b] === 'O' && board[c] === '') return c;
-                if (board[a] === 'O' && board[c] === 'O' && board[b] === '') return b;
-                if (board[b] === 'O' && board[c] === 'O' && board[a] === '') return a;
+            function checkWinOrBlock(playerToCheck) {
+                for (let i = 0; i < winningConditions.length; i++) {
+                    const [a, b, c] = winningConditions[i];
+                    if (board[a] === playerToCheck && board[b] === playerToCheck && board[c] === '') return c;
+                    if (board[a] === playerToCheck && board[c] === playerToCheck && board[b] === '') return b;
+                    if (board[b] === playerToCheck && board[c] === playerToCheck && board[a] === '') return a;
+                }
+                return null;
             }
-            // 2. ป้องกันผู้เล่นชนะ
-            for (let i = 0; i < winningConditions.length; i++) {
-                const [a, b, c] = winningConditions[i];
-                if (board[a] === 'X' && board[b] === 'X' && board[c] === '') return c;
-                if (board[a] === 'X' && board[c] === 'X' && board[b] === '') return b;
-                if (board[b] === 'X' && board[c] === 'X' && board[a] === '') return a;
-            }
-            // 3. ยึดช่องกลาง
-            if (board[4] === '') return 4;
-            // 4. ยึดมุมที่ว่าง
-            const corners = [0, 2, 6, 8].filter(i => board[i] === '');
-            if (corners.length > 0) return corners[Math.floor(Math.random() * corners.length)];
-            // 5. ยึดขอบที่ว่าง
-            const edges = [1, 3, 5, 7].filter(i => board[i] === '');
-            if (edges.length > 0) return edges[Math.floor(Math.random() * edges.length)];
+
+            // 1. ตรวจสอบว่าบอทสามารถชนะได้ในตานี้หรือไม่
+            let move = checkWinOrBlock(bot);
+            if (move !== null) return move;
+
+            // 2. ตรวจสอบว่าผู้เล่นจะชนะในตาหน้าหรือไม่ ถ้าใช่ ให้บล็อก
+            move = checkWinOrBlock(player);
+            if (move !== null) return move;
             
-            // ในกรณีที่ไม่มีช่องเหลือ (ไม่ควรเกิดขึ้นถ้า checkResult ทำงานถูกต้อง)
+            // 3. ตรวจสอบการสร้างสถานการณ์ได้เปรียบ (fork)
+            for (let i = 0; i < 9; i++) {
+                if (board[i] === '') {
+                    board[i] = bot;
+                    let winningOpportunities = 0;
+                    for (let j = 0; j < winningConditions.length; j++) {
+                        const [a, b, c] = winningConditions[j];
+                        if ((board[a] === bot && board[b] === bot && board[c] === '') ||
+                            (board[a] === bot && board[c] === bot && board[b] === '') ||
+                            (board[b] === bot && board[c] === bot && board[a] === '')) {
+                            winningOpportunities++;
+                        }
+                    }
+                    board[i] = ''; 
+                    if (winningOpportunities >= 2) {
+                        return i;
+                    }
+                }
+            }
+            
+            // 4. บล็อกการสร้าง fork ของผู้เล่น
+            const corners = {0: 8, 8: 0, 2: 6, 6: 2};
+            for(const corner in corners){
+                if(board[corner] === player && board[corners[corner]] === player){
+                     const sides = [1,3,5,7].filter(i => board[i] === '');
+                     if(sides.length > 0) return sides[0];
+                }
+            }
+
+            // 5. เลือกตำแหน่งกลางถ้าว่าง
+            if (board[4] === '') return 4;
+
+            // 6. เลือกมุมตรงข้ามกับผู้เล่น
+            if (board[0] === player && board[8] === '') return 8;
+            if (board[8] === player && board[0] === '') return 0;
+            if (board[2] === player && board[6] === '') return 6;
+            if (board[6] === player && board[2] === '') return 2;
+
+            // 7. เลือกมุมที่ว่าง
+            const emptyCorners = [0, 2, 6, 8].filter(i => board[i] === '');
+            if (emptyCorners.length > 0) return emptyCorners[Math.floor(Math.random() * emptyCorners.length)];
+
+            // 8. เลือกด้านที่ว่าง
+            const emptySides = [1, 3, 5, 7].filter(i => board[i] === '');
+            if (emptySides.length > 0) return emptySides[Math.floor(Math.random() * emptySides.length)];
+
+            // 9. เลือกช่องว่างช่องแรกที่เจอ (กรณีฉุกเฉิน)
             return board.findIndex(cell => cell === '');
         }
         
         function drawWinningLine(index) {
             const line = winningLine;
             line.style.display = 'block';
-
             const lineLength = 330;
             const diagonalLength = 420;
-
-            // ค่าตำแหน่งและมุมที่ปรับให้แม่นยำขึ้น
             switch(index) {
-                case 0: // แถวบน
-                    line.style.width = `0px`; // เริ่มจาก 0
-                    line.style.transform = 'translate(10px, 55px) rotate(0deg)';
-                    setTimeout(() => line.style.width = `${lineLength}px`, 50);
-                    break;
-                case 1: // แถวกลาง
-                    line.style.width = `0px`;
-                    line.style.transform = 'translate(10px, 175px) rotate(0deg)';
-                    setTimeout(() => line.style.width = `${lineLength}px`, 50);
-                    break;
-                case 2: // แถวล่าง
-                    line.style.width = `0px`;
-                    line.style.transform = 'translate(10px, 295px) rotate(0deg)';
-                    setTimeout(() => line.style.width = `${lineLength}px`, 50);
-                    break;
-                case 3: // คอลัมน์ซ้าย
-                    line.style.width = `0px`;
-                    line.style.transform = 'translate(-110px, 175px) rotate(90deg)';
-                    setTimeout(() => line.style.width = `${lineLength}px`, 50);
-                    break;
-                case 4: // คอลัมน์กลาง
-                    line.style.width = `0px`;
-                    line.style.transform = 'translate(10px, 175px) rotate(90deg)';
-                    setTimeout(() => line.style.width = `${lineLength}px`, 50);
-                    break;
-                case 5: // คอลัมน์ขวา
-                    line.style.width = `0px`;
-                    line.style.transform = 'translate(130px, 175px) rotate(90deg)';
-                    setTimeout(() => line.style.width = `${lineLength}px`, 50);
-                    break;
-                case 6: // ทแยงซ้ายไปขวา
-                    line.style.width = `0px`;
-                    line.style.transform = 'translate(-25px, 175px) rotate(45deg)';
-                    setTimeout(() => line.style.width = `${diagonalLength}px`, 50);
-                    break;
-                case 7: // ทแยงขวาไปซ้าย
-                    line.style.width = `0px`;
-                    line.style.transform = 'translate(-25px, 175px) rotate(-45deg)';
-                    setTimeout(() => line.style.width = `${diagonalLength}px`, 50);
-                    break;
+                case 0: line.style.width = `0px`; line.style.transform = 'translate(10px, 55px) rotate(0deg)'; setTimeout(() => line.style.width = `${lineLength}px`, 50); break;
+                case 1: line.style.width = `0px`; line.style.transform = 'translate(10px, 175px) rotate(0deg)'; setTimeout(() => line.style.width = `${lineLength}px`, 50); break;
+                case 2: line.style.width = `0px`; line.style.transform = 'translate(10px, 295px) rotate(0deg)'; setTimeout(() => line.style.width = `${lineLength}px`, 50); break;
+                case 3: line.style.width = `0px`; line.style.transform = 'translate(-110px, 175px) rotate(90deg)'; setTimeout(() => line.style.width = `${lineLength}px`, 50); break;
+                case 4: line.style.width = `0px`; line.style.transform = 'translate(10px, 175px) rotate(90deg)'; setTimeout(() => line.style.width = `${lineLength}px`, 50); break;
+                case 5: line.style.width = `0px`; line.style.transform = 'translate(130px, 175px) rotate(90deg)'; setTimeout(() => line.style.width = `${lineLength}px`, 50); break;
+                case 6: line.style.width = `0px`; line.style.transform = 'translate(-25px, 175px) rotate(45deg)'; setTimeout(() => line.style.width = `${diagonalLength}px`, 50); break;
+                case 7: line.style.width = `0px`; line.style.transform = 'translate(-25px, 175px) rotate(-45deg)'; setTimeout(() => line.style.width = `${diagonalLength}px`, 50); break;
             }
         }
-
 
         function showGameOverScreen(message) {
             gameOverMessage.textContent = message;
@@ -512,9 +524,10 @@
         resetButton.addEventListener('click', initializeGame);
         playAgainButton.addEventListener('click', initializeGame);
 
-        // เริ่มเกมครั้งแรก
+        // เริ่มเกมครั้งแรกเมื่อโหลดหน้าเว็บ
         initializeGame();
 
     </script>
 </body>
 </html>
+
