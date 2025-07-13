@@ -277,11 +277,12 @@
 
         function initializeGame() {
             board = ['', '', '', '', '', '', '', '', ''];
-            currentPlayer = player;
             gameActive = true;
             
-            gameInfo.textContent = `ตาของ: ${currentPlayer}`;
-            gameBoard.classList.remove('locked');
+            // --- MODIFICATION START ---
+            // ตั้งค่าให้บอทเริ่มก่อน
+            currentPlayer = bot; 
+            
             cells.forEach(cell => {
                 cell.textContent = '';
                 cell.classList.remove('x', 'o', 'win');
@@ -292,6 +293,14 @@
 
             hideGameOverScreen();
             clearConfetti();
+            
+            // ล็อกบอร์ดและแสดงข้อความว่าบอทกำลังเริ่ม
+            gameBoard.classList.add('locked');
+            gameInfo.textContent = `บอทกำลังเริ่ม... 🤔`;
+
+            // ให้บอทเดินตาแรกหลังจาก 800ms
+            setTimeout(botMove, 800);
+            // --- MODIFICATION END ---
         }
         
         cells.forEach(cell => {
@@ -328,7 +337,7 @@
         
         function changePlayer() {
             currentPlayer = (currentPlayer === player) ? bot : player;
-            if(currentPlayer === player) {
+            if(gameActive && currentPlayer === player) {
                  gameInfo.textContent = `ตาของ: ${currentPlayer}`;
             }
         }
@@ -393,11 +402,11 @@
                 return;
             }
             
-            setTimeout(() => {
-                if (!gameActive) return;
-                changePlayer();
-                gameBoard.classList.remove('locked');
-            }, 1000); 
+            // ไม่ต้องใช้ setTimeout ที่นี่แล้ว เพราะจะทำให้ delay สองชั้น
+            // ฟังก์ชัน changePlayer จะถูกเรียกและบอร์ดจะถูกปลดล็อกทันที
+            // เพื่อให้ผู้เล่นสามารถเล่นตาของตัวเองได้
+            changePlayer();
+            gameBoard.classList.remove('locked');
         }
 
         function findBestMove() {
@@ -411,12 +420,15 @@
                 return null;
             }
 
+            // 1. ตรวจสอบว่าบอทสามารถชนะได้ในตานี้หรือไม่
             let move = checkWinOrBlock(bot);
             if (move !== null) return move;
 
+            // 2. ตรวจสอบว่าผู้เล่นจะชนะในตาหน้าหรือไม่ ถ้าใช่ ให้บล็อก
             move = checkWinOrBlock(player);
             if (move !== null) return move;
             
+            // 3. ตรวจสอบการสร้างสถานการณ์ได้เปรียบ (fork)
             for (let i = 0; i < 9; i++) {
                 if (board[i] === '') {
                     board[i] = bot;
@@ -436,6 +448,7 @@
                 }
             }
             
+            // 4. บล็อกการสร้าง fork ของผู้เล่น
             const corners = {0: 8, 8: 0, 2: 6, 6: 2};
             for(const corner in corners){
                 if(board[corner] === player && board[corners[corner]] === player){
@@ -444,19 +457,24 @@
                 }
             }
 
+            // 5. เลือกตำแหน่งกลางถ้าว่าง
             if (board[4] === '') return 4;
 
+            // 6. เลือกมุมตรงข้ามกับผู้เล่น
             if (board[0] === player && board[8] === '') return 8;
             if (board[8] === player && board[0] === '') return 0;
             if (board[2] === player && board[6] === '') return 6;
             if (board[6] === player && board[2] === '') return 2;
 
+            // 7. เลือกมุมที่ว่าง
             const emptyCorners = [0, 2, 6, 8].filter(i => board[i] === '');
             if (emptyCorners.length > 0) return emptyCorners[Math.floor(Math.random() * emptyCorners.length)];
 
+            // 8. เลือกด้านที่ว่าง
             const emptySides = [1, 3, 5, 7].filter(i => board[i] === '');
             if (emptySides.length > 0) return emptySides[Math.floor(Math.random() * emptySides.length)];
 
+            // 9. เลือกช่องว่างช่องแรกที่เจอ (กรณีฉุกเฉิน)
             return board.findIndex(cell => cell === '');
         }
         
@@ -506,8 +524,10 @@
         resetButton.addEventListener('click', initializeGame);
         playAgainButton.addEventListener('click', initializeGame);
 
+        // เริ่มเกมครั้งแรกเมื่อโหลดหน้าเว็บ
         initializeGame();
 
     </script>
 </body>
 </html>
+
