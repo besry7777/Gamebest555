@@ -1,9 +1,0 @@
-services:
-  - type: web
-    name: roblox-ai-server
-    env: python
-    buildCommand: ""
-    startCommand: python server.py
-    envVars:
-      - key: PORT
-        value: 10000
