@@ -1,233 +1,543 @@
-
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8">
-  <title>หมากฮอสมือถือ</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      background: #111;
-      color: white;
-      font-family: sans-serif;
-      text-align: center;
-      overflow: hidden;
-      height: 100vh;
-    }
-    h1 {
-      margin: 0.5em 0 0.2em;
-      font-size: 6vw;
-    }
-    #info {
-      font-size: 4vw;
-      margin-bottom: 0.5em;
-    }
-    #board {
-      display: grid;
-      grid-template-columns: repeat(8, 1fr);
-      width: 96vmin;
-      height: 96vmin;
-      max-width: 96vmin;
-      max-height: 96vmin;
-      margin: 0 auto;
-      background: #222;
-    }
-    .cell {
-      width: 100%;
-      height: 100%;
-      box-sizing: border-box;
-    }
-    .dark {
-      background: #b58863;
-    }
-    .light {
-      background: #f0d9b5;
-    }
-    .piece {
-      width: 80%;
-      height: 80%;
-      border-radius: 50%;
-      margin: 10%;
-      box-sizing: border-box;
-    }
-    .player {
-      background: red;
-    }
-    .bot {
-      background: limegreen;
-    }
-    .king::after {
-      content: "♛";
-      position: absolute;
-      font-size: 1.8em;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .selected {
-      outline: 3px solid yellow;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เกม XO สุดยอด! (Unbeatable AI)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Mitr:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Mitr', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+            margin: 0;
+            color: #333;
+            overflow: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('data:image/svg+xml;utf8,<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="15" fill="rgba(255,255,255,0.1)"/><circle cx="80" cy="80" r="10" fill="rgba(255,255,255,0.1)"/><line x1="0" y1="50" x2="100" y2="50" stroke="rgba(255,255,255,0.05)" stroke-width="1"/><line x1="50" y1="0" x2="50" y2="100" stroke="rgba(255,255,255,0.05)" stroke-width="1"/></svg>') center/cover no-repeat;
+            opacity: 0.3;
+            z-index: -1;
+            animation: backgroundFade 5s infinite alternate;
+        }
+
+        @keyframes backgroundFade {
+            from { opacity: 0.3; }
+            to { opacity: 0.4; }
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 25px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+            padding: 35px 45px;
+            text-align: center;
+            max-width: 90%;
+            width: 480px;
+            backdrop-filter: blur(15px);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            transform: scale(1);
+            animation: popIn 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        h1 {
+            color: #1a5276;
+            margin-bottom: 25px;
+            font-size: 3em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.15);
+            letter-spacing: 1px;
+        }
+
+        .game-info {
+            font-size: 1.5em;
+            margin-bottom: 25px;
+            color: #4a69bd;
+            min-height: 30px;
+            font-weight: 700;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(3, 110px);
+            grid-template-rows: repeat(3, 110px);
+            gap: 10px;
+            margin: 30px auto;
+            width: 350px;
+            background-color: #ecf0f1;
+            padding: 10px;
+            border-radius: 20px;
+            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.15);
+            position: relative;
+        }
+        
+        .game-board.locked {
+            cursor: not-allowed;
+        }
+
+        .cell {
+            width: 110px;
+            height: 110px;
+            background-color: #ffffff;
+            border-radius: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 5em;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+            color: #34495e;
+            user-select: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .game-board.locked .cell:hover:not(.x):not(.o) {
+            background-color: #ffffff;
+            transform: none;
+            cursor: not-allowed;
+        }
+
+        .cell:hover:not(.x):not(.o) {
+            background-color: #e8f6ff;
+            transform: scale(1.03);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .cell.x {
+            color: #e74c3c;
+            text-shadow: 2px 2px 5px rgba(231, 76, 60, 0.4);
+        }
+
+        .cell.o {
+            color: #2ecc71;
+            text-shadow: 2px 2px 5px rgba(46, 204, 113, 0.4);
+        }
+
+        .cell.win {
+            background-color: #ffeaa7;
+            animation: winCellPulse 0.8s ease-in-out infinite alternate;
+            box-shadow: 0 8px 20px rgba(255, 234, 167, 0.7);
+        }
+
+        @keyframes winCellPulse {
+            from { transform: scale(1); box-shadow: 0 8px 20px rgba(255, 234, 167, 0.7); }
+            to { transform: scale(1.08); box-shadow: 0 12px 30px rgba(255, 234, 167, 0.9); }
+        }
+        
+        .winning-line {
+            position: absolute;
+            background-color: #e74c3c;
+            height: 10px;
+            border-radius: 5px;
+            transform-origin: center center;
+            box-shadow: 0 0 15px 5px rgba(231, 76, 60, 0.5);
+            display: none;
+            transition: all 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        }
+
+        .reset-button {
+            background-color: #f39c12;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 30px;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+            letter-spacing: 0.5px;
+            font-weight: 700;
+        }
+
+        .reset-button:hover {
+            background-color: #e67e22;
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.25);
+        }
+
+        .game-over-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7); display: flex; justify-content: center;
+            align-items: center; z-index: 100; opacity: 0; visibility: hidden;
+            transition: opacity 0.4s ease, visibility 0.4s ease;
+        }
+        .game-over-overlay.active { opacity: 1; visibility: visible; }
+        .game-over-modal {
+            background: #fff; padding: 40px; border-radius: 20px;
+            text-align: center; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            transform: translateY(-50px); opacity: 0;
+            animation: modalPopUp 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards;
+        }
+        @keyframes modalPopUp {
+            from { transform: translateY(-50px) scale(0.9); opacity: 0; }
+            to { transform: translateY(0) scale(1); opacity: 1; }
+        }
+        .game-over-modal h2 { font-size: 3em; margin-bottom: 20px; color: #2c3e50; }
+        .game-over-modal button {
+            background-color: #3498db; color: white; padding: 12px 25px;
+            border: none; border-radius: 8px; font-size: 1.1em; cursor: pointer;
+            transition: all 0.3s ease; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .game-over-modal button:hover {
+            background-color: #2980b9; transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .confetti-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; z-index: 99; }
+        .confetti { position: absolute; width: 10px; height: 10px; background-color: #f00; animation: fall 3s ease-out forwards; opacity: 0; border-radius: 50%; }
+        @keyframes fall {
+            0% { transform: translateY(-100px) rotateZ(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotateZ(720deg); opacity: 0.8; }
+        }
+
+        @media (max-width: 500px) {
+            .container { padding: 25px 30px; width: 95%; }
+            h1 { font-size: 2.5em; }
+            .game-board {
+                grid-template-columns: repeat(3, 90px);
+                grid-template-rows: repeat(3, 90px);
+                width: 290px;
+            }
+            .cell { width: 90px; height: 90px; font-size: 4em; }
+            .reset-button { padding: 12px 25px; font-size: 1.1em; }
+            .game-over-modal h2 { font-size: 2.5em; }
+        }
+    </style>
 </head>
 <body>
-  <h1>หมากฮอสมือถือ</h1>
-  <div id="info">🔴 คุณ vs 🟢 บอท</div>
-  <div id="board"></div>
+    <div class="container">
+        <h1>เกม XO สุดยอด!</h1>
+        <div class="game-info" id="gameInfo"></div>
+        <div class="game-board" id="gameBoard">
+            <div class="cell" data-index="0"></div>
+            <div class="cell" data-index="1"></div>
+            <div class="cell" data-index="2"></div>
+            <div class="cell" data-index="3"></div>
+            <div class="cell" data-index="4"></div>
+            <div class="cell" data-index="5"></div>
+            <div class="cell" data-index="6"></div>
+            <div class="cell" data-index="7"></div>
+            <div class="cell" data-index="8"></div>
+            <div class="winning-line" id="winningLine"></div>
+        </div>
+        <button class="reset-button" id="resetButton">เริ่มเกมใหม่</button>
+    </div>
 
-  <script>
-    const SIZE = 8;
-    let board = [];
-    let selected = null;
-    let turn = 'P'; // 'P' = player, 'B' = bot
+    <div class="game-over-overlay" id="gameOverOverlay">
+        <div class="game-over-modal">
+            <h2 id="gameOverMessage"></h2>
+            <button id="playAgainButton">เล่นอีกครั้ง!</button>
+        </div>
+    </div>
 
-    const boardEl = document.getElementById("board");
+    <div class="confetti-container" id="confettiContainer"></div>
 
-    function initBoard() {
-      board = [];
-      for (let r = 0; r < SIZE; r++) {
-        let row = [];
-        for (let c = 0; c < SIZE; c++) {
-          if ((r + c) % 2 === 0) row.push('');
-          else if (r < 3) row.push('B');
-          else if (r > 4) row.push('P');
-          else row.push('');
+    <script>
+        const cells = document.querySelectorAll('.cell');
+        const gameBoard = document.getElementById('gameBoard');
+        const gameInfo = document.getElementById('gameInfo');
+        const resetButton = document.getElementById('resetButton');
+        const gameOverOverlay = document.getElementById('gameOverOverlay');
+        const gameOverMessage = document.getElementById('gameOverMessage');
+        const playAgainButton = document.getElementById('playAgainButton');
+        const confettiContainer = document.getElementById('confettiContainer');
+        const winningLine = document.getElementById('winningLine');
+
+        const winningConditions = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8],
+            [0, 3, 6], [1, 4, 7], [2, 5, 8],
+            [0, 4, 8], [2, 4, 6]
+        ];
+
+        let board;
+        let currentPlayer;
+        let gameActive;
+        const player = 'X';
+        const bot = 'O';
+
+        function initializeGame() {
+            board = ['', '', '', '', '', '', '', '', ''];
+            gameActive = true;
+            
+            currentPlayer = bot; 
+            
+            cells.forEach(cell => {
+                cell.textContent = '';
+                cell.classList.remove('x', 'o', 'win');
+            });
+            
+            winningLine.style.display = 'none';
+            winningLine.style.width = '0px';
+
+            hideGameOverScreen();
+            clearConfetti();
+            
+            gameBoard.classList.add('locked');
+            gameInfo.textContent = `บอทกำลังเริ่ม... 🤔`;
+
+            setTimeout(botMove, 800);
         }
-        board.push(row);
-      }
-    }
+        
+        cells.forEach(cell => {
+            cell.addEventListener('click', handleCellClick);
+        });
 
-    function drawBoard() {
-      boardEl.innerHTML = '';
-      for (let r = 0; r < SIZE; r++) {
-        for (let c = 0; c < SIZE; c++) {
-          let cell = document.createElement("div");
-          cell.className = "cell " + ((r + c) % 2 === 0 ? "light" : "dark");
-          cell.dataset.row = r;
-          cell.dataset.col = c;
+        function handleCellClick(e) {
+            const clickedCell = e.target;
+            const clickedCellIndex = parseInt(clickedCell.dataset.index);
 
-          let piece = board[r][c];
-          if (piece) {
-            let div = document.createElement("div");
-            div.className = "piece " + (piece.toUpperCase() === 'P' ? "player" : "bot");
-            if (piece === piece.toLowerCase()) div.classList.add("king");
-            if (selected && selected.r == r && selected.c == c) {
-              div.classList.add("selected");
+            if (gameBoard.classList.contains('locked') || board[clickedCellIndex] !== '' || !gameActive) {
+                return;
             }
-            cell.appendChild(div);
-          }
 
-          if (turn === 'P') {
-            cell.addEventListener("click", () => handleClick(r, c));
-          }
-          boardEl.appendChild(cell);
+            makeMove(clickedCell, clickedCellIndex, currentPlayer);
+            
+            if (checkResult()) {
+                return;
+            }
+            
+            changePlayer();
+            
+            gameBoard.classList.add('locked');
+            gameInfo.textContent = `บอทกำลังคิด... 🤔`;
+
+            setTimeout(botMove, 800);
         }
-      }
-    }
 
-    function handleClick(r, c) {
-      let piece = board[r][c];
-      if (piece && piece.toUpperCase() === 'P') {
-        selected = {r, c};
-        drawBoard();
-      } else if (selected) {
-        let legalMoves = getLegalMoves(selected.r, selected.c);
-        if (legalMoves.some(m => m.r === r && m.c === c)) {
-          movePiece(selected.r, selected.c, r, c);
-          selected = null;
-          turn = 'B';
-          drawBoard();
-          setTimeout(botMove, 500);
+        function makeMove(cellElement, index, activePlayer) {
+            board[index] = activePlayer;
+            cellElement.textContent = activePlayer;
+            cellElement.classList.add(activePlayer.toLowerCase());
         }
-      }
-    }
-
-    function getLegalMoves(r, c) {
-      let piece = board[r][c];
-      let directions = [[-1,-1], [-1,1]];
-      if (piece === piece.toLowerCase()) {
-        directions = [[-1,-1],[1,-1],[-1,1],[1,1]];
-      }
-      let moves = [];
-      directions.forEach(([dr, dc]) => {
-        let nr = r + dr, nc = c + dc;
-        if (inBounds(nr, nc) && board[nr][nc] === '') {
-          moves.push({r: nr, c: nc});
+        
+        function changePlayer() {
+            currentPlayer = (currentPlayer === player) ? bot : player;
+            if(gameActive && currentPlayer === player) {
+                 gameInfo.textContent = `ตาของ: ${currentPlayer}`;
+            }
         }
-        let jr = r + dr * 2, jc = c + dc * 2;
-        if (inBounds(jr, jc) && board[nr][nc] && board[nr][nc].toUpperCase() === 'B' && board[jr][jc] === '') {
-          moves.push({r: jr, c: jc, eat: [nr, nc]});
+
+        function checkResult() {
+            let roundWon = false;
+            let winningCombo = [];
+            let winningConditionIndex = -1;
+            let winner = null;
+
+            for (let i = 0; i < winningConditions.length; i++) {
+                const winCondition = winningConditions[i];
+                const a = board[winCondition[0]];
+                const b = board[winCondition[1]];
+                const c = board[winCondition[2]];
+
+                if (a === '' || b === '' || c === '') continue;
+                
+                if (a === b && b === c) {
+                    roundWon = true;
+                    winner = a;
+                    winningCombo = winCondition;
+                    winningConditionIndex = i;
+                    break;
+                }
+            }
+
+            if (roundWon) {
+                gameActive = false;
+                gameBoard.classList.add('locked');
+                winningCombo.forEach(index => cells[index].classList.add('win'));
+                drawWinningLine(winningConditionIndex);
+                
+                setTimeout(() => {
+                    const message = (winner === player) ? `คุณชนะ!` : `บอทชนะ!`;
+                    gameInfo.textContent = message + ' 🎉';
+                    showGameOverScreen(message);
+                    if (winner === player) triggerConfetti();
+                }, 600);
+                return true;
+            }
+
+            if (!board.includes('')) {
+                gameActive = false;
+                gameBoard.classList.add('locked');
+                gameInfo.textContent = `เสมอ! 🤝`;
+                showGameOverScreen(`เกมเสมอ!`);
+                return true;
+            }
+            
+            return false;
         }
-      });
-      return moves;
-    }
 
-    function movePiece(sr, sc, dr, dc) {
-      let piece = board[sr][sc];
-      board[sr][sc] = '';
-      if (Math.abs(dr - sr) === 2) {
-        let er = (sr + dr) / 2, ec = (sc + dc) / 2;
-        board[er][ec] = '';
-      }
-      if ((piece === 'P' && dr === 0) || (piece === 'B' && dr === SIZE - 1)) {
-        piece = piece.toLowerCase();
-      }
-      board[dr][dc] = piece;
-    }
+        function botMove() {
+            if (!gameActive) return;
 
-    function botMove() {
-      let moves = [];
-      for (let r = 0; r < SIZE; r++) {
-        for (let c = 0; c < SIZE; c++) {
-          if (board[r][c] && board[r][c].toUpperCase() === 'B') {
-            let pieceMoves = getLegalMovesBot(r, c);
-            pieceMoves.forEach(m => moves.push({from: {r, c}, to: m}));
-          }
+            const move = findBestMove();
+            const cellElement = cells[move];
+            makeMove(cellElement, move, bot);
+            
+            if (checkResult()) {
+                return;
+            }
+            
+            changePlayer();
+            gameBoard.classList.remove('locked');
         }
-      }
-      if (moves.length === 0) {
-        alert("คุณชนะ!");
-        return;
-      }
-      moves.sort(() => Math.random() - 0.5); // shuffle
-      let move = moves[0];
-      movePiece(move.from.r, move.from.c, move.to.r, move.to.c);
-      turn = 'P';
-      drawBoard();
-    }
 
-    function getLegalMovesBot(r, c) {
-      let piece = board[r][c];
-      let directions = [[1,-1], [1,1]];
-      if (piece === piece.toLowerCase()) {
-        directions = [[-1,-1],[1,-1],[-1,1],[1,1]];
-      }
-      let moves = [];
-      directions.forEach(([dr, dc]) => {
-        let nr = r + dr, nc = c + dc;
-        if (inBounds(nr, nc) && board[nr][nc] === '') {
-          moves.push({r: nr, c: nc});
+        // --- 🤖 START OF MODIFIED AI LOGIC 🤖 ---
+        function findBestMove() {
+            // ตรวจสอบว่าเป็นตาแรกของเกมหรือไม่ (บอร์ดว่างทั้งหมด)
+            const isFirstMove = board.every(cell => cell === '');
+            if (isFirstMove) {
+                // ถ้าเป็นตาแรก ให้สุ่มลงตำแหน่งที่แข็งแกร่ง (มุม หรือ กลาง)
+                const strongFirstMoves = [0, 2, 4, 6, 8];
+                return strongFirstMoves[Math.floor(Math.random() * strongFirstMoves.length)];
+            }
+
+            // ฟังก์ชันสำหรับช่วยตรวจสอบการชนะ/บล็อก
+            function checkWinOrBlock(playerToCheck) {
+                for (let i = 0; i < winningConditions.length; i++) {
+                    const [a, b, c] = winningConditions[i];
+                    if (board[a] === playerToCheck && board[b] === playerToCheck && board[c] === '') return c;
+                    if (board[a] === playerToCheck && board[c] === playerToCheck && board[b] === '') return b;
+                    if (board[b] === playerToCheck && board[c] === playerToCheck && board[a] === '') return a;
+                }
+                return null;
+            }
+
+            // 1. ตรวจสอบว่าบอทสามารถชนะได้ในตานี้หรือไม่
+            let move = checkWinOrBlock(bot);
+            if (move !== null) return move;
+
+            // 2. ตรวจสอบว่าผู้เล่นจะชนะในตาหน้าหรือไม่ ถ้าใช่ ให้บล็อก
+            move = checkWinOrBlock(player);
+            if (move !== null) return move;
+            
+            // 3. ตรวจสอบการสร้างสถานการณ์ได้เปรียบ (fork)
+            for (let i = 0; i < 9; i++) {
+                if (board[i] === '') {
+                    board[i] = bot; // ลองวางชั่วคราว
+                    let winningOpportunities = 0;
+                    for (let j = 0; j < winningConditions.length; j++) {
+                        const [a, b, c] = winningConditions[j];
+                        const line = [board[a], board[b], board[c]];
+                        if (line.filter(p => p === bot).length === 2 && line.filter(p => p === '').length === 1) {
+                            winningOpportunities++;
+                        }
+                    }
+                    board[i] = ''; // เอาที่วางไว้ออก
+                    if (winningOpportunities >= 2) {
+                        return i; // ถ้าสร้าง fork ได้ ให้ลงตรงนี้
+                    }
+                }
+            }
+            
+            // 4. บล็อกการสร้าง fork ของผู้เล่น
+            for (let i = 0; i < 9; i++) {
+                if (board[i] === '') {
+                    board[i] = player; // ลองให้ผู้เล่นวาง
+                     let winningOpportunities = 0;
+                    for (let j = 0; j < winningConditions.length; j++) {
+                        const [a, b, c] = winningConditions[j];
+                         const line = [board[a], board[b], board[c]];
+                        if (line.filter(p => p === player).length === 2 && line.filter(p => p === '').length === 1) {
+                            winningOpportunities++;
+                        }
+                    }
+                    board[i] = ''; // เอาออก
+                    if (winningOpportunities >= 2) {
+                        return i; // ถ้าผู้เล่นจะสร้าง fork ได้ ให้บล็อกที่จุดนั้น
+                    }
+                }
+            }
+            
+            // 5. เลือกตำแหน่งกลางถ้าว่าง
+            if (board[4] === '') return 4;
+
+            // 6. เลือกมุมตรงข้ามกับผู้เล่น
+            if (board[0] === player && board[8] === '') return 8;
+            if (board[8] === player && board[0] === '') return 0;
+            if (board[2] === player && board[6] === '') return 6;
+            if (board[6] === player && board[2] === '') return 2;
+
+            // 7. เลือกมุมที่ว่าง
+            const emptyCorners = [0, 2, 6, 8].filter(i => board[i] === '');
+            if (emptyCorners.length > 0) return emptyCorners[0];
+
+            // 8. เลือกด้านที่ว่าง
+            const emptySides = [1, 3, 5, 7].filter(i => board[i] === '');
+            if (emptySides.length > 0) return emptySides[0];
+
+            // 9. เลือกช่องว่างช่องแรกที่เจอ (กรณีฉุกเฉิน)
+            return board.findIndex(cell => cell === '');
         }
-        let jr = r + dr * 2, jc = c + dc * 2;
-        if (inBounds(jr, jc) && board[nr][nc] && board[nr][nc].toUpperCase() === 'P' && board[jr][jc] === '') {
-          moves.push({r: jr, c: jc, eat: [nr, nc]});
+        // --- 🤖 END OF MODIFIED AI LOGIC 🤖 ---
+        
+        function drawWinningLine(index) {
+            const line = winningLine;
+            line.style.display = 'block';
+            const lineLength = 330;
+            const diagonalLength = 420;
+            switch(index) {
+                case 0: line.style.width = `0px`; line.style.transform = 'translate(10px, 55px) rotate(0deg)'; setTimeout(() => line.style.width = `${lineLength}px`, 50); break;
+                case 1: line.style.width = `0px`; line.style.transform = 'translate(10px, 175px) rotate(0deg)'; setTimeout(() => line.style.width = `${lineLength}px`, 50); break;
+                case 2: line.style.width = `0px`; line.style.transform = 'translate(10px, 295px) rotate(0deg)'; setTimeout(() => line.style.width = `${lineLength}px`, 50); break;
+                case 3: line.style.width = `0px`; line.style.transform = 'translate(-110px, 175px) rotate(90deg)'; setTimeout(() => line.style.width = `${lineLength}px`, 50); break;
+                case 4: line.style.width = `0px`; line.style.transform = 'translate(10px, 175px) rotate(90deg)'; setTimeout(() => line.style.width = `${lineLength}px`, 50); break;
+                case 5: line.style.width = `0px`; line.style.transform = 'translate(130px, 175px) rotate(90deg)'; setTimeout(() => line.style.width = `${lineLength}px`, 50); break;
+                case 6: line.style.width = `0px`; line.style.transform = 'translate(-25px, 175px) rotate(45deg)'; setTimeout(() => line.style.width = `${diagonalLength}px`, 50); break;
+                case 7: line.style.width = `0px`; line.style.transform = 'translate(-25px, 175px) rotate(-45deg)'; setTimeout(() => line.style.width = `${diagonalLength}px`, 50); break;
+            }
         }
-      });
-      return moves;
-    }
 
-    function inBounds(r, c) {
-      return r >= 0 && c >= 0 && r < SIZE && c < SIZE;
-    }
+        function showGameOverScreen(message) {
+            gameOverMessage.textContent = message;
+            gameOverOverlay.classList.add('active');
+        }
 
-    initBoard();
-    drawBoard();
-  </script>
+        function hideGameOverScreen() {
+            gameOverOverlay.classList.remove('active');
+        }
+
+        function triggerConfetti() {
+            const colors = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#03a9f4', '#00bcd4', '#009688', '#4CAF50', '#8BC34A', '#CDDC39', '#FFEB3B', '#FFC107', '#FF9800', '#FF5722'];
+            for (let i = 0; i < 50; i++) {
+                const confetti = document.createElement('div');
+                confetti.classList.add('confetti');
+                confetti.style.left = `${Math.random() * 100}vw`;
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.animationDelay = `${Math.random() * 0.5}s`;
+                confettiContainer.appendChild(confetti);
+                confetti.addEventListener('animationend', () => confetti.remove());
+            }
+        }
+
+        function clearConfetti() {
+            confettiContainer.innerHTML = '';
+        }
+
+        resetButton.addEventListener('click', initializeGame);
+        playAgainButton.addEventListener('click', initializeGame);
+
+        initializeGame();
+
+    </script>
 </body>
 </html>
