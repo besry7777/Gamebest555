@@ -14,19 +14,23 @@
       background: #111;
       color: white;
       text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
     }
 
     h1, p {
-      margin: 0.5em 0;
+      margin: 1vh 0 0.5vh;
+      font-size: 4.5vw;
     }
 
     table {
       border-collapse: collapse;
-      margin: auto;
-      height: 80vh;
-      width: 80vh;
-      max-width: 96vw;
-      max-height: 96vw;
+      width: 96vw;
+      height: 96vw;
+      max-width: 96vh;
+      max-height: 96vh;
     }
 
     td {
@@ -44,10 +48,12 @@
     .player { color: #e74c3c; font-weight: bold; cursor: pointer; }
     .bot    { color: #2ecc71; font-weight: bold; }
     .selected { outline: 3px solid yellow; }
+
     #message {
       margin-top: 1vh;
       font-weight: bold;
       color: gold;
+      font-size: 3.5vw;
     }
   </style>
 </head>
