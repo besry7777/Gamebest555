@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เกม XO สุดยอด!</title>
+    <link href="https://fonts.googleapis.com/css2?family=Mitr:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* สไตล์ CSS (ส่วนใหญ่เหมือนเดิม) */
+        body {
+            font-family: 'Mitr', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%); /* ท้องฟ้าสดใส */
+            margin: 0;
+            color: #333;
+            overflow: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('data:image/svg+xml;utf8,<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="15" fill="rgba(255,255,255,0.1)"/><circle cx="80" cy="80" r="10" fill="rgba(255,255,255,0.1)"/><line x1="0" y1="50" x2="100" y2="50" stroke="rgba(255,255,255,0.05)" stroke-width="1"/><line x1="50" y1="0" x2="50" y2="100" stroke="rgba(255,255,255,0.05)" stroke-width="1"/></svg>') center/cover no-repeat;
+            opacity: 0.3;
+            z-index: -1;
+            animation: backgroundFade 5s infinite alternate;
+        }
+
+        @keyframes backgroundFade {
+            from { opacity: 0.3; }
+            to { opacity: 0.4; }
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 25px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+            padding: 35px 45px;
+            text-align: center;
+            max-width: 90%;
+            width: 480px;
+            backdrop-filter: blur(15px);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            transform: scale(1);
+            animation: popIn 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        h1 {
+            color: #1a5276; /* สีน้ำเงินเข้ม */
+            margin-bottom: 25px;
+            font-size: 3em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.15);
+            letter-spacing: 1px;
+        }
+
+        .game-info {
+            font-size: 1.5em;
+            margin-bottom: 25px;
+            color: #4a69bd; /* น้ำเงินกลาง */
+            min-height: 30px;
+            font-weight: 700;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(3, 110px);
+            grid-template-rows: repeat(3, 110px);
+            gap: 10px;
+            margin: 30px auto;
+            width: 350px;
+            background-color: #ecf0f1;
+            padding: 10px;
+            border-radius: 20px;
+            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.15);
+            position: relative; /* <-- สำคัญมากสำหรับเส้นที่ชนะ */
+        }
+        
+        .game-board.locked {
+            cursor: not-allowed;
+        }
+
+        .cell {
+            width: 110px;
+            height: 110px;
+            background-color: #ffffff;
+            border-radius: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 5em;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+            color: #34495e;
+            user-select: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .game-board.locked .cell:hover:not(.x):not(.o) {
+            background-color: #ffffff;
+            transform: none;
+            cursor: not-allowed;
+        }
+
+        .cell:hover:not(.x):not(.o) {
+            background-color: #e8f6ff;
+            transform: scale(1.03);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .cell.x {
+            color: #e74c3c;
+            text-shadow: 2px 2px 5px rgba(231, 76, 60, 0.4);
+        }
+
+        .cell.o {
+            color: #2ecc71;
+            text-shadow: 2px 2px 5px rgba(46, 204, 113, 0.4);
+        }
+
+        .cell.win {
+            background-color: #ffeaa7;
+            animation: winCellPulse 0.8s ease-in-out infinite alternate;
+            box-shadow: 0 8px 20px rgba(255, 234, 167, 0.7);
+        }
+
+        @keyframes winCellPulse {
+            from { transform: scale(1); box-shadow: 0 8px 20px rgba(255, 234, 167, 0.7); }
+            to { transform: scale(1.08); box-shadow: 0 12px 30px rgba(255, 234, 167, 0.9); }
+        }
+        
+        /* ✨ สไตล์สำหรับเส้นขีดฆ่าเมื่อชนะ (ใหม่) ✨ */
+        .winning-line {
+            position: absolute;
+            background-color: #e74c3c;
+            height: 10px;
+            border-radius: 5px;
+            transform-origin: center center;
+            box-shadow: 0 0 15px 5px rgba(231, 76, 60, 0.5);
+            display: none; /* ซ่อนไว้ก่อน */
+            transition: all 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        }
+
+        .reset-button {
+            background-color: #f39c12; /* ส้ม */
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 30px;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+            letter-spacing: 0.5px;
+            font-weight: 700;
+        }
+
+        .reset-button:hover {
+            background-color: #e67e22; /* ส้มเข้ม */
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.25);
+        }
+
+        /* ส่วนของ Game Over (เหมือนเดิม) */
+        .game-over-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7); display: flex; justify-content: center;
+            align-items: center; z-index: 100; opacity: 0; visibility: hidden;
+            transition: opacity 0.4s ease, visibility 0.4s ease;
+        }
+        .game-over-overlay.active { opacity: 1; visibility: visible; }
+        .game-over-modal {
+            background: #fff; padding: 40px; border-radius: 20px;
+            text-align: center; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            transform: translateY(-50px); opacity: 0;
+            animation: modalPopUp 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards;
+        }
+        @keyframes modalPopUp {
+            from { transform: translateY(-50px) scale(0.9); opacity: 0; }
+            to { transform: translateY(0) scale(1); opacity: 1; }
+        }
+        .game-over-modal h2 { font-size: 3em; margin-bottom: 20px; color: #2c3e50; }
+        .game-over-modal button {
+            background-color: #3498db; color: white; padding: 12px 25px;
+            border: none; border-radius: 8px; font-size: 1.1em; cursor: pointer;
+            transition: all 0.3s ease; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .game-over-modal button:hover {
+            background-color: #2980b9; transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        /* ส่วนของ Confetti (เหมือนเดิม) */
+        .confetti-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; z-index: 99; }
+        .confetti { position: absolute; width: 10px; height: 10px; background-color: #f00; animation: fall 3s ease-out forwards; opacity: 0; border-radius: 50%; }
+        @keyframes fall {
+            0% { transform: translateY(-100px) rotateZ(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotateZ(720deg); opacity: 0.8; }
+        }
+
+        /* Responsive Design (เหมือนเดิม) */
+        @media (max-width: 500px) {
+            .container { padding: 25px 30px; width: 95%; }
+            h1 { font-size: 2.5em; }
+            .game-board {
+                grid-template-columns: repeat(3, 90px);
+                grid-template-rows: repeat(3, 90px);
+                width: 290px;
+            }
+            .cell { width: 90px; height: 90px; font-size: 4em; }
+            .reset-button { padding: 12px 25px; font-size: 1.1em; }
+            .game-over-modal h2 { font-size: 2.5em; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>เกม XO สุดยอด!</h1>
+        <div class="game-info" id="gameInfo">ตาของ: X</div>
+        <div class="game-board" id="gameBoard">
+            <div class="cell" data-index="0"></div>
+            <div class="cell" data-index="1"></div>
+            <div class="cell" data-index="2"></div>
+            <div class="cell" data-index="3"></div>
+            <div class="cell" data-index="4"></div>
+            <div class="cell" data-index="5"></div>
+            <div class="cell" data-index="6"></div>
+            <div class="cell" data-index="7"></div>
+            <div class="cell" data-index="8"></div>
+            <div class="winning-line" id="winningLine"></div>
+        </div>
+        <button class="reset-button" id="resetButton">เริ่มเกมใหม่</button>
+    </div>
+
+    <div class="game-over-overlay" id="gameOverOverlay">
+        <div class="game-over-modal">
+            <h2 id="gameOverMessage"></h2>
+            <button id="playAgainButton">เล่นอีกครั้ง!</button>
+        </div>
+    </div>
+
+    <div class="confetti-container" id="confettiContainer"></div>
+
+    <script>
+        const cells = document.querySelectorAll('.cell');
+        const gameBoard = document.getElementById('gameBoard');
+        const gameInfo = document.getElementById('gameInfo');
+        const resetButton = document.getElementById('resetButton');
+        const gameOverOverlay = document.getElementById('gameOverOverlay');
+        const gameOverMessage = document.getElementById('gameOverMessage');
+        const playAgainButton = document.getElementById('playAgainButton');
+        const confettiContainer = document.getElementById('confettiContainer');
+        const winningLine = document.getElementById('winningLine'); // ✨ อ้างอิง element เส้น
+
+        const winningConditions = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8], // แนวนอน
+            [0, 3, 6], [1, 4, 7], [2, 5, 8], // แนวตั้ง
+            [0, 4, 8], [2, 4, 6]            // แนวทแยง
+        ];
+
+        let board;
+        let currentPlayer;
+        let gameActive;
+
+        function initializeGame() {
+            board = ['', '', '', '', '', '', '', '', ''];
+            currentPlayer = 'X';
+            gameActive = true;
+            
+            gameInfo.textContent = `ตาของ: ${currentPlayer}`;
+            gameBoard.classList.remove('locked');
+            cells.forEach(cell => {
+                cell.textContent = '';
+                cell.classList.remove('x', 'o', 'win');
+                // ไม่ต้อง add/remove event listener แล้ว เพราะเราจะจัดการใน handleCellClick เอง
+            });
+
+            // ✨ ซ่อนเส้นขีดฆ่าเมื่อเริ่มเกมใหม่
+            winningLine.style.display = 'none';
+            winningLine.style.width = '0px';
+
+            hideGameOverScreen();
+            clearConfetti();
+        }
+        
+        // ✨ รวม event listener ไว้ที่เดียวเพื่อจัดการได้ง่ายขึ้น
+        cells.forEach(cell => {
+            cell.addEventListener('click', handleCellClick);
+        });
+
+        function handleCellClick(e) {
+            const clickedCell = e.target;
+            const clickedCellIndex = parseInt(clickedCell.dataset.index);
+
+            // 🛑 ป้องกันการคลิกเมื่อ: ช่องไม่ว่าง, เกมจบแล้ว, หรือบอร์ดถูกล็อคอยู่
+            if (board[clickedCellIndex] !== '' || !gameActive) {
+                return;
+            }
+
+            // --- Player's Move ---
+            makeMove(clickedCell, clickedCellIndex, currentPlayer);
+            
+            if (checkResult()) { // checkResult จะ return true ถ้าเกมจบ
+                return; // จบการทำงานของฟังก์ชันทันทีถ้าเกมจบ
+            }
+            
+            // --- Bot's Turn ---
+            changePlayer(); // เปลี่ยนเป็นตาของ 'O'
+            
+            // 🔒 ล็อคบอร์ดทันทีหลังจากผู้เล่นเดิน เพื่อป้องกันการคลิกซ้ำ
+            gameBoard.classList.add('locked');
+            gameInfo.textContent = `บอทกำลังคิด... 🤔`; // แสดงสถานะให้ผู้เล่นรู้
+
+            setTimeout(botMove, 800); // หน่วงเวลาให้บอทคิด
+        }
+
+        function makeMove(cellElement, index, player) {
+            board[index] = player;
+            cellElement.textContent = player;
+            cellElement.classList.add(player.toLowerCase());
+        }
+        
+        function changePlayer() {
+            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+            gameInfo.textContent = `ตาของ: ${currentPlayer}`;
+        }
+
+        function checkResult() {
+            let roundWon = false;
+            let winningCombo = [];
+            let winningConditionIndex = -1;
+
+            for (let i = 0; i < winningConditions.length; i++) {
+                const winCondition = winningConditions[i];
+                const a = board[winCondition[0]];
+                const b = board[winCondition[1]];
+                const c = board[winCondition[2]];
+
+                if (a === '' || b === '' || c === '') continue;
+                
+                if (a === b && b === c) {
+                    roundWon = true;
+                    winningCombo = winCondition;
+                    winningConditionIndex = i; // ✨ เก็บ index ของแนวที่ชนะ
+                    break;
+                }
+            }
+
+            if (roundWon) {
+                gameActive = false;
+                gameBoard.classList.add('locked');
+                winningCombo.forEach(index => cells[index].classList.add('win'));
+                drawWinningLine(winningConditionIndex); // ✨ เรียกใช้ฟังก์ชันวาดเส้น
+                
+                setTimeout(() => {
+                    gameInfo.textContent = `ผู้เล่น ${currentPlayer} ชนะ! 🎉`;
+                    showGameOverScreen(`ผู้เล่น ${currentPlayer} ชนะ!`);
+                    triggerConfetti();
+                }, 600); // หน่วงเวลาเล็กน้อยเพื่อให้เห็นเส้นก่อน
+                return true; // คืนค่าว่าเกมจบแล้ว
+            }
+
+            if (!board.includes('')) {
+                gameActive = false;
+                gameBoard.classList.add('locked');
+                gameInfo.textContent = `เสมอ! 🤝`;
+                showGameOverScreen(`เกมเสมอ!`);
+                triggerConfetti();
+                return true; // คืนค่าว่าเกมจบแล้ว
+            }
+            
+            return false; // คืนค่าว่าเกมยังไม่จบ
+        }
+
+        function botMove() {
+            if (!gameActive) return;
+
+            // กลยุทธ์บอท (เหมือนเดิม แต่ปรับปรุงเล็กน้อย)
+            const move = findBestMove();
+            const cellElement = cells[move];
+            makeMove(cellElement, move, 'O');
+            
+            if (checkResult()) { // ตรวจสอบผลลัพธ์หลังจากบอทเดิน
+                return;
+            }
+
+            changePlayer(); // เปลี่ยนกลับเป็นตาของผู้เล่น 'X'
+            
+            // 🔓 ปลดล็อคบอร์ดเพื่อให้ผู้เล่นสามารถเดินตาต่อไปได้
+            gameBoard.classList.remove('locked');
+        }
+
+        function findBestMove() {
+            // 1. ชนะได้ให้ชนะเลย
+            for (let i = 0; i < winningConditions.length; i++) {
+                const [a, b, c] = winningConditions[i];
+                if (board[a] === 'O' && board[b] === 'O' && board[c] === '') return c;
+                if (board[a] === 'O' && board[c] === 'O' && board[b] === '') return b;
+                if (board[b] === 'O' && board[c] === 'O' && board[a] === '') return a;
+            }
+            // 2. ป้องกันผู้เล่นชนะ
+            for (let i = 0; i < winningConditions.length; i++) {
+                const [a, b, c] = winningConditions[i];
+                if (board[a] === 'X' && board[b] === 'X' && board[c] === '') return c;
+                if (board[a] === 'X' && board[c] === 'X' && board[b] === '') return b;
+                if (board[b] === 'X' && board[c] === 'X' && board[a] === '') return a;
+            }
+            // 3. ยึดช่องกลาง
+            if (board[4] === '') return 4;
+            // 4. ยึดมุมที่ว่าง
+            const corners = [0, 2, 6, 8].filter(i => board[i] === '');
+            if (corners.length > 0) return corners[Math.floor(Math.random() * corners.length)];
+            // 5. ยึดขอบที่ว่าง
+            const edges = [1, 3, 5, 7].filter(i => board[i] === '');
+            if (edges.length > 0) return edges[Math.floor(Math.random() * edges.length)];
+            
+            return board.findIndex(cell => cell === ''); // Fallback (ไม่น่าจะเกิดขึ้น)
+        }
+        
+        // ✨ ฟังก์ชันสำหรับวาดเส้นขีดฆ่าเมื่อชนะ (ใหม่) ✨
+        function drawWinningLine(index) {
+            const line = winningLine;
+            line.style.display = 'block';
+
+            // ค่าตำแหน่งคำนวณจากขนาดของบอร์ดและช่อง
+            // Board width = 350, Cell width = 110, Gap = 10
+            const lineLength = 330; // ความยาวเส้นสำหรับแนวนอน/ตั้ง
+            const diagonalLength = 420; // ความยาวเส้นสำหรับแนวทแยง
+
+            switch(index) {
+                case 0: // แถวบน
+                    line.style.width = `${lineLength}px`;
+                    line.style.transform = 'translateY(55px) rotate(0deg)';
+                    break;
+                case 1: // แถวกลาง
+                    line.style.width = `${lineLength}px`;
+                    line.style.transform = 'translateY(175px) rotate(0deg)';
+                    break;
+                case 2: // แถวล่าง
+                    line.style.width = `${lineLength}px`;
+                    line.style.transform = 'translateY(295px) rotate(0deg)';
+                    break;
+                case 3: // คอลัมน์ซ้าย
+                    line.style.width = `${lineLength}px`;
+                    line.style.transform = 'translate(120px, 175px) rotate(90deg)';
+                    break;
+                case 4: // คอลัมน์กลาง
+                    line.style.width = `${lineLength}px`;
+                    line.style.transform = 'translate(0px, 175px) rotate(90deg)';
+                    break;
+                case 5: // คอลัมน์ขวา
+                    line.style.width = `${lineLength}px`;
+                    line.style.transform = 'translate(-120px, 175px) rotate(90deg)';
+                    break;
+                case 6: // ทแยงซ้ายไปขวา
+                    line.style.width = `${diagonalLength}px`;
+                    line.style.transform = 'translateY(175px) rotate(45deg)';
+                    break;
+                case 7: // ทแยงขวาไปซ้าย
+                    line.style.width = `${diagonalLength}px`;
+                    line.style.transform = 'translateY(175px) rotate(-45deg)';
+                    break;
+            }
+        }
+
+
+        function showGameOverScreen(message) {
+            gameOverMessage.textContent = message;
+            gameOverOverlay.classList.add('active');
+        }
+
+        function hideGameOverScreen() {
+            gameOverOverlay.classList.remove('active');
+        }
+
+        function triggerConfetti() {
+            const colors = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#03a9f4', '#00bcd4', '#009688', '#4CAF50', '#8BC34A', '#CDDC39', '#FFEB3B', '#FFC107', '#FF9800', '#FF5722'];
+            for (let i = 0; i < 50; i++) {
+                const confetti = document.createElement('div');
+                confetti.classList.add('confetti');
+                confetti.style.left = `${Math.random() * 100}vw`;
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.animationDelay = `${Math.random() * 0.5}s`;
+                confettiContainer.appendChild(confetti);
+                confetti.addEventListener('animationend', () => confetti.remove());
+            }
+        }
+
+        function clearConfetti() {
+            confettiContainer.innerHTML = '';
+        }
+
+        resetButton.addEventListener('click', initializeGame);
+        playAgainButton.addEventListener('click', initializeGame);
+
+        // เริ่มเกมครั้งแรก
+        initializeGame();
+
+    </script>
+</body>
+</html>
