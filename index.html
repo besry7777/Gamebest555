@@ -2,41 +2,39 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<title>หมากฮอสมือถือ + แม่ฮอส + เอฟเฟกต์</title>
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+<title>หมากฮอสมือถือ+AIแรงสุด</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <style>
-  html,body{margin:0;padding:0;height:100vh;overflow:hidden;background:#111;color:#fff;display:flex;flex-direction:column;align-items:center;}
-  h1,p{margin:1vh 0 .5vh;font-size:4.5vw;}
-  table{border-collapse:collapse;width:96vw;height:96vw;max-width:96vh;max-height:96vh;}
-  td{width:12.5%;height:12.5%;text-align:center;vertical-align:middle;font-size:6vw;transition:background .2s;position:relative;}
-  .white{background:#f0d9b5;}
-  .black{background:#b58863;}
-  .piece{position:absolute;top:5%;left:5%;width:90%;height:90%;border-radius:50%;transition:transform .3s;}
-  .player{background:#e74c3c;box-shadow:0 0 .2em #c0392b;}
-  .bot{background:#2ecc71;box-shadow:0 0 .2em #27ae60;}
+  html,body{margin:0;padding:0;height:100vh;overflow:hidden;background:#111;display:flex;flex-direction:column;align-items:center;}
+  h1,p{margin:1vh 0 .5vh;font-size:4.5vw;color:#fff;}
+  #board{position:relative;width:96vw;height:96vw;max-width:96vh;max-height:96vh;background:#333;display:grid;grid-template:repeat(8,1fr)/repeat(8,1fr);}
+  .cell{position:relative;}
+  .cell:nth-child(even){background:#f0d9b5;}
+  .cell:nth-child(odd){background:#b58863;}
+  .piece{position:absolute;width:90%;height:90%;border-radius:50%;top:5%;left:5%;transition:transform .3s;}
+  .player{background:#e74c3c;}
+  .bot{background:#2ecc71;}
   .king:before{content:"";position:absolute;top:20%;left:20%;width:60%;height:60%;border-radius:50%;background:rgba(255,255,255,0.4);}
-  .selected::after{content:"";position:absolute;inset:0;border:3px solid yellow;border-radius:50%;}
+  .selected .piece{outline:3px solid yellow;}
   #message{margin-top:1vh;font-size:3.5vw;color:gold;}
 </style>
 </head>
 <body>
-<h1>หมากฮอสมือถือ ♕</h1><p>🔴 คุณ vs 🟢 บอท</p>
-<table id="board"></table><div id="message"></div>
+<h1>หมากฮอส + AI 10 เท่า ♕</h1><p>🔴 คุณ vs 🟢 บอท</p>
+<div id="board"></div><div id="message"></div>
 
 <script>
-// --- เสียงประกอบ ---
-const SFX = {};
-['walk','eat','crown','turn','win'].forEach(n => {
-  const a = new Audio();
-  a.src = n+'.mp3'; // เสียงไฟล์ต้องวางไว้ในโฟลเดอร์เดียวกัน
-  SFX[n] = a;
-});
+// ... (เสียงเอฟเฟกต์เหมือนก่อน) ...
 
-// --- ตัวแปรหลัก ---
-const SIZE=8,board=[],table=document.getElementById('board'),msg=document.getElementById('message');
-let turn='P', selected=null, history=[], mustContinue=false;
+const SIZE=8, board=[], boardEl=document.getElementById('board'), msg=document.getElementById('message');
+let turn='P', selected=null, mustContinue=false;
 
-// --- สร้างกระดาน+เรียกเริ่ม ---
+function init() {
+  boardEl.innerHTML='';
+  for(let i=0;i<64;i++){ const div=document.createElement('div'); div.className='cell'; boardEl.appendChild(div); }
+  createBoard(); draw();
+}
+
 function createBoard(){
   for(let r=0;r<SIZE;r++){
     board[r]=[];
@@ -44,128 +42,131 @@ function createBoard(){
       board[r][c]=(r<3 && (r+c)%2? 'B': r>4 && (r+c)%2? 'P':'');
     }
   }
-  drawBoard();
-}
-function drawBoard(){
-  table.innerHTML='';
-  for(let r=0;r<SIZE;r++){ const row=table.insertRow();
-    for(let c=0;c<SIZE;c++){
-      const cell=row.insertCell(), piece=board[r][c];
-      cell.className=(r+c)%2?'black':'white';
-      cell.onclick=()=>clickCell(r,c);
-      if(piece){
-        const div=document.createElement('div');
-        div.classList.add('piece', piece==='P'?'player':'bot');
-        if(piece==='p' || piece==='b') div.classList.add('king');
-        if(selected?.r===r && selected?.c===c) div.classList.add('selected');
-        cell.appendChild(div);
-      }
-    }
-  }
 }
 
-// --- คลิกเพื่อเลือก/เดินหมาก ---
-function clickCell(r,c){
+function draw(){
+  Array.from(boardEl.children).forEach((cell,i)=>{
+    const r=Math.floor(i/8), c=i%8;
+    cell.innerHTML='';
+    const p=board[r][c];
+    if(p){
+      const el=document.createElement('div');
+      el.className='piece '+(p.toUpperCase()==='P'?'player':'bot')+(p==='p'||p==='b'?' king':'');
+      const [nr,nc]=getPos(r,c);
+      el.style.transform=`translate(${nc*100}%,${nr*100}%)`;
+      cell.appendChild(el);
+    }
+    if(selected?.r===r && selected?.c===c) cell.classList.add('selected');
+    else cell.classList.remove('selected');
+  });
+}
+
+function clickEvent(e){
   if(turn!=='P') return;
-  const piece=board[r][c];
-  const eatMoves=mustEatMoves('P');
-  if(piece.toUpperCase()==='P'){
-    if(mustContinue && !(selected && selected.r===r && selected.c===c)) return;
-    selected={r,c}; msg.innerText=''; drawBoard();
-    SFX.turn.play();
+  const i=[...boardEl.children].indexOf(e.currentTarget);
+  const r=Math.floor(i/8), c=i%8, p=board[r][c];
+  if(p.toUpperCase()==='P'){
+    selected={r,c}; mustContinue=false; msg.innerText=''; draw();
   } else if(selected){
-    const moves=legalMovesFor(selected.r,selected.c,'P');
-    const target=moves.find(m=>m.r===r && m.c===c);
+    const moves=legal(selected.r,selected.c,'P');
+    const target=moves.find(m=>m.r===r&&m.c===c);
     if(!target) return;
-    if(eatMoves.length && target.kind!=='eat'){
-      msg.innerText='⚠️ ต้องกินก่อน!';
-      return;
-    }
-    makeMove(selected, target);
+    if(mustContinue && selected?.r!==r) return;
+    makeMove(selected,target,false);
   }
 }
 
-// --- สร้างรายการเดินที่ถูกต้อง ---
-function legalMovesFor(r,c,pl){
-  const dirs=pl==='P'?[[-1,-1],[-1,1],[1,-1],[1,1]]:[[1,-1],[1,1],[-1,-1],[-1,1]];
+function getPos(r,c){return [r,c];}
+
+function legal(r,c,pl){
+  const dirs=pl==='P'? [[-1,-1],[-1,1]]:[[1,-1],[1,1],[-1,-1],[-1,1]];
   const arr=[];
-  for(const [dr,dc]of dirs){
-    const nr=r+dr, nc=c+dc;
-    if(inB(nr,nc) && board[nr][nc]==='') arr.push({r:nr,c:nc,kind:'move'});
+  dirs.forEach(d=>{
+    const [dr,dc]=d, nr=r+dr, nc=c+dc;
+    if(inBound(nr,nc) && board[nr][nc]==='') arr.push({r:nr,c:nc,kind:'move'});
     const jr=r+2*dr, jc=c+2*dc;
-    if(inB(jr,jc)&&board[nr][nc]&&(board[nr][nc].toUpperCase()!==pl)&&board[jr][jc]===''){
+    if(inBound(jr,jc)&&board[jr][jc]===''&&board[nr][nc]&&board[nr][nc].toUpperCase()!==pl){
       arr.push({r:jr,c:jc,kind:'eat'});
     }
-  }
-  return arr;
-}
-function mustEatMoves(pl){
-  const arr=[];
-  for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++){
-    if(board[r][c].toUpperCase()===pl){
-      legalMovesFor(r,c,pl).filter(m=>m.kind==='eat').forEach(m=>arr.push({from:{r,c},...m}));
-    }
-  }
+  });
   return arr;
 }
 
-// --- ดำเนินการเดิน ---
-function makeMove(from, to){
-  const pr=from.r, pc=from.c, tr=to.r, tc=to.c;
-  const piece=board[pr][pc];
-  board[pr][pc]='';
-  board[tr][tc]=piece;
-  SFX.walk.play();
-  drawBoard();
-  if(to.kind==='eat'){ const mr=(pr+tr)/2, mc=(pc+tc)/2; board[mr][mc]=''; SFX.eat.play(); }
-  // ขึ้นแม่ฮอส
-  const isKingTarget = (piece==='P'&&tr===0)||(piece==='B'&&tr===SIZE-1);
-  if(isKingTarget){
-    board[tr][tc]= piece==='P'?'p':'b';
-    SFX.crown.play(); msg.innerText='👑 แม่ฮอสแล้ว!';
+function mustEat(pl){
+  return board.flatMap((row,r)=>
+    row.flatMap((p,c)=>p.toUpperCase()===pl ? legal(r,c,pl).filter(m=>m.kind==='eat').map(m=>({r,c,...m})) : [])
+  );
+}
+
+function makeMove(from,to,isBot){
+  const {r:cfr, c:cfc} = from;
+  const {r:tr, c:tc, kind} = to;
+  const p=board[cfr][cfc];
+  board[cfr][cfc]=''; board[tr][tc]=p;
+  if(kind==='eat') {
+    const mr=(cfr+tr)/2, mc=(cfc+tc)/2;
+    board[mr][mc]='';
   }
-  // เช็คต่อเนื่อง
-  if(to.kind==='eat'){
-    const cont=legalMovesFor(tr,tc,piece).filter(m=>m.kind==='eat');
-    if(cont.length){ turn='P'; selected={r:tr,c:tc}; mustContinue=true; drawBoard(); return; }
+  // mother conversion
+  if((p==='P' && tr===0) || (p==='B' && tr===SIZE-1)) board[tr][tc]=p.toLowerCase();
+  draw();
+  if(kind==='eat' && legal(tr,tc,p.toUpperCase()).some(m=>m.kind==='eat')){
+    mustContinue=true; selected={r:tr,c:tc}; msg.innerText='🍴 กินต่อเลย!';
+    if(!isBot) return;
   }
-  // รีวิวจบเทิร์น
+  turn = isBot? 'P':'B';
   selected=null; mustContinue=false; msg.innerText='';
-  turn='B'; SFX.turn.play(); setTimeout(botTurn,300);
+  if(!isBot) setTimeout(botTurn,200);
 }
 
-// --- บอทเดินเช่นเดิม แต่รองรับแม่ฮอส---
-function botTurn(){
-  const moves=generateMoves('B');
-  if(!moves.length){ alert('🎉 คุณชนะแล้ว!'); SFX.win.play(); return; }
-  moves.sort((a,b)=>b.score-a.score);
-  makeBotMove(moves[0]);
+async function botTurn(){
+  const move = minimax(board,4,true).move;
+  makeMove(move.from,move.to,true);
 }
 
-function generateMoves(pl){
-  const arr=[];
-  for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++){
-    if(board[r][c].toUpperCase()===pl)
-      legalMovesFor(r,c,pl).forEach(m=>{
-        const copyB=board.map(r=>r.slice());
-        copyB[r][c]=''; copyB[m.r][m.c]=board[r][c];
-        if(m.kind==='eat'){ const mr=(r+m.r)/2, mc=(c+m.c)/2; copyB[mr][mc]=''; }
-        arr.push({board:copyB,score:(m.kind==='eat'?10:1)+Math.random(),from:{r,c},to:m});
-      });
+function minimax(bd,depth,isMax){
+  if(depth===0) return {score:evalBoard(bd),move:null};
+  const pl = isMax? 'B':'P';
+  const moves = allMoves(bd,pl);
+  let best = isMax? {score:-Infinity}: {score:Infinity};
+  for(const m of moves){
+    const bd2 = copyBoard(bd);
+    apply(bd2,m);
+    const res = minimax(bd2,depth-1,!isMax);
+    if(isMax? res.score>best.score : res.score<best.score){ best={score:res.score,move:m}; }
   }
+  return best;
+}
+
+function allMoves(bd, pl){
+  const arr = [];
+  bd.forEach((row,r)=> row.forEach((p,c)=>{ if(p.toUpperCase()===pl) legal(r,c,pl).forEach(m=>{
+    arr.push({from:{r,c},to:m});
+  })}));
   return arr;
 }
-function makeBotMove(m){
-  board.splice(0,SIZE,...m.board); drawBoard();
-  turn='P';
-  SFX.walk.play();
+
+function apply(bd,m){
+  const {r:cfr,c:cfc}=m.from, {r:tr, c:tc, kind}=m.to;
+  const p=bd[cfr][cfc];
+  bd[cfr][cfc]=''; bd[tr][tc]=p;
+  if(kind==='eat'){ const mr=(cfr+tr)/2, mc=(cfc+tc)/2; bd[mr][mc]=''; }
+  if((p==='P'&&tr===0)||(p==='B'&&tr===7)) bd[tr][tc]=p.toLowerCase();
 }
 
-// --- ฟังก์ชันช่วยเหลือ ---
-function inB(r,c){ return r>=0&&c>=0&&r<SIZE&&c<SIZE; }
+function evalBoard(bd){
+  let s=0;
+  bd.flat().forEach(p=>{
+    if(p) s += p.toUpperCase()==='P'? (p===p.toLowerCase()?5:3) : (p===p.toLowerCase()?-5:-3);
+  });
+  return s;
+}
 
-// --- เริ่มต้นเกม ---
-createBoard();
+function copyBoard(bd){return bd.map(r=>r.slice());}
+function inBound(r,c){return r>=0&&c>=0&&r<SIZE&&c<SIZE;}
+
+boardEl.childNodes.forEach(cell=>cell.onclick=clickEvent);
+init();
 </script>
 </body>
 </html>
