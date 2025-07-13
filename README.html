@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>เกมหมากฮอส - คน vs บอทโหด</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      text-align: center;
+      background-color: #f0f0f0;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh; /* Ensure full height for centering */
+      box-sizing: border-box;
+    }
+
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+      font-size: 2.5em;
+    }
+
+    p {
+      color: #555;
+      margin-top: 5px;
+      margin-bottom: 20px;
+    }
+
+    #game-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      background-color: #fff;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 550px; /* Limit max width for desktop */
+    }
+
+    #game-status {
+      font-size: 1.3em;
+      font-weight: bold;
+      color: #333;
+      min-height: 1.5em; /* Prevent layout shift */
+    }
+
+    table {
+      border-collapse: collapse;
+      margin: auto;
+      border: 4px solid #8B4513; /* Wood-like border */
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+      width: 100%; /* Make board responsive */
+      max-width: 480px; /* Max size for cells * SIZE */
+      aspect-ratio: 1 / 1; /* Maintain square aspect ratio */
+    }
+
+    td {
+      width: calc(100% / 8); /* Distribute width equally */
+      padding-bottom: calc(100% / 8); /* Create square cells with padding-bottom trick */
+      position: relative; /* For piece positioning */
+      text-align: center;
+      vertical-align: middle;
+      font-size: 0; /* Hide default piece character */
+      box-sizing: border-box;
+    }
+
+    td div.piece {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 80%; /* Percentage of cell size */
+      height: 80%;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(20px, 6vw, 40px); /* Responsive font size for king */
+      font-weight: bold;
+      color: #fff;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+      cursor: pointer;
+      transition: transform 0.1s ease-out, box-shadow 0.1s ease-out;
+    }
+
+    .white { background: #E0BA88; /* Light wood */ }
+    .black { background: #8B4513; /* Dark wood */ }
+
+    /* Piece Colors */
+    .player .piece {
+      background: linear-gradient(145deg, #ff6b6b, #e63946); /* Red gradient */
+      border: 2px solid #a8242e;
+    }
+    .bot .piece {
+      background: linear-gradient(145deg, #6fdc6f, #3CB371); /* Green gradient */
+      border: 2px solid #2e8b57;
+    }
+
+    /* King Pieces */
+    .player.king .piece::after,
+    .bot.king .piece::after {
+      content: '★'; /* Star character for king */
+      position: absolute;
+      font-size: 0.6em; /* Adjust star size */
+      color: rgba(255, 255, 255, 0.8);
+      text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    /* Selected Piece */
+    .selected .piece {
+      transform: translate(-50%, -50%) scale(1.08); /* Slightly larger */
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4), 0 0 0 3px #FFA500; /* Orange glow */
+    }
+
+    /* Valid Move Highlight */
+    td.highlight-move {
+      background-color: rgba(255, 255, 0, 0.3) !important; /* Yellowish highlight */
+      cursor: pointer;
+    }
+    td.highlight-move::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 25%;
+      height: 25%;
+      background-color: rgba(255, 255, 255, 0.5);
+      border-radius: 50%;
+      pointer-events: none; /* Allow clicks on cell, not on circle */
+    }
+
+    /* Game End Overlay */
+    #game-end-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.7);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      flex-direction: column;
+      gap: 20px;
+      color: #fff;
+      font-size: 2em;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+    }
+
+    #game-end-overlay.visible {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    #game-end-overlay button {
+      padding: 12px 25px;
+      font-size: 1.2em;
+      cursor: pointer;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      transition: background-color 0.2s, transform 0.1s;
+    }
+
+    #game-end-overlay button:hover {
+      background-color: #45a049;
+      transform: translateY(-2px);
+    }
+
+    /* Buttons */
+    .controls {
+        margin-top: 20px;
+    }
+
+    .controls button {
+        padding: 10px 20px;
+        font-size: 1em;
+        cursor: pointer;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        margin: 0 10px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        transition: background-color 0.2s, transform 0.1s;
+    }
+
+    .controls button:hover {
+        background-color: #0056b3;
+        transform: translateY(-1px);
+    }
+
+    @media (max-width: 600px) {
+      h1 {
+        font-size: 1.8em;
+      }
+      p {
+        font-size: 0.9em;
+      }
+      td div.piece {
+        width: 85%;
+        height: 85%;
+        font-size: clamp(18px, 5vw, 32px);
+      }
+      #game-container {
+          padding: 15px;
+      }
+      #game-status {
+          font-size: 1.1em;
+      }
+      #game-end-overlay {
+          font-size: 1.5em;
+      }
+      #game-end-overlay button {
+          padding: 10px 20px;
+          font-size: 1em;
+      }
+      .controls button {
+          padding: 8px 15px;
+          font-size: 0.9em;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container">
+    <h1>เกมหมากฮอส</h1>
+    <p>สีแดง: คน / สีเขียว: บอท</p>
+    <div id="game-status"></div>
+    <table id="board"></table>
+    <div class="controls">
+      <button id="newGameBtn">เริ่มเกมใหม่</button>
+    </div>
+  </div>
+
+  <div id="game-end-overlay">
+    <div id="game-end-message"></div>
+    <button id="playAgainBtn">เล่นอีกครั้ง</button>
+  </div>
+
+  <script>
+    const SIZE = 8;
+    const PLAYER = 'P'; // Player piece
+    const BOT = 'B';    // Bot piece
+    const PLAYER_KING = 'PK'; // Player King
+    const BOT_KING = 'BK';    // Bot King
+
+    let board = [];
+    let selectedCell = null; // {r, c} of selected piece
+    let turn = PLAYER; // P = player, B = bot
+    let possibleMoves = []; // Array of valid moves for the currently selected piece or overall for player's turn
+    let playerCanJump = false; // Flag to indicate if player *must* jump
+
+    let gameEnded = false;
+
+    const table = document.getElementById("board");
+    const gameStatus = document.getElementById("game-status");
+    const gameEndOverlay = document.getElementById("game-end-overlay");
+    const gameEndMessage = document.getElementById("game-end-message");
+
+    // --- Game Initialization ---
+    function createBoard() {
+        board = [];
+        for (let r = 0; r < SIZE; r++) {
+            let row = [];
+            for (let c = 0; c < SIZE; c++) {
+                if ((r + c) % 2 === 0) { // White squares are empty
+                    row.push('');
+                } else { // Black squares get pieces
+                    if (r < 3) row.push(BOT);
+                    else if (r > 4) row.push(PLAYER);
+                    else row.push('');
+                }
+            }
+            board.push(row);
+        }
+        gameEnded = false;
+        selectedCell = null;
+        turn = PLAYER;
+        possibleMoves = [];
+        updateGameStatus();
+        drawBoard();
+    }
+
+    // --- Drawing Functions ---
+    function drawBoard() {
+        table.innerHTML = '';
+        for (let r = 0; r < SIZE; r++) {
+            let row = table.insertRow();
+            for (let c = 0; c < SIZE; c++) {
+                let cell = row.insertCell();
+                const piece = board[r][c];
+                cell.className = (r + c) % 2 === 0 ? 'white' : 'black';
+                cell.dataset.row = r; // Store row/col for easy access
+                cell.dataset.col = c;
+
+                // Add piece div inside cell
+                if (piece) {
+                    const pieceDiv = document.createElement('div');
+                    pieceDiv.classList.add('piece');
+                    if (piece === PLAYER) pieceDiv.classList.add('player');
+                    else if (piece === BOT) pieceDiv.classList.add('bot');
+                    else if (piece === PLAYER_KING) pieceDiv.classList.add('player', 'king');
+                    else if (piece === BOT_KING) pieceDiv.classList.add('bot', 'king');
+                    cell.appendChild(pieceDiv);
+                }
+
+                // Highlight selected piece
+                if (selectedCell && selectedCell.r === r && selectedCell.c === c) {
+                    cell.classList.add('selected');
+                }
+
+                // Highlight possible moves
+                const isPossibleMove = possibleMoves.some(move => move.to.r === r && move.to.c === c);
+                if (isPossibleMove) {
+                    cell.classList.add('highlight-move');
+                }
+
+                cell.onclick = () => handleClick(r, c);
+            }
+        }
+    }
+
+    function clearHighlights() {
+        document.querySelectorAll('.selected').forEach(cell => cell.classList.remove('selected'));
+        document.querySelectorAll('.highlight-move').forEach(cell => cell.classList.remove('highlight-move'));
+    }
+
+    function updateGameStatus() {
+        let playerPieces = 0;
+        let botPieces = 0;
+        for (let r = 0; r < SIZE; r++) {
+            for (let c = 0; c < SIZE; c++) {
+                const piece = board[r][c];
+                if (piece === PLAYER || piece === PLAYER_KING) playerPieces++;
+                if (piece === BOT || piece === BOT_KING) botPieces++;
+            }
+        }
+
+        if (playerPieces === 0) {
+            endGame("บอทชนะแล้ว!");
+            return;
+        }
+        if (botPieces === 0) {
+            endGame("คุณชนะแล้ว!");
+            return;
+        }
+
+        if (gameEnded) return;
+
+        gameStatus.textContent = turn === PLAYER ? "ตาของคุณ (สีแดง)" : "ตาของบอท (สีเขียว)";
+        gameStatus.style.color = turn === PLAYER ? '#e63946' : '#3CB371';
+    }
+
+    function endGame(message) {
+        gameEnded = true;
+        gameEndMessage.textContent = message;
+        gameEndOverlay.classList.add('visible');
+        gameStatus.textContent = "เกมจบแล้ว!";
+    }
+
+    // --- Game Logic ---
+    function getPieceAt(r, c) {
+        if (!inBounds(r, c)) return null;
+        return board[r][c];
+    }
+
+    function setPieceAt(r, c, value) {
+        if (inBounds(r, c)) {
+            board[r][c] = value;
+        }
+    }
+
+    function inBounds(r, c) {
+        return r >= 0 && c >= 0 && r < SIZE && c < SIZE;
+    }
+
+    // Generates all possible moves (including jumps) for a given player on a given board state
+    // Returns an array of move objects: { from: {r,c}, to: {r,c}, capture: {r,c}?, newBoard: boardCopy, type: 'move'|'jump' }
+    function generateAllMoves(playerType, currentBoard) {
+        let moves = [];
+        let jumps = [];
+        const isPlayer = (playerType === PLAYER || playerType === PLAYER_KING);
+        const pieceTypes = isPlayer ? [PLAYER, PLAYER_KING] : [BOT, BOT_KING];
+        const opponentTypes = isPlayer ? [BOT, BOT_KING] : [PLAYER, PLAYER_KING];
+
+        for (let r = 0; r < SIZE; r++) {
+            for (let c = 0; c < SIZE; c++) {
+                const piece = currentBoard[r][c];
+                if (!pieceTypes.includes(piece)) continue; // Not our piece
+
+                const isKing = (piece === PLAYER_KING || piece === BOT_KING);
+                let directions = [];
+
+                if (isKing) {
+                    directions = [[1, -1], [1, 1], [-1, -1], [-1, 1]]; // All 4 directions for king
+                } else {
+                    // Forward directions based on player
+                    if (isPlayer) directions = [[-1, -1], [-1, 1]]; // Player moves up
+                    else directions = [[1, -1], [1, 1]];     // Bot moves down
+                }
+
+                for (let [dr, dc] of directions) {
+                    let nr = r + dr;
+                    let nc = c + dc;
+
+                    // Simple move
+                    if (inBounds(nr, nc) && currentBoard[nr][nc] === '') {
+                        let newBoard = copyBoard(currentBoard);
+                        newBoard[nr][nc] = newBoard[r][c];
+                        newBoard[r][c] = '';
+                        // Check for kinging
+                        if ((newBoard[nr][nc] === PLAYER && nr === 0) || (newBoard[nr][nc] === BOT && nr === SIZE - 1)) {
+                            newBoard[nr][nc] = isPlayer ? PLAYER_KING : BOT_KING;
+                        }
+                        moves.push({ from: { r, c }, to: { r: nr, c: nc }, newBoard: newBoard, type: 'move' });
+                    }
+
+                    // Jump move
+                    let jr = r + dr * 2;
+                    let jc = c + dc * 2;
+                    let mr = r + dr; // Middle piece row
+                    let mc = c + dc; // Middle piece col
+
+                    if (inBounds(jr, jc) && currentBoard[jr][jc] === '' && opponentTypes.includes(currentBoard[mr][mc])) {
+                        let newBoard = copyBoard(currentBoard);
+                        newBoard[jr][jc] = newBoard[r][c];
+                        newBoard[r][c] = '';
+                        newBoard[mr][mc] = ''; // Remove captured piece
+
+                        // Check for kinging after jump
+                        if ((newBoard[jr][jc] === PLAYER && jr === 0) || (newBoard[jr][jc] === BOT && jr === SIZE - 1)) {
+                            newBoard[jr][jc] = isPlayer ? PLAYER_KING : BOT_KING;
+                        }
+                        jumps.push({ from: { r, c }, to: { r: jr, c: jc }, capture: { r: mr, c: mc }, newBoard: newBoard, type: 'jump' });
+                    }
+                }
+            }
+        }
+        // Prioritize jumps: if any jumps are found, only return jumps
+        return jumps.length > 0 ? jumps : moves;
+    }
+
+
+    // --- Player Turn Logic ---
+    function handleClick(r, c) {
+        if (turn !== PLAYER || gameEnded) return;
+
+        clearHighlights(); // Clear previous highlights
+
+        const clickedPiece = getPieceAt(r, c);
+        const playerPieceTypes = [PLAYER, PLAYER_KING];
+
+        // Determine if player has any mandatory jumps
+        const allPossibleJumps = generateAllMoves(PLAYER, board).filter(m => m.type === 'jump');
+        playerCanJump = allPossibleJumps.length > 0;
+
+        // Case 1: Select a piece
+        if (playerPieceTypes.includes(clickedPiece) && !selectedCell) {
+            // If jumps are mandatory, ensure the selected piece can actually jump
+            if (playerCanJump) {
+                const pieceJumps = generateAllMovesForSelectedPiece(PLAYER, board, r, c).filter(m => m.type === 'jump');
+                if (pieceJumps.length > 0) {
+                    selectedCell = { r, c };
+                    possibleMoves = pieceJumps; // Only show jumps for this piece
+                } else {
+                    alert("คุณต้องเดินด้วยตัวที่สามารถกินได้!");
+                }
+            } else { // No jumps are mandatory, allow any valid move
+                selectedCell = { r, c };
+                possibleMoves = generateAllMovesForSelectedPiece(PLAYER, board, r, c);
+            }
+
+            if (selectedCell) {
+                 drawBoard(); // Redraw to show selected piece and its moves
+            }
+
+        }
+        // Case 2: Deselect a piece (click same piece again)
+        else if (selectedCell && selectedCell.r === r && selectedCell.c === c) {
+            selectedCell = null;
+            possibleMoves = [];
+            drawBoard();
+        }
+        // Case 3: Try to move selected piece
+        else if (selectedCell) {
+            const move = possibleMoves.find(m => m.to.r === r && m.to.c === c && m.from.r === selectedCell.r && m.from.c === selectedCell.c);
+
+            if (move) {
+                applyMove(move);
+                if (move.type === 'jump') {
+                    // Check for multi-jump
+                    const furtherJumps = generateAllMovesForSelectedPiece(PLAYER, board, move.to.r, move.to.c).filter(m => m.type === 'jump');
+                    if (furtherJumps.length > 0) {
+                        selectedCell = { r: move.to.r, c: move.to.c }; // Keep piece selected for multi-jump
+                        possibleMoves = furtherJumps;
+                        drawBoard(); // Update board to show piece moved and new possible jumps
+                        return; // Player's turn continues
+                    }
+                }
+                // If no multi-jump or it was a simple move, end player's turn
+                switchTurn();
+            } else {
+                // Invalid move, try to re-select another of player's pieces if not forced jump situation
+                if (playerPieceTypes.includes(clickedPiece) && !playerCanJump) {
+                    selectedCell = { r, c };
+                    possibleMoves = generateAllMovesForSelectedPiece(PLAYER, board, r, c);
+                     drawBoard(); // Redraw for new selection
+                } else {
+                    alert("การเดินไม่ถูกต้อง หรือคุณต้องเดินด้วยตัวที่สามารถกินได้!");
+                    selectedCell = null; // Deselect on invalid move attempt
+                    possibleMoves = [];
+                    drawBoard();
+                }
+            }
+        }
+    }
+
+    // Generates moves specifically for a single selected piece
+    function generateAllMovesForSelectedPiece(playerType, currentBoard, sr, sc) {
+        let moves = [];
+        let jumps = [];
+        const isPlayer = (playerType === PLAYER || playerType === PLAYER_KING);
+        const pieceTypes = isPlayer ? [PLAYER, PLAYER_KING] : [BOT, BOT_KING];
+        const opponentTypes = isPlayer ? [BOT, BOT_KING] : [PLAYER, PLAYER_KING];
+
+        const piece = currentBoard[sr][sc];
+        if (!pieceTypes.includes(piece)) return []; // Not our piece
+
+        const isKing = (piece === PLAYER_KING || piece === BOT_KING);
+        let directions = [];
+
+        if (isKing) {
+            directions = [[1, -1], [1, 1], [-1, -1], [-1, 1]]; // All 4 directions for king
+        } else {
+            if (isPlayer) directions = [[-1, -1], [-1, 1]]; // Player moves up
+            else directions = [[1, -1], [1, 1]];     // Bot moves down
+        }
+
+        for (let [dr, dc] of directions) {
+            let nr = sr + dr;
+            let nc = sc + dc;
+
+            // Simple move
+            if (inBounds(nr, nc) && currentBoard[nr][nc] === '') {
+                let newBoard = copyBoard(currentBoard);
+                newBoard[nr][nc] = newBoard[sr][sc];
+                newBoard[sr][sc] = '';
+                // Check for kinging
+                if ((newBoard[nr][nc] === PLAYER && nr === 0) || (newBoard[nr][nc] === BOT && nr === SIZE - 1)) {
+                    newBoard[nr][nc] = isPlayer ? PLAYER_KING : BOT_KING;
+                }
+                moves.push({ from: { r: sr, c: sc }, to: { r: nr, c: nc }, newBoard: newBoard, type: 'move' });
+            }
+
+            // Jump move
+            let jr = sr + dr * 2;
+            let jc = sc + dc * 2;
+            let mr = sr + dr; // Middle piece row
+            let mc = sc + dc; // Middle piece col
+
+            if (inBounds(jr, jc) && currentBoard[jr][jc] === '' && opponentTypes.includes(currentBoard[mr][mc])) {
+                let newBoard = copyBoard(currentBoard);
+                newBoard[jr][jc] = newBoard[sr][sc];
+                newBoard[sr][sc] = '';
+                newBoard[mr][mc] = ''; // Remove captured piece
+
+                // Check for kinging after jump
+                if ((newBoard[jr][jc] === PLAYER && jr === 0) || (newBoard[jr][jc] === BOT && jr === SIZE - 1)) {
+                    newBoard[jr][jc] = isPlayer ? PLAYER_KING : BOT_KING;
+                }
+                jumps.push({ from: { r: sr, c: sc }, to: { r: jr, c: jc }, capture: { r: mr, c: mc }, newBoard: newBoard, type: 'jump' });
+            }
+        }
+        // Prioritize jumps: if any jumps are found, only return jumps
+        return jumps.length > 0 ? jumps : moves;
+    }
+
+
+    function applyMove(move) {
+        board = move.newBoard;
+        selectedCell = null;
+        possibleMoves = [];
+        drawBoard();
+        updateGameStatus();
+        // checkWinCondition() is called inside updateGameStatus()
+    }
+
+    function switchTurn() {
+        selectedCell = null;
+        possibleMoves = [];
+        if (!gameEnded) {
+            turn = (turn === PLAYER) ? BOT : PLAYER;
+            updateGameStatus();
+            if (turn === BOT) {
+                setTimeout(botTurn, 700); // Give a slight delay for bot move
+            }
+        }
+    }
+
+    // --- Bot Logic ---
+    function botTurn() {
+        if (gameEnded) return;
+
+        let allBotMoves = generateAllMoves(BOT, board);
+
+        // If bot has no moves, player wins
+        if (allBotMoves.length === 0) {
+            endGame("คุณชนะแล้ว! บอทไม่มีทางเดิน.");
+            return;
+        }
+
+        // Filter to only include jump moves if available (already handled by generateAllMoves)
+        // A very basic AI: prioritizes jumps. If multiple jumps, tries to find one that allows further jumps.
+        // Otherwise, picks a random move.
+
+        let bestMove = null;
+        let maxChainLength = -1; // For greedy multi-jump, initialize to -1 for no jumps, 0 for single jump
+
+        // Prioritize jumps that lead to more jumps
+        const botJumps = allBotMoves.filter(m => m.type === 'jump');
+        if (botJumps.length > 0) {
+            for (let move of botJumps) {
+                // Simulate the board state after this jump
+                const simulatedBoard = move.newBoard;
+                // Check for further jumps from the new position for the same piece
+                const furtherJumps = generateAllMovesForSelectedPiece(BOT, simulatedBoard, move.to.r, move.to.c).filter(m => m.type === 'jump');
+                
+                // Count chain length (1 for the current jump, plus any further jumps)
+                const currentChainLength = 1 + furtherJumps.length;
+
+                if (currentChainLength > maxChainLength) {
+                    maxChainLength = currentChainLength;
+                    bestMove = move;
+                }
+            }
+        } else {
+            // No jumps available, pick a random simple move
+            bestMove = allBotMoves[Math.floor(Math.random() * allBotMoves.length)];
+        }
+
+        if (bestMove) {
+            board = bestMove.newBoard;
+            drawBoard();
+            updateGameStatus();
+
+            if (bestMove.type === 'jump') {
+                // Check for multi-jump for bot recursively
+                const furtherJumps = generateAllMovesForSelectedPiece(BOT, board, bestMove.to.r, bestMove.to.c).filter(m => m.type === 'jump');
+                if (furtherJumps.length > 0) {
+                    // Bot's turn continues for multi-jump
+                    setTimeout(botTurn, 700); // Recursive call for next jump
+                    return;
+                }
+            }
+        } else {
+            // This case should ideally not be reached if allBotMoves.length was checked
+            endGame("บอทไม่มีทางเดิน! คุณชนะแล้ว!");
+            return;
+        }
+
+        // If no further jumps or it was a simple move, switch turn
+        if (!gameEnded) { // Only switch if game didn't end from last move
+            switchTurn();
+        }
+    }
+
+
+    // --- Utility Functions ---
+    function copyBoard(b) {
+        return b.map(row => row.slice());
+    }
+
+    document.getElementById('newGameBtn').addEventListener('click', createBoard);
+    document.getElementById('playAgainBtn').addEventListener('click', () => {
+        gameEndOverlay.classList.remove('visible');
+        createBoard();
+    });
+
+
+    // Initial board setup
+    createBoard();
+  </script>
+</body>
+</html>
