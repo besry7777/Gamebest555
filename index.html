@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>หมากฮอสมือถือ - บอทโหด</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      overflow: hidden;
+      font-family: sans-serif;
+      background: #111;
+      color: white;
+      text-align: center;
+    }
+
+    h1, p {
+      margin: 0.5em 0;
+    }
+
+    table {
+      border-collapse: collapse;
+      margin: auto;
+      height: 80vh;
+      width: 80vh;
+      max-width: 96vw;
+      max-height: 96vw;
+    }
+
+    td {
+      width: 12.5%;
+      height: 12.5%;
+      font-size: 6vw;
+      text-align: center;
+      vertical-align: middle;
+      transition: background 0.2s;
+      touch-action: manipulation;
+    }
+
+    .white { background: #f0d9b5; }
+    .black { background: #b58863; }
+    .player { color: #e74c3c; font-weight: bold; cursor: pointer; }
+    .bot    { color: #2ecc71; font-weight: bold; }
+    .selected { outline: 3px solid yellow; }
+    #message {
+      margin-top: 1vh;
+      font-weight: bold;
+      color: gold;
+    }
+  </style>
+</head>
+<body>
+  <h1>หมากฮอสมือถือ</h1>
+  <p>🔴 คุณ vs 🟢 บอทโหด</p>
+  <table id="board"></table>
+  <div id="message"></div>
+
+  <script>
+    const SIZE = 8;
+    let board = [];
+    let selected = null;
+    let turn = 'P';
+    let history = [];
+    const table = document.getElementById("board");
+    const message = document.getElementById("message");
+
+    function createBoard() {
+      board = [];
+      for (let r = 0; r < SIZE; r++) {
+        let row = [];
+        for (let c = 0; c < SIZE; c++) {
+          if ((r + c) % 2 === 0) row.push('');
+          else if (r < 3) row.push('B');
+          else if (r > 4) row.push('P');
+          else row.push('');
+        }
+        board.push(row);
+      }
+      drawBoard();
+    }
+
+    function drawBoard() {
+      table.innerHTML = '';
+      for (let r = 0; r < SIZE; r++) {
+        let row = table.insertRow();
+        for (let c = 0; c < SIZE; c++) {
+          let cell = row.insertCell();
+          cell.className = (r + c) % 2 === 0 ? 'white' : 'black';
+          const piece = board[r][c];
+          if (piece === 'P') cell.innerHTML = '⬤', cell.classList.add('player');
+          if (piece === 'B') cell.innerHTML = '⬤', cell.classList.add('bot');
+          if (selected && selected.r === r && selected.c === c) cell.classList.add('selected');
+          cell.onclick = () => handleClick(r, c);
+        }
+      }
+    }
+
+    function handleClick(r, c) {
+      if (turn !== 'P') return;
+      const piece = board[r][c];
+      const mustEat = mustEatMoves('P');
+
+      if (piece === 'P') {
+        selected = { r, c };
+        message.innerText = '';
+        drawBoard();
+      } else if (selected) {
+        const legal = legalMovesFor(selected.r, selected.c, 'P');
+        const isMustEat = mustEat.length > 0;
+        const isEat = Math.abs(r - selected.r) === 2;
+        const validMove = legal.some(m => m.r === r && m.c === c);
+
+        if (isMustEat && !isEat) {
+          message.innerText = '⚠️ คุณต้องกินหมากก่อน!';
+          return;
+        }
+
+        if (validMove) {
+          if (isEat) {
+            let mr = (r + selected.r) / 2;
+            let mc = (c + selected.c) / 2;
+            board[mr][mc] = '';
+          }
+
+          board[r][c] = 'P';
+          board[selected.r][selected.c] = '';
+          selected = null;
+          turn = 'B';
+          message.innerText = '';
+          drawBoard();
+          requestAnimationFrame(() => setTimeout(botTurn, 300));
+        } else {
+          message.innerText = '⛔️ เดินตรงนี้ไม่ได้';
+        }
+      }
+    }
+
+    function botTurn() {
+      const moves = generateMoves('B');
+      let filtered = moves.filter(m => !history.includes(serializeBoard(m.board)));
+      if (filtered.length === 0) filtered = moves;
+      if (filtered.length === 0) {
+        alert("🎉 คุณชนะแล้ว!");
+        return;
+      }
+      filtered.sort((a, b) => b.score - a.score);
+      board = filtered[0].board;
+      history.push(serializeBoard(board));
+      turn = 'P';
+      drawBoard();
+    }
+
+    function legalMovesFor(r, c, player) {
+      const dirs = player === 'P' ? [[-1, -1], [-1, 1]] : [[1, -1], [1, 1]];
+      let result = [];
+      for (let [dr, dc] of dirs) {
+        let nr = r + dr, nc = c + dc;
+        if (inBounds(nr, nc) && board[nr][nc] === '') {
+          result.push({ r: nr, c: nc });
+        }
+        let jr = r + dr * 2, jc = c + dc * 2;
+        if (inBounds(jr, jc) && board[nr][nc] === (player === 'P' ? 'B' : 'P') && board[jr][jc] === '') {
+          result.push({ r: jr, c: jc });
+        }
+      }
+      return result;
+    }
+
+    function mustEatMoves(player) {
+      const dirs = player === 'P' ? [[-1, -1], [-1, 1]] : [[1, -1], [1, 1]];
+      let moves = [];
+      for (let r = 0; r < SIZE; r++) {
+        for (let c = 0; c < SIZE; c++) {
+          if (board[r][c] !== player) continue;
+          for (let [dr, dc] of dirs) {
+            let nr = r + dr, nc = c + dc;
+            let jr = r + dr * 2, jc = c + dc * 2;
+            if (
+              inBounds(jr, jc) &&
+              board[nr][nc] === (player === 'P' ? 'B' : 'P') &&
+              board[jr][jc] === ''
+            ) {
+              moves.push({ from: [r, c], to: [jr, jc] });
+            }
+          }
+        }
+      }
+      return moves;
+    }
+
+    function generateMoves(player) {
+      const dirs = player === 'B' ? [[1, -1], [1, 1]] : [[-1, -1], [-1, 1]];
+      const results = [];
+      for (let r = 0; r < SIZE; r++) {
+        for (let c = 0; c < SIZE; c++) {
+          if (board[r][c] !== player) continue;
+          for (let [dr, dc] of dirs) {
+            let nr = r + dr, nc = c + dc;
+            if (inBounds(nr, nc) && board[nr][nc] === '') {
+              let newBoard = copyBoard(board);
+              newBoard[nr][nc] = player;
+              newBoard[r][c] = '';
+              results.push({ board: newBoard, score: 1 + evalBoard(newBoard, player) });
+            }
+            let jr = r + dr * 2, jc = c + dc * 2;
+            if (
+              inBounds(jr, jc) &&
+              board[nr][nc] === (player === 'B' ? 'P' : 'B') &&
+              board[jr][jc] === ''
+            ) {
+              let newBoard = copyBoard(board);
+              newBoard[jr][jc] = player;
+              newBoard[r][c] = '';
+              newBoard[nr][nc] = '';
+              results.push({ board: newBoard, score: 10 + evalBoard(newBoard, player) });
+            }
+          }
+        }
+      }
+      return results;
+    }
+
+    function evalBoard(b, player) {
+      let score = 0;
+      for (let row of b) {
+        for (let cell of row) {
+          if (cell === player) score++;
+          else if (cell && cell !== player) score -= 1;
+        }
+      }
+      return score;
+    }
+
+    function copyBoard(b) {
+      return b.map(r => r.slice());
+    }
+
+    function serializeBoard(b) {
+      return b.flat().join('');
+    }
+
+    function inBounds(r, c) {
+      return r >= 0 && c >= 0 && r < SIZE && c < SIZE;
+    }
+
+    createBoard();
+  </script>
+</body>
+</html>
