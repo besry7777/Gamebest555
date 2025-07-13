@@ -2,30 +2,60 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8">
-  <title>เกมหมากฮอส - มือถือ VS บอทโหด</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>หมากฮอสมือถือ - บอทโหด</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <style>
-    body { font-family: sans-serif; margin: 0; text-align: center; background: #222; color: #fff; }
-    h1, p { margin: 0.5em; }
-    table { border-collapse: collapse; margin: auto; }
-    td {
-      width: 12vw; height: 12vw;
-      max-width: 60px; max-height: 60px;
-      text-align: center; vertical-align: middle;
-      font-size: 6vw;
-      transition: background 0.2s ease;
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      overflow: hidden;
+      font-family: sans-serif;
+      background: #111;
+      color: white;
+      text-align: center;
     }
-    .white { background: #eee; }
-    .black { background: #444; color: white; }
-    .player { color: red; cursor: pointer; }
-    .bot { color: lime; }
+
+    h1, p {
+      margin: 0.5em 0;
+    }
+
+    table {
+      border-collapse: collapse;
+      margin: auto;
+      height: 80vh;
+      width: 80vh;
+      max-width: 96vw;
+      max-height: 96vw;
+    }
+
+    td {
+      width: 12.5%;
+      height: 12.5%;
+      font-size: 6vw;
+      text-align: center;
+      vertical-align: middle;
+      transition: background 0.2s;
+      touch-action: manipulation;
+    }
+
+    .white { background: #f0d9b5; }
+    .black { background: #b58863; }
+    .player { color: #e74c3c; font-weight: bold; cursor: pointer; }
+    .bot    { color: #2ecc71; font-weight: bold; }
     .selected { outline: 3px solid yellow; }
+    #message {
+      margin-top: 1vh;
+      font-weight: bold;
+      color: gold;
+    }
   </style>
 </head>
 <body>
-  <h1>หมากฮอส: คุณ vs บอท</h1>
-  <p>สีแดง: คน | สีเขียว: บอทโหด</p>
+  <h1>หมากฮอสมือถือ</h1>
+  <p>🔴 คุณ vs 🟢 บอทโหด</p>
   <table id="board"></table>
+  <div id="message"></div>
 
   <script>
     const SIZE = 8;
@@ -33,8 +63,8 @@
     let selected = null;
     let turn = 'P';
     let history = [];
-
     const table = document.getElementById("board");
+    const message = document.getElementById("message");
 
     function createBoard() {
       board = [];
@@ -57,8 +87,8 @@
         let row = table.insertRow();
         for (let c = 0; c < SIZE; c++) {
           let cell = row.insertCell();
-          let piece = board[r][c];
           cell.className = (r + c) % 2 === 0 ? 'white' : 'black';
+          const piece = board[r][c];
           if (piece === 'P') cell.innerHTML = '⬤', cell.classList.add('player');
           if (piece === 'B') cell.innerHTML = '⬤', cell.classList.add('bot');
           if (selected && selected.r === r && selected.c === c) cell.classList.add('selected');
@@ -70,34 +100,41 @@
     function handleClick(r, c) {
       if (turn !== 'P') return;
       const piece = board[r][c];
+      const mustEat = mustEatMoves('P');
+
       if (piece === 'P') {
-        selected = {r, c};
+        selected = { r, c };
+        message.innerText = '';
         drawBoard();
       } else if (selected) {
-        tryMove(selected.r, selected.c, r, c);
-      }
-    }
+        const legal = legalMovesFor(selected.r, selected.c, 'P');
+        const isMustEat = mustEat.length > 0;
+        const isEat = Math.abs(r - selected.r) === 2;
+        const validMove = legal.some(m => m.r === r && m.c === c);
 
-    function tryMove(sr, sc, dr, dc) {
-      const dx = dr - sr, dy = dc - sc;
-      if (Math.abs(dx) === 1 && Math.abs(dy) === 1 && board[dr][dc] === '') {
-        movePiece(sr, sc, dr, dc);
-      } else if (Math.abs(dx) === 2 && Math.abs(dy) === 2) {
-        let mr = sr + dx/2, mc = sc + dy/2;
-        if (board[mr][mc] === 'B' && board[dr][dc] === '') {
-          board[mr][mc] = '';
-          movePiece(sr, sc, dr, dc);
+        if (isMustEat && !isEat) {
+          message.innerText = '⚠️ คุณต้องกินหมากก่อน!';
+          return;
+        }
+
+        if (validMove) {
+          if (isEat) {
+            let mr = (r + selected.r) / 2;
+            let mc = (c + selected.c) / 2;
+            board[mr][mc] = '';
+          }
+
+          board[r][c] = 'P';
+          board[selected.r][selected.c] = '';
+          selected = null;
+          turn = 'B';
+          message.innerText = '';
+          drawBoard();
+          requestAnimationFrame(() => setTimeout(botTurn, 300));
+        } else {
+          message.innerText = '⛔️ เดินตรงนี้ไม่ได้';
         }
       }
-    }
-
-    function movePiece(sr, sc, dr, dc) {
-      board[dr][dc] = board[sr][sc];
-      board[sr][sc] = '';
-      selected = null;
-      turn = 'B';
-      drawBoard();
-      requestAnimationFrame(() => setTimeout(botTurn, 200));
     }
 
     function botTurn() {
@@ -105,7 +142,7 @@
       let filtered = moves.filter(m => !history.includes(serializeBoard(m.board)));
       if (filtered.length === 0) filtered = moves;
       if (filtered.length === 0) {
-        alert("คุณชนะแล้ว!");
+        alert("🎉 คุณชนะแล้ว!");
         return;
       }
       filtered.sort((a, b) => b.score - a.score);
@@ -113,6 +150,44 @@
       history.push(serializeBoard(board));
       turn = 'P';
       drawBoard();
+    }
+
+    function legalMovesFor(r, c, player) {
+      const dirs = player === 'P' ? [[-1, -1], [-1, 1]] : [[1, -1], [1, 1]];
+      let result = [];
+      for (let [dr, dc] of dirs) {
+        let nr = r + dr, nc = c + dc;
+        if (inBounds(nr, nc) && board[nr][nc] === '') {
+          result.push({ r: nr, c: nc });
+        }
+        let jr = r + dr * 2, jc = c + dc * 2;
+        if (inBounds(jr, jc) && board[nr][nc] === (player === 'P' ? 'B' : 'P') && board[jr][jc] === '') {
+          result.push({ r: jr, c: jc });
+        }
+      }
+      return result;
+    }
+
+    function mustEatMoves(player) {
+      const dirs = player === 'P' ? [[-1, -1], [-1, 1]] : [[1, -1], [1, 1]];
+      let moves = [];
+      for (let r = 0; r < SIZE; r++) {
+        for (let c = 0; c < SIZE; c++) {
+          if (board[r][c] !== player) continue;
+          for (let [dr, dc] of dirs) {
+            let nr = r + dr, nc = c + dc;
+            let jr = r + dr * 2, jc = c + dc * 2;
+            if (
+              inBounds(jr, jc) &&
+              board[nr][nc] === (player === 'P' ? 'B' : 'P') &&
+              board[jr][jc] === ''
+            ) {
+              moves.push({ from: [r, c], to: [jr, jc] });
+            }
+          }
+        }
+      }
+      return moves;
     }
 
     function generateMoves(player) {
@@ -130,7 +205,11 @@
               results.push({ board: newBoard, score: 1 + evalBoard(newBoard, player) });
             }
             let jr = r + dr * 2, jc = c + dc * 2;
-            if (inBounds(jr, jc) && board[nr][nc] === (player === 'B' ? 'P' : 'B') && board[jr][jc] === '') {
+            if (
+              inBounds(jr, jc) &&
+              board[nr][nc] === (player === 'B' ? 'P' : 'B') &&
+              board[jr][jc] === ''
+            ) {
               let newBoard = copyBoard(board);
               newBoard[jr][jc] = player;
               newBoard[r][c] = '';
@@ -144,14 +223,14 @@
     }
 
     function evalBoard(b, player) {
-      let pCount = 0, oCount = 0;
+      let score = 0;
       for (let row of b) {
         for (let cell of row) {
-          if (cell === player) pCount++;
-          else if (cell && cell !== player) oCount++;
+          if (cell === player) score++;
+          else if (cell && cell !== player) score -= 1;
         }
       }
-      return pCount - oCount;
+      return score;
     }
 
     function copyBoard(b) {
