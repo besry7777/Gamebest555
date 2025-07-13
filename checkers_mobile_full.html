@@ -1,0 +1,233 @@
+
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>หมากฮอสมือถือ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #111;
+      color: white;
+      font-family: sans-serif;
+      text-align: center;
+      overflow: hidden;
+      height: 100vh;
+    }
+    h1 {
+      margin: 0.5em 0 0.2em;
+      font-size: 6vw;
+    }
+    #info {
+      font-size: 4vw;
+      margin-bottom: 0.5em;
+    }
+    #board {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      width: 96vmin;
+      height: 96vmin;
+      max-width: 96vmin;
+      max-height: 96vmin;
+      margin: 0 auto;
+      background: #222;
+    }
+    .cell {
+      width: 100%;
+      height: 100%;
+      box-sizing: border-box;
+    }
+    .dark {
+      background: #b58863;
+    }
+    .light {
+      background: #f0d9b5;
+    }
+    .piece {
+      width: 80%;
+      height: 80%;
+      border-radius: 50%;
+      margin: 10%;
+      box-sizing: border-box;
+    }
+    .player {
+      background: red;
+    }
+    .bot {
+      background: limegreen;
+    }
+    .king::after {
+      content: "♛";
+      position: absolute;
+      font-size: 1.8em;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .selected {
+      outline: 3px solid yellow;
+    }
+  </style>
+</head>
+<body>
+  <h1>หมากฮอสมือถือ</h1>
+  <div id="info">🔴 คุณ vs 🟢 บอท</div>
+  <div id="board"></div>
+
+  <script>
+    const SIZE = 8;
+    let board = [];
+    let selected = null;
+    let turn = 'P'; // 'P' = player, 'B' = bot
+
+    const boardEl = document.getElementById("board");
+
+    function initBoard() {
+      board = [];
+      for (let r = 0; r < SIZE; r++) {
+        let row = [];
+        for (let c = 0; c < SIZE; c++) {
+          if ((r + c) % 2 === 0) row.push('');
+          else if (r < 3) row.push('B');
+          else if (r > 4) row.push('P');
+          else row.push('');
+        }
+        board.push(row);
+      }
+    }
+
+    function drawBoard() {
+      boardEl.innerHTML = '';
+      for (let r = 0; r < SIZE; r++) {
+        for (let c = 0; c < SIZE; c++) {
+          let cell = document.createElement("div");
+          cell.className = "cell " + ((r + c) % 2 === 0 ? "light" : "dark");
+          cell.dataset.row = r;
+          cell.dataset.col = c;
+
+          let piece = board[r][c];
+          if (piece) {
+            let div = document.createElement("div");
+            div.className = "piece " + (piece.toUpperCase() === 'P' ? "player" : "bot");
+            if (piece === piece.toLowerCase()) div.classList.add("king");
+            if (selected && selected.r == r && selected.c == c) {
+              div.classList.add("selected");
+            }
+            cell.appendChild(div);
+          }
+
+          if (turn === 'P') {
+            cell.addEventListener("click", () => handleClick(r, c));
+          }
+          boardEl.appendChild(cell);
+        }
+      }
+    }
+
+    function handleClick(r, c) {
+      let piece = board[r][c];
+      if (piece && piece.toUpperCase() === 'P') {
+        selected = {r, c};
+        drawBoard();
+      } else if (selected) {
+        let legalMoves = getLegalMoves(selected.r, selected.c);
+        if (legalMoves.some(m => m.r === r && m.c === c)) {
+          movePiece(selected.r, selected.c, r, c);
+          selected = null;
+          turn = 'B';
+          drawBoard();
+          setTimeout(botMove, 500);
+        }
+      }
+    }
+
+    function getLegalMoves(r, c) {
+      let piece = board[r][c];
+      let directions = [[-1,-1], [-1,1]];
+      if (piece === piece.toLowerCase()) {
+        directions = [[-1,-1],[1,-1],[-1,1],[1,1]];
+      }
+      let moves = [];
+      directions.forEach(([dr, dc]) => {
+        let nr = r + dr, nc = c + dc;
+        if (inBounds(nr, nc) && board[nr][nc] === '') {
+          moves.push({r: nr, c: nc});
+        }
+        let jr = r + dr * 2, jc = c + dc * 2;
+        if (inBounds(jr, jc) && board[nr][nc] && board[nr][nc].toUpperCase() === 'B' && board[jr][jc] === '') {
+          moves.push({r: jr, c: jc, eat: [nr, nc]});
+        }
+      });
+      return moves;
+    }
+
+    function movePiece(sr, sc, dr, dc) {
+      let piece = board[sr][sc];
+      board[sr][sc] = '';
+      if (Math.abs(dr - sr) === 2) {
+        let er = (sr + dr) / 2, ec = (sc + dc) / 2;
+        board[er][ec] = '';
+      }
+      if ((piece === 'P' && dr === 0) || (piece === 'B' && dr === SIZE - 1)) {
+        piece = piece.toLowerCase();
+      }
+      board[dr][dc] = piece;
+    }
+
+    function botMove() {
+      let moves = [];
+      for (let r = 0; r < SIZE; r++) {
+        for (let c = 0; c < SIZE; c++) {
+          if (board[r][c] && board[r][c].toUpperCase() === 'B') {
+            let pieceMoves = getLegalMovesBot(r, c);
+            pieceMoves.forEach(m => moves.push({from: {r, c}, to: m}));
+          }
+        }
+      }
+      if (moves.length === 0) {
+        alert("คุณชนะ!");
+        return;
+      }
+      moves.sort(() => Math.random() - 0.5); // shuffle
+      let move = moves[0];
+      movePiece(move.from.r, move.from.c, move.to.r, move.to.c);
+      turn = 'P';
+      drawBoard();
+    }
+
+    function getLegalMovesBot(r, c) {
+      let piece = board[r][c];
+      let directions = [[1,-1], [1,1]];
+      if (piece === piece.toLowerCase()) {
+        directions = [[-1,-1],[1,-1],[-1,1],[1,1]];
+      }
+      let moves = [];
+      directions.forEach(([dr, dc]) => {
+        let nr = r + dr, nc = c + dc;
+        if (inBounds(nr, nc) && board[nr][nc] === '') {
+          moves.push({r: nr, c: nc});
+        }
+        let jr = r + dr * 2, jc = c + dc * 2;
+        if (inBounds(jr, jc) && board[nr][nc] && board[nr][nc].toUpperCase() === 'P' && board[jr][jc] === '') {
+          moves.push({r: jr, c: jc, eat: [nr, nc]});
+        }
+      });
+      return moves;
+    }
+
+    function inBounds(r, c) {
+      return r >= 0 && c >= 0 && r < SIZE && c < SIZE;
+    }
+
+    initBoard();
+    drawBoard();
+  </script>
+</body>
+</html>
