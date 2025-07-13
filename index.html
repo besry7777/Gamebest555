@@ -66,11 +66,36 @@
 
         .game-info {
             font-size: 1.5em;
-            margin-bottom: 25px;
+            margin-bottom: 15px;
             color: #4a69bd;
             min-height: 30px;
             font-weight: 700;
             text-shadow: 1px 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .stats-container {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.7);
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .stat-label {
+            font-size: 0.8em;
+            color: #7f8c8d;
         }
 
         .game-board {
@@ -78,7 +103,7 @@
             grid-template-columns: repeat(3, 110px);
             grid-template-rows: repeat(3, 110px);
             gap: 10px;
-            margin: 30px auto;
+            margin: 20px auto;
             width: 350px;
             background-color: #ecf0f1;
             padding: 10px;
@@ -163,7 +188,7 @@
             font-size: 1.2em;
             cursor: pointer;
             transition: all 0.3s ease;
-            margin-top: 30px;
+            margin-top: 20px;
             box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
             letter-spacing: 0.5px;
             font-weight: 700;
@@ -221,6 +246,7 @@
             .cell { width: 90px; height: 90px; font-size: 4em; }
             .reset-button { padding: 12px 25px; font-size: 1.1em; }
             .game-over-modal h2 { font-size: 2.5em; }
+            .stats-container { flex-direction: column; gap: 10px; }
         }
     </style>
 </head>
@@ -228,6 +254,22 @@
     <div class="container">
         <h1>เกม XO สุดยอด!</h1>
         <div class="game-info" id="gameInfo"></div>
+        
+        <div class="stats-container">
+            <div class="stat-item">
+                <div class="stat-value" id="playerWins">0</div>
+                <div class="stat-label">คุณชนะ</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="botWins">0</div>
+                <div class="stat-label">บอทชนะ</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="draws">0</div>
+                <div class="stat-label">เสมอ</div>
+            </div>
+        </div>
+        
         <div class="game-board" id="gameBoard">
             <div class="cell" data-index="0"></div>
             <div class="cell" data-index="1"></div>
@@ -262,6 +304,11 @@
         const playAgainButton = document.getElementById('playAgainButton');
         const confettiContainer = document.getElementById('confettiContainer');
         const winningLine = document.getElementById('winningLine');
+        
+        // องค์ประกอบสถิติ
+        const playerWinsElement = document.getElementById('playerWins');
+        const botWinsElement = document.getElementById('botWins');
+        const drawsElement = document.getElementById('draws');
 
         const winningConditions = [
             [0, 1, 2], [3, 4, 5], [6, 7, 8],
@@ -274,6 +321,51 @@
         let gameActive;
         const player = 'X';
         const bot = 'O';
+        
+        // สถิติ
+        let stats = {
+            playerWins: 0,
+            botWins: 0,
+            draws: 0
+        };
+
+        // โหลดสถิติจาก localStorage เมื่อเริ่มเกม
+        function loadStats() {
+            const savedStats = localStorage.getItem('xoStats');
+            if (savedStats) {
+                stats = JSON.parse(savedStats);
+                updateStatsDisplay();
+            }
+        }
+        
+        // บันทึกสถิติลง localStorage
+        function saveStats() {
+            localStorage.setItem('xoStats', JSON.stringify(stats));
+        }
+        
+        // อัพเดทการแสดงผลสถิติ
+        function updateStatsDisplay() {
+            playerWinsElement.textContent = stats.playerWins;
+            botWinsElement.textContent = stats.botWins;
+            drawsElement.textContent = stats.draws;
+        }
+        
+        // อัพเดทสถิติตามผลลัพธ์
+        function updateStats(result) {
+            switch(result) {
+                case 'player':
+                    stats.playerWins++;
+                    break;
+                case 'bot':
+                    stats.botWins++;
+                    break;
+                case 'draw':
+                    stats.draws++;
+                    break;
+            }
+            updateStatsDisplay();
+            saveStats();
+        }
 
         function initializeGame() {
             board = ['', '', '', '', '', '', '', '', ''];
@@ -370,7 +462,12 @@
                     const message = (winner === player) ? `คุณชนะ!` : `บอทชนะ!`;
                     gameInfo.textContent = message + ' 🎉';
                     showGameOverScreen(message);
-                    if (winner === player) triggerConfetti();
+                    if (winner === player) {
+                        triggerConfetti();
+                        updateStats('player');
+                    } else {
+                        updateStats('bot');
+                    }
                 }, 600);
                 return true;
             }
@@ -380,6 +477,7 @@
                 gameBoard.classList.add('locked');
                 gameInfo.textContent = `เสมอ! 🤝`;
                 showGameOverScreen(`เกมเสมอ!`);
+                updateStats('draw');
                 return true;
             }
             
@@ -401,17 +499,13 @@
             gameBoard.classList.remove('locked');
         }
 
-        // --- 🤖 START OF MODIFIED AI LOGIC 🤖 ---
         function findBestMove() {
-            // ตรวจสอบว่าเป็นตาแรกของเกมหรือไม่ (บอร์ดว่างทั้งหมด)
             const isFirstMove = board.every(cell => cell === '');
             if (isFirstMove) {
-                // ถ้าเป็นตาแรก ให้สุ่มลงตำแหน่งที่แข็งแกร่ง (มุม หรือ กลาง)
                 const strongFirstMoves = [0, 2, 4, 6, 8];
                 return strongFirstMoves[Math.floor(Math.random() * strongFirstMoves.length)];
             }
 
-            // ฟังก์ชันสำหรับช่วยตรวจสอบการชนะ/บล็อก
             function checkWinOrBlock(playerToCheck) {
                 for (let i = 0; i < winningConditions.length; i++) {
                     const [a, b, c] = winningConditions[i];
@@ -422,18 +516,15 @@
                 return null;
             }
 
-            // 1. ตรวจสอบว่าบอทสามารถชนะได้ในตานี้หรือไม่
             let move = checkWinOrBlock(bot);
             if (move !== null) return move;
 
-            // 2. ตรวจสอบว่าผู้เล่นจะชนะในตาหน้าหรือไม่ ถ้าใช่ ให้บล็อก
             move = checkWinOrBlock(player);
             if (move !== null) return move;
             
-            // 3. ตรวจสอบการสร้างสถานการณ์ได้เปรียบ (fork)
             for (let i = 0; i < 9; i++) {
                 if (board[i] === '') {
-                    board[i] = bot; // ลองวางชั่วคราว
+                    board[i] = bot;
                     let winningOpportunities = 0;
                     for (let j = 0; j < winningConditions.length; j++) {
                         const [a, b, c] = winningConditions[j];
@@ -442,17 +533,16 @@
                             winningOpportunities++;
                         }
                     }
-                    board[i] = ''; // เอาที่วางไว้ออก
+                    board[i] = '';
                     if (winningOpportunities >= 2) {
-                        return i; // ถ้าสร้าง fork ได้ ให้ลงตรงนี้
+                        return i;
                     }
                 }
             }
             
-            // 4. บล็อกการสร้าง fork ของผู้เล่น
             for (let i = 0; i < 9; i++) {
                 if (board[i] === '') {
-                    board[i] = player; // ลองให้ผู้เล่นวาง
+                    board[i] = player;
                      let winningOpportunities = 0;
                     for (let j = 0; j < winningConditions.length; j++) {
                         const [a, b, c] = winningConditions[j];
@@ -461,34 +551,28 @@
                             winningOpportunities++;
                         }
                     }
-                    board[i] = ''; // เอาออก
+                    board[i] = '';
                     if (winningOpportunities >= 2) {
-                        return i; // ถ้าผู้เล่นจะสร้าง fork ได้ ให้บล็อกที่จุดนั้น
+                        return i;
                     }
                 }
             }
             
-            // 5. เลือกตำแหน่งกลางถ้าว่าง
             if (board[4] === '') return 4;
 
-            // 6. เลือกมุมตรงข้ามกับผู้เล่น
             if (board[0] === player && board[8] === '') return 8;
             if (board[8] === player && board[0] === '') return 0;
             if (board[2] === player && board[6] === '') return 6;
             if (board[6] === player && board[2] === '') return 2;
 
-            // 7. เลือกมุมที่ว่าง
             const emptyCorners = [0, 2, 6, 8].filter(i => board[i] === '');
             if (emptyCorners.length > 0) return emptyCorners[0];
 
-            // 8. เลือกด้านที่ว่าง
             const emptySides = [1, 3, 5, 7].filter(i => board[i] === '');
             if (emptySides.length > 0) return emptySides[0];
 
-            // 9. เลือกช่องว่างช่องแรกที่เจอ (กรณีฉุกเฉิน)
             return board.findIndex(cell => cell === '');
         }
-        // --- 🤖 END OF MODIFIED AI LOGIC 🤖 ---
         
         function drawWinningLine(index) {
             const line = winningLine;
@@ -536,6 +620,8 @@
         resetButton.addEventListener('click', initializeGame);
         playAgainButton.addEventListener('click', initializeGame);
 
+        // โหลดสถิติเมื่อเริ่มเกม
+        loadStats();
         initializeGame();
 
     </script>
