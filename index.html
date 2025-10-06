@@ -17,7 +17,6 @@
         html, body { margin: 0; padding: 0; height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background-color: var(--bg-color); color: var(--primary-text); touch-action: manipulation; overflow: hidden; }
         #main-layout { display: flex; height: 100vh; }
 
-        /* --- Explorer Panel --- */
         #explorer-panel { width: 240px; background-color: var(--panel-bg); display: flex; flex-direction: column; border-right: 1px solid #444; flex-shrink: 0; transition: width 0.3s ease; position: relative; }
         #explorer-panel.collapsed { width: 0; border-right: none; }
         #explorer-panel > * { min-width: 240px; }
@@ -44,7 +43,6 @@
         #add-item-menu ul { list-style: none; margin: 0; padding: 0; } #add-item-menu li { padding: 8px 12px; cursor: pointer; white-space: nowrap; }
         #add-item-menu li:hover { background-color: var(--accent-color); }
         
-        /* --- Main Content Area --- */
         #main-content { flex-grow: 1; display: flex; flex-direction: column; height: 100vh; min-width: 0; }
         #ai-tutor { padding: 10px 15px; background-color: var(--panel-bg); border-bottom: 1px solid #444; font-size: 0.9em; flex-shrink: 0; }
         #ai-tutor .title { font-weight: bold; color: var(--info-color); }
@@ -120,7 +118,6 @@
     <script src="https://unpkg.com/fengari-web@0.1.4/dist/fengari-web.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // --- DOM Elements ---
             const getEl = id => document.getElementById(id);
             const codeEditor = getEl('code-editor');
             const outputChat = getEl('output-chat');
@@ -134,7 +131,6 @@
             const addItemMenu = getEl('add-item-menu');
             const explorerPanel = getEl('explorer-panel');
             
-            // --- Global State ---
             let mockGame = {
                 Workspace: { _children: {}, ClassName: 'Workspace' },
                 ServerScriptService: { _children: {}, ClassName: 'ServerScriptService' },
@@ -150,7 +146,6 @@
             let sceneHistoryIndex = -1;
             let isHighlighting = false;
 
-            // --- TUTORIALS & AI (in Thai) ---
             const tutorials = {
                 "01_พื้นฐาน": `--[[ บทเรียนที่ 1: พื้นฐาน --\n\n-- 'local' ใช้สร้างตัวแปรที่ใช้ได้แค่ในสคริปต์นี้\nlocal ข้อความ = "สวัสดีสตูดิโอ!" -- ชื่อตัวแปรภาษาไทยจะถูกขีดเส้นใต้\nlocal คะแนน = 100\n\n-- print() ใช้แสดงผลในหน้าต่าง Output\nprint("ยินดีต้อนรับ!")\nprint("คะแนนของคุณคือ:", คะแนน)\n\nlocal testRandom = kdjcjc -- คำที่ไม่รู้จักจะถูกขีดเส้นใต้ด้วย\n]]`,
                 "02_การหาPart": `--[[ บทเรียนที่ 2: การค้นหา Part\n\n-- เพิ่ม Part ชื่อ "MySpecialPart" ใน Workspace ก่อนรัน\n\nlocal partToFind = game.Workspace:FindFirstChild("MySpecialPart")\n\nif partToFind then\n\tprint("เจอแล้ว! Part:", partToFind.Name)\nelse\n\tprint("หา Part ไม่เจอ!")\nend\n]]`,
@@ -160,23 +155,21 @@
              const aiTips = [ "ใช้ :FindFirstChild() เพื่อค้นหาของอย่างปลอดภัย", "ตัวแปร local จะทำงานเร็วกว่าตัวแปร global", "ใช้คอมเมนต์ (--) เพื่ออธิบายโค้ดที่ซับซ้อน", "Instance.new(\"Part\") ใช้สำหรับสร้าง Part ใหม่", "สคริปต์จะรู้จัก script.Parent ได้" ];
             setInterval(() => { aiTipElement.textContent = aiTips[Math.floor(Math.random() * aiTips.length)]; }, 10000);
             
-            // --- Core Usability & Mobile Support ---
             let lastTouchEnd = 0;
             document.body.addEventListener('touchend', (e) => { const now = Date.now(); if (now - lastTouchEnd <= 300) e.preventDefault(); lastTouchEnd = now; }, false);
             codeEditor.addEventListener('focus', () => { dismissBtn.classList.add('visible'); lastFocusedElement = codeEditor; });
             codeEditor.addEventListener('blur', () => dismissBtn.classList.remove('visible'));
             dismissBtn.addEventListener('click', () => { if(document.activeElement) document.activeElement.blur(); });
 
-            // --- Undo/Redo System ---
             function recordSceneAction(action) {
                 if (sceneHistoryIndex < sceneHistory.length - 1) sceneHistory = sceneHistory.slice(0, sceneHistoryIndex + 1);
                 sceneHistory.push(action); sceneHistoryIndex++; updateUndoRedoButtons();
             }
             function getObjectByPath(path) {
-                return path.split('.').reduce((o, k) => (o && o._children) ? o._children[k] : (o ? o[k] : undefined), mockGame);
+                return path.split('.').reduce((o, k) => (o && o._children) ? o._children[k] : (o ? o[k] : undefined), { _children: mockGame });
             }
             function getParentByPath(path) {
-                 return path.split('.').slice(0, -1).reduce((o, k) => (o && o._children) ? o._children[k] : (o ? o[k] : undefined), mockGame);
+                 return path.split('.').slice(0, -1).reduce((o, k) => (o && o._children) ? o._children[k] : (o ? o[k] : undefined), { _children: mockGame });
             }
             function applyAction(action, isUndo) {
                  let parent, oldName, newName, path;
@@ -220,7 +213,6 @@
             undoBtn.addEventListener('click', () => { if (lastFocusedElement === codeEditor) document.execCommand('undo'); else undoScene(); });
             redoBtn.addEventListener('click', () => { if (lastFocusedElement === codeEditor) document.execCommand('redo'); else redoScene(); });
 
-            // --- Explorer & UI Interaction ---
             const toggleButtons = document.querySelectorAll('#explorer-toggle-btn');
             toggleButtons.forEach(btn => btn.addEventListener('click', () => explorerPanel.classList.toggle('collapsed')));
             document.addEventListener('click', (e) => { 
@@ -231,7 +223,6 @@
                 }
             });
 
-            // --- Script & Tab Management ---
             function switchScript(index) {
                 if (activeScriptIndex > -1 && scripts[activeScriptIndex]) scripts[activeScriptIndex].code = codeEditor.value;
                 activeScriptIndex = index;
@@ -243,6 +234,7 @@
                 let scriptIndex = scripts.findIndex(s => s.path === path);
                 if (scriptIndex === -1) {
                     const obj = getObjectByPath(path);
+                    if (!obj) return;
                     scripts.push({ path: path, name: obj.Name, code: obj.code || `-- Code for ${obj.Name}` });
                     scriptIndex = scripts.length - 1;
                 }
@@ -267,7 +259,6 @@
                 });
             }
 
-            // --- Explorer Renderer & Interaction ---
             function renderExplorer() {
                 explorerContent.innerHTML = '';
                 function handleRename(span, name, path) {
@@ -280,9 +271,8 @@
                         if (newName !== name) {
                              recordSceneAction({ type: 'RENAME', path: path, oldName: name, newName: newName });
                              applyAction(sceneHistory[sceneHistory.length-1], false);
-                        } else {
-                           renderExplorer(); // Re-render to restore original name if unchanged
                         }
+                        renderExplorer();
                     };
                     input.addEventListener('blur', finishEditing);
                     input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); });
@@ -298,9 +288,8 @@
                         item.classList.add('renameable');
                         item.addEventListener('click', (e) => { 
                             e.stopPropagation();
-                            if (selectedObjectPath === path) { // Second click on selected item
-                                if (object.ClassName === 'Script') openScriptByPath(path);
-                                else handleRename(span, name, path);
+                            if (selectedObjectPath === path) {
+                                handleRename(span, name, path);
                             } else {
                                 selectedObjectPath = path; renderExplorer(); lastFocusedElement = explorerContent;
                             }
@@ -356,7 +345,6 @@
                 }
             });
             
-            // --- PERFORMANCE & ADVANCED ERROR HIGHLIGHTING ---
             const debounce = (func, delay) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => func.apply(this, a), delay); }; };
             const knownGlobals = new Set(['game', 'print', 'workspace', 'wait', 'script', 'math', 'Vector3', 'CFrame', 'Color3', 'Instance', 'pcall', 'xpcall', 'tostring', 'tonumber', 'type']);
             const keywords = new Set(['local', 'function', 'if', 'then', 'else', 'elseif', 'end', 'for', 'while', 'do', 'return', 'and', 'or', 'not', 'break', 'in', 'repeat', 'until']);
@@ -415,13 +403,13 @@
             codeEditor.addEventListener('input', () => { debouncedCheckSyntax(); requestAnimationFrame(updateHighlighting); });
             codeEditor.addEventListener('scroll', () => { getEl('highlighting-layer-container').scrollTop = codeEditor.scrollTop; getEl('highlighting-layer-container').scrollLeft = codeEditor.scrollLeft; });
 
-            // --- ROBUST LUA RUNNER with script.Parent ---
             getEl('run-button').addEventListener('click', () => {
                 const logToOutput = (m, t = 'info') => { const l=document.createElement('div');l.className=`output-line ${t}`;l.textContent=m;outputChat.appendChild(l);outputChat.scrollTop=outputChat.scrollHeight;};
                 outputChat.innerHTML = '';
                 logToOutput("> Starting execution...", "info");
                 try {
                     let executionGame = JSON.parse(JSON.stringify(mockGame));
+                    function getObjectByPathForExec(path, root) { return path.split('.').reduce((o, k) => (o && o._children) ? o._children[k] : (o ? o[k] : undefined), { _children: root }); }
                     const serverScripts = executionGame.ServerScriptService._children;
                     for (const scriptName in serverScripts) {
                          if (serverScripts[scriptName].ClassName === 'Script') {
@@ -430,7 +418,17 @@
                             const scriptProxy = { Parent: executionGame.ServerScriptService, Name: scriptName };
                             fengari.lua.lua_pushjs(L, scriptProxy); fengari.lua.lua_setglobal(L, fengari.to_luastring("script"));
                             fengari.lua.lua_pushjs(L, (...args) => { const msg = args.map(a => fengari.to_jsstring(a)).join('\t'); logToOutput(msg, 'print'); }); fengari.lua.lua_setglobal(L, fengari.to_luastring("print"));
-                            fengari.lauxlib.luaL_dostring(L, fengari.to_luastring('function Instance.new(type) local obj = {ClassName=type, _children={}}; function obj:FindFirstChild(name) return obj._children[name] or nil end; return obj end'));
+                            fengari.lauxlib.luaL_dostring(L, fengari.to_luastring(`
+                                local metatables = {}
+                                metatables.Part = {
+                                    __index = function(t, k) return rawget(t, k) end
+                                }
+                                function Instance.new(type) 
+                                    local obj = {ClassName=type, _children={}}
+                                    function obj:FindFirstChild(name) return obj._children and obj._children[name] or nil end
+                                    return setmetatable(obj, metatables[type])
+                                end
+                            `));
 
                             logToOutput(`--- Running ${scriptName} ---`, 'info');
                             const status = fengari.lauxlib.luaL_dostring(L, fengari.to_luastring(serverScripts[scriptName].code));
@@ -442,11 +440,10 @@
                     }
                     logToOutput("> Execution finished.", "success");
                     mockGame = executionGame; renderExplorer();
-                } catch (e) { logToOutput("[FATAL JS ERROR]: " a+ e.message, 'error'); }
+                } catch (e) { logToOutput("[FATAL JS ERROR]: " + e.message, 'error'); }
             });
             getEl('clear-output-btn').addEventListener('click', () => outputChat.innerHTML = '');
 
-            // --- INITIAL SETUP ---
             Object.keys(tutorials).forEach(name => {
                 mockGame.ServerScriptService._children[name] = { Name: name, ClassName: 'Script', code: tutorials[name] };
             });
