@@ -117,10 +117,9 @@
 
     <script src="https://unpkg.com/fengari-web@0.1.4/dist/fengari-web.js"></script>
     <script>
-        // This is the complete, fully functional, and debugged JavaScript code.
         document.addEventListener('DOMContentLoaded', () => {
-            const getEl = (id) => document.getElementById(id);
-            // --- All DOM Elements ---
+            // --- DOM Elements ---
+            const getEl = id => document.getElementById(id);
             const codeEditor = getEl('code-editor');
             const outputChat = getEl('output-chat');
             const explorerPanel = getEl('explorer-panel');
@@ -128,6 +127,7 @@
             const aiTipElement = getEl('ai-tip');
             const dismissBtn = getEl('dismiss-keyboard-btn');
             const highlightingLayer = getEl('highlighting-layer');
+            const autocompletePopup = getEl('autocomplete-popup');
             
             // --- Global State ---
             let mockGame = {
@@ -150,27 +150,23 @@
                 "04_Loopและการสร้าง": `--[[ บทเรียนที่ 4: การใช้ Loop และการสร้าง Part\n\n-- for loop คือการสั่งให้โปรแกรมทำงานซ้ำๆ ตามจำนวนรอบที่กำหนด\nprint("กำลังจะสร้าง Part หลายชิ้น...")\n\nfor i = 1, 5 do\n\tlocal newPart = Instance.new("Part")\n\tnewPart.Name = "LoopPart_" .. i\n\tnewPart.Parent = game.Workspace\n\tprint("สร้าง Part:", newPart.Name)\nend\n\nprint("สร้าง Part ทั้งหมดเสร็จแล้ว!")\n]]`
             };
             
-            // --- Anti Double-Tap Zoom ---
-            document.addEventListener('touchend', (e) => { const now = Date.now(); if (now - lastTouchEnd <= 300) { e.preventDefault(); } lastTouchEnd = now; }, false);
-            
-            // --- Mobile Keyboard Dismiss ---
+            // --- Core Usability Functions ---
+            document.addEventListener('touchend', (e) => { const now = Date.now(); if (now - lastTouchEnd <= 300) e.preventDefault(); lastTouchEnd = now; }, false);
             codeEditor.addEventListener('focus', () => dismissBtn.classList.add('visible'));
             codeEditor.addEventListener('blur', () => dismissBtn.classList.remove('visible'));
             dismissBtn.addEventListener('click', () => { if(document.activeElement) document.activeElement.blur(); });
 
             // --- AI Tutor (in Thai) ---
-            const aiTips = [ "ใช้ :FindFirstChild() เพื่อค้นหาของอย่างปลอดภัย", "ตัวแปร local จะทำงานเร็วกว่าตัวแปร global", "ใช้คอมเมนต์ (--) เพื่ออธิบายโค้ดที่ซับซ้อน", "Instance.new(\"Part\") ใช้สำหรับสร้าง Part ใหม่", "คุณสามารถเปลี่ยนสี Part ได้ด้วย .Color = Color3.new(...)" ];
+            const aiTips = [ "ใช้ :FindFirstChild() เพื่อค้นหาของอย่างปลอดภัย", "ตัวแปร local จะทำงานเร็วกว่าตัวแปร global", "ใช้คอมเมนต์ (--) เพื่ออธิบายโค้ดที่ซับซ้อน", "Instance.new(\"Part\") ใช้สำหรับสร้าง Part ใหม่", "คุณสามารถเปลี่ยนสี Part ได้ด้วย .Color" ];
             setInterval(() => { aiTipElement.textContent = aiTips[Math.floor(Math.random() * aiTips.length)]; }, 10000);
 
-            // --- FULLY FUNCTIONAL EXPLORER LOGIC ---
-            const explorerPanel = getEl('explorer-panel');
+            // --- Explorer & UI Interaction ---
             const toggleButtons = document.querySelectorAll('#explorer-toggle-btn');
             toggleButtons.forEach(btn => btn.addEventListener('click', () => explorerPanel.classList.toggle('collapsed')));
-            
             getEl('show-add-menu-btn').addEventListener('click', (e) => { e.stopPropagation(); addItemMenu.style.display = 'block'; });
             document.addEventListener('click', () => addItemMenu.style.display = 'none');
-
-            // --- FULLY FUNCTIONAL SCRIPT & TAB MANAGEMENT ---
+            
+            // --- Script & Tab Management ---
             function switchScript(index) {
                 if (activeScriptIndex > -1 && scripts[activeScriptIndex]) { scripts[activeScriptIndex].code = codeEditor.value; }
                 activeScriptIndex = index;
@@ -198,7 +194,7 @@
                 });
             }
 
-            // --- FULLY FUNCTIONAL RENDERER WITH RENAME PROTECTION ---
+            // --- Explorer Renderer ---
             function renderExplorer() {
                 const explorerContent = getEl('explorer-content'); explorerContent.innerHTML = '';
                 function handleRename(span, name, path) {
@@ -263,13 +259,13 @@
                 addItemMenu.style.display = 'none';
             });
 
-            // --- LIVE SYNTAX & THAI CHARACTER ERROR HIGHLIGHTING ---
+            // --- Live Syntax & Thai Character Error Highlighting ---
             const debounce = (func, delay) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => func.apply(this, a), delay); }; };
             function checkSyntax() {
                 try {
                     const L = fengari.lauxlib.luaL_newstate();
                     const status = fengari.lauxlib.luaL_loadstring(L, fengari.to_luastring(codeEditor.value));
-                    if (status !== fengari.lua.L_OK) {
+                    if (status !== fengari.lua.LUA_OK) {
                         const errorMsg = fengari.to_jsstring(fengari.lua.lua_tostring(L, -1));
                         const lineMatch = errorMsg.match(/\[string "..."\]:(\d+):/);
                         syntaxError = { line: lineMatch ? parseInt(lineMatch[1]) : -1, message: errorMsg };
@@ -285,17 +281,17 @@
                 const stringPattern = /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')/;
                 const commentPattern = /(--.*)/;
                 for(let i=0; i < lines.length; i++) {
-                    let line = lines[i]; let lineHtml = ''; let lastIndex = 0;
+                    let line = lines[i]; let lineHtml = '';
                     const parts = line.split(new RegExp(`(${stringPattern.source}|${commentPattern.source})`)).filter(Boolean);
                     parts.forEach(part => {
-                        if (part.match(stringPattern)) { lineHtml += `<span class="hl-string">${part.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</span>`; } 
-                        else if (part.match(commentPattern)) { lineHtml += `<span class="hl-comment">${part.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</span>`; } 
+                        if (part.match(stringPattern)) { lineHtml += `<span class="hl-string">${part.replace(/</g, '&lt;')}</span>`; } 
+                        else if (part.match(commentPattern)) { lineHtml += `<span class="hl-comment">${part.replace(/</g, '&lt;')}</span>`; } 
                         else {
-                            let codePart = part.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                            let codePart = part.replace(/</g, '&lt;');
                             codePart = codePart.replace(/\b(local|function|if|then|else|elseif|end|for|while|do|return|and|or|not|break|in|repeat|until|Instance)\b/g, '<span class="hl-keyword">$1</span>');
                             codePart = codePart.replace(/\b(game|print|workspace|wait|script|math|Vector3|CFrame|Color3)\b/g, '<span class="hl-global">$1</span>');
                             codePart = codePart.replace(/\b(\d+(\.\d+)?)\b/g, '<span class="hl-number">$1</span>');
-                            codePart = codePart.replace(/[ก-๙]+/g, '<span class="hl-thai-error">$&</span>'); // Thai Error Check
+                            codePart = codePart.replace(/([ก-๙]+)/g, '<span class="hl-thai-error">$1</span>'); // Thai Error Check
                             lineHtml += codePart;
                         }
                     });
@@ -313,24 +309,24 @@
                 logToOutput("> Starting execution...", "info");
                 try {
                     const L = fengari.lauxlib.luaL_newstate(); fengari.lualib.luaL_openlibs(L);
-                    fengari.lua.lua_pushjs(L, (parent) => (name) => mockGame[fengari.to_jsstring(parent)]._children[fengari.to_jsstring(name)] || null); fengari.lua.lua_setglobal(L, fengari.to_luastring("findChild"));
-                    const fullGameProxy = JSON.parse(JSON.stringify(mockGame)); // Safe copy for execution
-                    fengari.lua.lua_pushjs(L, fullGameProxy); fengari.lua.lua_setglobal(L, fengari.to_luastring("game"));
+                    const executionGame = JSON.parse(JSON.stringify(mockGame));
+                    fengari.lua.lua_pushjs(L, executionGame); fengari.lua.lua_setglobal(L, fengari.to_luastring("game"));
                     fengari.lua.lua_pushjs(L, (...args) => { const msg = args.map(a => fengari.to_jsstring(a)).join('\t'); logToOutput(msg, 'print'); }); fengari.lua.lua_setglobal(L, fengari.to_luastring("print"));
-                    fengari.lauxlib.luaL_dostring(L, fengari.to_luastring('function Instance.new(type) return {ClassName=type} end'));
+                    fengari.lauxlib.luaL_dostring(L, fengari.to_luastring('function Instance.new(type) local obj = {ClassName=type}; function obj:FindFirstChild(name) return obj._children and obj._children[name] or nil end; return obj end'));
 
-                    const serverScripts = mockGame.ServerScriptService._children;
+                    const serverScripts = executionGame.ServerScriptService._children;
                     for (const scriptName in serverScripts) {
                          if (serverScripts[scriptName].ClassName === 'Script') {
                             logToOutput(`--- Running ${scriptName} ---`, 'info');
                             const status = fengari.lauxlib.luaL_dostring(L, fengari.to_luastring(serverScripts[scriptName].code));
-                            if (status !== fengari.lua.L_OK) {
+                            if (status !== fengari.lua.LUA_OK) {
                                 const errorMsg = fengari.to_jsstring(fengari.lua.lua_tostring(L, -1));
                                 logToOutput(`[ERROR] in ${scriptName}: ${errorMsg.split(": ").slice(1).join(": ")}`, 'error'); break;
                             }
                          }
                     }
                     logToOutput("> Execution finished.", "success");
+                    mockGame = executionGame; // Sync changes back
                     renderExplorer();
                 } catch (e) { logToOutput("[FATAL JS ERROR]: " + e.message, 'error'); }
             });
