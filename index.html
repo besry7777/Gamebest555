@@ -2,716 +2,363 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>เกม XO สุดยอด! (Unbeatable AI)</title>
-    <link href="https://fonts.googleapis.com/css2?family=Mitr:wght@400;700&display=swap" rel="stylesheet">
-    <!-- เพิ่ม Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Lua Learning Studio (Mobile)</title>
     <style>
-        body {
-            font-family: 'Mitr', sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+        /* CSS: สไตล์ชีตสำหรับหน้าเว็บ */
+        :root {
+            --bg-color: #1e1e1e;
+            --editor-bg: #2d2d2d;
+            --output-bg: #252526;
+            --primary-text: #d4d4d4;
+            --secondary-text: #a0a0a0;
+            --accent-color: #007acc;
+            --error-color: #f44747;
+            --success-color: #4CAF50;
+            --info-color: #f0e68c; /* Khaki for AI */
+            --font-family: Consolas, 'Courier New', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent; /* ป้องกันแสงวาบตอนกดบนมือถือ */
+        }
+
+        html, body {
             margin: 0;
-            color: #333;
-            overflow: hidden;
-            position: relative;
-        }
-
-        body::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
+            padding: 0;
             height: 100%;
-            background: url('data:image/svg+xml;utf8,<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="15" fill="rgba(255,255,255,0.1)"/><circle cx="80" cy="80" r="10" fill="rgba(255,255,255,0.1)"/><line x1="0" y1="50" x2="100" y2="50" stroke="rgba(255,255,255,0.05)" stroke-width="1"/><line x1="50" y1="0" x2="50" y2="100" stroke="rgba(255,255,255,0.05)" stroke-width="1"/></svg>') center/cover no-repeat;
-            opacity: 0.3;
-            z-index: -1;
-            animation: backgroundFade 5s infinite alternate;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--primary-text);
+            /* ป้องกัน Double-tap to zoom บนมือถือ */
+            touch-action: manipulation;
         }
 
-        @keyframes backgroundFade {
-            from { opacity: 0.3; }
-            to { opacity: 0.4; }
-        }
-
-        .container {
-            background: rgba(255, 255, 255, 0.98);
-            border-radius: 25px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
-            padding: 35px 45px;
-            text-align: center;
-            max-width: 90%;
-            width: 480px;
-            backdrop-filter: blur(15px);
-            border: 2px solid rgba(255, 255, 255, 0.5);
-            transform: scale(1);
-            animation: popIn 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55);
-            position: relative;
-        }
-
-        @keyframes popIn {
-            from { transform: scale(0.8); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
-        }
-
-        h1 {
-            color: #1a5276;
-            margin-bottom: 25px;
-            font-size: 3em;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.15);
-            letter-spacing: 1px;
-        }
-
-        .game-info {
-            font-size: 1.5em;
-            margin-bottom: 25px;
-            color: #4a69bd;
-            min-height: 30px;
-            font-weight: 700;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.05);
-        }
-
-        .game-board {
-            display: grid;
-            grid-template-columns: repeat(3, 110px);
-            grid-template-rows: repeat(3, 110px);
-            gap: 10px;
-            margin: 30px auto;
-            width: 350px;
-            background-color: #ecf0f1;
-            padding: 10px;
-            border-radius: 20px;
-            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.15);
-            position: relative;
-        }
-        
-        .game-board.locked {
-            cursor: not-allowed;
-        }
-
-        .cell {
-            width: 110px;
-            height: 110px;
-            background-color: #ffffff;
-            border-radius: 15px;
+        #app-container {
             display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 5em;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-            color: #34495e;
-            user-select: none;
-            position: relative;
+            flex-direction: column;
+            height: 100vh; /* ใช้ vh เพื่อให้เต็มความสูงของหน้าจอ */
             overflow: hidden;
         }
 
-        .game-board.locked .cell:hover:not(.x):not(.o) {
-            background-color: #ffffff;
-            transform: none;
-            cursor: not-allowed;
+        /* ส่วน AI Tutor */
+        #ai-tutor {
+            padding: 10px 15px;
+            background-color: var(--output-bg);
+            border-bottom: 1px solid #444;
+            font-size: 0.9em;
+        }
+        #ai-tutor .title {
+            font-weight: bold;
+            color: var(--info-color);
         }
 
-        .cell:hover:not(.x):not(.o) {
-            background-color: #e8f6ff;
-            transform: scale(1.03);
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        /* ส่วนจัดการสคริปต์ (แท็บ) */
+        #script-manager {
+            display: flex;
+            align-items: center;
+            background-color: #333;
+            padding: 5px;
+            overflow-x: auto;
         }
-
-        .cell.x {
-            color: #e74c3c;
-            text-shadow: 2px 2px 5px rgba(231, 76, 60, 0.4);
+        #script-tabs {
+            display: flex;
+            flex-grow: 1;
         }
-
-        .cell.o {
-            color: #2ecc71;
-            text-shadow: 2px 2px 5px rgba(46, 204, 113, 0.4);
+        .tab {
+            padding: 8px 12px;
+            cursor: pointer;
+            border-radius: 4px 4px 0 0;
+            margin-right: 4px;
+            background-color: var(--editor-bg);
+            color: var(--secondary-text);
+            white-space: nowrap;
+            border: 1px solid transparent;
         }
-
-        .cell.win {
-            background-color: #ffeaa7;
-            animation: winCellPulse 0.8s ease-in-out infinite alternate;
-            box-shadow: 0 8px 20px rgba(255, 234, 167, 0.7);
+        .tab.active {
+            background-color: var(--bg-color);
+            color: var(--primary-text);
+            border-color: #444;
+            border-bottom-color: transparent;
         }
-
-        @keyframes winCellPulse {
-            from { transform: scale(1); box-shadow: 0 8px 20px rgba(255, 234, 167, 0.7); }
-            to { transform: scale(1.08); box-shadow: 0 12px 30px rgba(255, 234, 167, 0.9); }
-        }
-        
-        .winning-line {
-            position: absolute;
-            background-color: #e74c3c;
-            height: 10px;
-            border-radius: 5px;
-            transform-origin: center center;
-            box-shadow: 0 0 15px 5px rgba(231, 76, 60, 0.5);
-            display: none;
-            transition: all 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
-        }
-
-        .reset-button {
-            background-color: #f39c12;
+        #add-script-btn {
+            background-color: var(--accent-color);
             color: white;
-            padding: 15px 30px;
             border: none;
-            border-radius: 10px;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
             font-size: 1.2em;
             cursor: pointer;
-            transition: all 0.3s ease;
-            margin-top: 30px;
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-            letter-spacing: 0.5px;
-            font-weight: 700;
+            flex-shrink: 0;
         }
 
-        .reset-button:hover {
-            background-color: #e67e22;
-            transform: translateY(-5px) scale(1.02);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.25);
+        /* ส่วน Code Editor */
+        #editor-container {
+            flex-grow: 1;
+            display: flex;
+            position: relative;
         }
-
-        .game-over-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.7); display: flex; justify-content: center;
-            align-items: center; z-index: 100; opacity: 0; visibility: hidden;
-            transition: opacity 0.4s ease, visibility 0.4s ease;
-        }
-        .game-over-overlay.active { opacity: 1; visibility: visible; }
-        .game-over-modal {
-            background: #fff; padding: 40px; border-radius: 20px;
-            text-align: center; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-            transform: translateY(-50px); opacity: 0;
-            animation: modalPopUp 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards;
-        }
-        @keyframes modalPopUp {
-            from { transform: translateY(-50px) scale(0.9); opacity: 0; }
-            to { transform: translateY(0) scale(1); opacity: 1; }
-        }
-        .game-over-modal h2 { font-size: 3em; margin-bottom: 20px; color: #2c3e50; }
-        .game-over-modal button {
-            background-color: #3498db; color: white; padding: 12px 25px;
-            border: none; border-radius: 8px; font-size: 1.1em; cursor: pointer;
-            transition: all 0.3s ease; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-        .game-over-modal button:hover {
-            background-color: #2980b9; transform: translateY(-3px);
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-        }
-
-        .confetti-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; z-index: 99; }
-        .confetti { position: absolute; width: 10px; height: 10px; background-color: #f00; animation: fall 3s ease-out forwards; opacity: 0; border-radius: 50%; }
-        @keyframes fall {
-            0% { transform: translateY(-100px) rotateZ(0deg); opacity: 1; }
-            100% { transform: translateY(100vh) rotateZ(720deg); opacity: 0.8; }
-        }
-
-        /* เมนูสถิติ */
-        .menu-button {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            font-size: 1.8em;
-            cursor: pointer;
-            z-index: 10;
-            color: #1a5276;
-        }
-
-        .stats-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
+        #code-editor {
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 99;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.4s ease, visibility 0.4s ease;
+            padding: 10px;
+            background-color: var(--bg-color);
+            color: var(--primary-text);
+            border: none;
+            outline: none;
+            font-family: var(--font-family);
+            font-size: 16px;
+            line-height: 1.5;
+            resize: none;
         }
 
-        .stats-overlay.active {
-            opacity: 1;
-            visibility: visible;
+        /* ส่วนปุ่ม Run */
+        #controls {
+            padding: 10px;
+            background-color: var(--output-bg);
         }
-
-        .stats-modal {
-            background: #fff;
-            padding: 30px;
-            border-radius: 20px;
-            width: 90%;
-            max-width: 400px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-            transform: translateY(-50px);
-            opacity: 0;
-            animation: modalPopUp 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards;
-        }
-
-        .stats-modal h2 {
-            color: #1a5276;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        .stats-item {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #eee;
-        }
-
-        .stats-label {
-            font-weight: bold;
-            color: #2c3e50;
-        }
-
-        .stats-value {
-            font-weight: bold;
-            color: #4a69bd;
-        }
-
-        .close-stats {
-            background-color: #e74c3c;
+        #run-button {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--success-color);
             color: white;
             border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
-            margin-top: 20px;
+            border-radius: 5px;
+            font-size: 1.2em;
             cursor: pointer;
             font-weight: bold;
-            transition: all 0.3s ease;
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
         }
 
-        .close-stats:hover {
-            background-color: #c0392b;
-            transform: translateY(-2px);
+        /* ส่วน Output Chat */
+        #output-chat {
+            height: 200px; /* ความสูงเริ่มต้นของหน้าต่าง output */
+            background-color: var(--output-bg);
+            padding: 10px;
+            overflow-y: auto;
+            border-top: 1px solid #444;
+            font-family: var(--font-family);
+            font-size: 0.9em;
         }
-
-        @media (max-width: 500px) {
-            .container { padding: 25px 30px; width: 95%; }
-            h1 { font-size: 2.5em; }
-            .game-board {
-                grid-template-columns: repeat(3, 90px);
-                grid-template-rows: repeat(3, 90px);
-                width: 290px;
-            }
-            .cell { width: 90px; height: 90px; font-size: 4em; }
-            .reset-button { padding: 12px 25px; font-size: 1.1em; }
-            .game-over-modal h2 { font-size: 2.5em; }
+        .output-line {
+            padding: 4px 0;
+            white-space: pre-wrap;
+            word-break: break-all;
         }
+        .output-line.error { color: var(--error-color); }
+        .output-line.success { color: var(--success-color); }
+        .output-line.info { color: var(--secondary-text); }
+        .output-line.print { color: #87ceeb; /* SkyBlue */ }
     </style>
 </head>
 <body>
-    <div class="menu-button" id="menuButton">☰</div>
-    
-    <div class="container">
-        <h1>เกม XO สุดยอด!</h1>
-        <div class="game-info" id="gameInfo"></div>
-        <div class="game-board" id="gameBoard">
-            <div class="cell" data-index="0"></div>
-            <div class="cell" data-index="1"></div>
-            <div class="cell" data-index="2"></div>
-            <div class="cell" data-index="3"></div>
-            <div class="cell" data-index="4"></div>
-            <div class="cell" data-index="5"></div>
-            <div class="cell" data-index="6"></div>
-            <div class="cell" data-index="7"></div>
-            <div class="cell" data-index="8"></div>
-            <div class="winning-line" id="winningLine"></div>
-        </div>
-        <button class="reset-button" id="resetButton">เริ่มเกมใหม่</button>
-    </div>
 
-    <!-- เมนูสถิติ -->
-    <div class="stats-overlay" id="statsOverlay">
-        <div class="stats-modal">
-            <h2>สถิติเกม XO</h2>
-            <div class="stats-item">
-                <span class="stats-label">ผู้เล่นชนะ:</span>
-                <span class="stats-value" id="globalPlayerWins">0</span>
-            </div>
-            <div class="stats-item">
-                <span class="stats-label">บอทชนะ:</span>
-                <span class="stats-value" id="globalBotWins">0</span>
-            </div>
-            <div class="stats-item">
-                <span class="stats-label">เกมเสมอ:</span>
-                <span class="stats-value" id="globalDraws">0</span>
-            </div>
-            <button class="close-stats" id="closeStats">ปิด</button>
+    <div id="app-container">
+        <div id="ai-tutor">
+            <span class="title">💡 AI Tutor:</span>
+            <span id="ai-tip">กำลังโหลดคำแนะนำ...</span>
+        </div>
+
+        <div id="script-manager">
+            <div id="script-tabs"></div>
+            <button id="add-script-btn">+</button>
+        </div>
+        
+        <div id="editor-container">
+            <textarea id="code-editor" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
+        </div>
+
+        <div id="controls">
+            <button id="run-button">▶️ Run</button>
+        </div>
+
+        <div id="output-chat">
+            <div class="output-line info">-- Output จะแสดงที่นี่ --</div>
         </div>
     </div>
 
-    <div class="game-over-overlay" id="gameOverOverlay">
-        <div class="game-over-modal">
-            <h2 id="gameOverMessage"></h2>
-            <button id="playAgainButton">เล่นอีกครั้ง!</button>
-        </div>
-    </div>
-
-    <div class="confetti-container" id="confettiContainer"></div>
+    <script src="https://unpkg.com/fengari-web@0.1.4/dist/fengari-web.js"></script>
 
     <script>
-        // กำหนดค่า Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyDZx3v3J5Z5X5X5X5X5X5X5X5X5X5X5X5X",
-            authDomain: "xo-game-stats.firebaseapp.com",
-            databaseURL: "https://xo-game-stats-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "xo-game-stats",
-            storageBucket: "xo-game-stats.appspot.com",
-            messagingSenderId: "123456789012",
-            appId: "1:123456789012:web:5X5X5X5X5X5X5X5X5X5X5X"
-        };
+        // JavaScript: ส่วนควบคุมการทำงานทั้งหมด
+        document.addEventListener('DOMContentLoaded', () => {
 
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
+            // --- DOM Elements ---
+            const aiTipElement = document.getElementById('ai-tip');
+            const codeEditor = document.getElementById('code-editor');
+            const runButton = document.getElementById('run-button');
+            const outputChat = document.getElementById('output-chat');
+            const scriptTabsContainer = document.getElementById('script-tabs');
+            const addScriptButton = document.getElementById('add-script-btn');
 
-        const cells = document.querySelectorAll('.cell');
-        const gameBoard = document.getElementById('gameBoard');
-        const gameInfo = document.getElementById('gameInfo');
-        const resetButton = document.getElementById('resetButton');
-        const gameOverOverlay = document.getElementById('gameOverOverlay');
-        const gameOverMessage = document.getElementById('gameOverMessage');
-        const playAgainButton = document.getElementById('playAgainButton');
-        const confettiContainer = document.getElementById('confettiContainer');
-        const winningLine = document.getElementById('winningLine');
-        
-        // องค์ประกอบเมนูสถิติ
-        const menuButton = document.getElementById('menuButton');
-        const statsOverlay = document.getElementById('statsOverlay');
-        const closeStats = document.getElementById('closeStats');
-        const globalPlayerWins = document.getElementById('globalPlayerWins');
-        const globalBotWins = document.getElementById('globalBotWins');
-        const globalDraws = document.getElementById('globalDraws');
+            // --- State Management ---
+            let scripts = [
+                { name: 'Script', code: '-- เขียนโค้ด Lua ที่นี่\nprint("สวัสดี, โลก!")\n\n-- ลองสร้าง Part ใน Workspace จำลอง\nlocal myPart = game.Workspace:Create("Part")\nmyPart.Name = "MyCoolPart"\nmyPart.Position = {x=10, y=5, z=0}' },
+                { name: 'LocalScript', code: '-- LocalScript สามารถอ่านค่าจาก Workspace ได้\n\nlocal coolPart = game.Workspace:FindFirstChild("MyCoolPart")\n\nif coolPart then\n  print("เจอ Part ที่ชื่อว่า: " .. coolPart.Name)\n  print("ตำแหน่งของ Part คือ x=" .. coolPart.Position.x)\nelse\n  print("ไม่เจอ Part ที่ชื่อ MyCoolPart!")\nend' }
+            ];
+            let activeScriptIndex = 0;
 
-        const winningConditions = [
-            [0, 1, 2], [3, 4, 5], [6, 7, 8],
-            [0, 3, 6], [1, 4, 7], [2, 5, 8],
-            [0, 4, 8], [2, 4, 6]
-        ];
+            // --- AI Tutor Simulation ---
+            const aiTips = [
+                "ใน Lua, 'print()' ใช้สำหรับแสดงข้อความใน Output",
+                "ตัวแปร local จะใช้งานได้แค่ในสคริปต์ที่ประกาศมันเท่านั้น",
+                "ใช้ '--' เพื่อเขียนคอมเมนต์ โค้ดที่อยู่หลังเครื่องหมายนี้จะไม่ถูกรัน",
+                "Roblox มี 'game' เป็นจุดเริ่มต้นในการเข้าถึงทุกอย่างในเกม",
+                "Workspace คือที่ที่เก็บ Object ทั้งหมดที่มองเห็นได้ในเกม",
+                "คุณสามารถสร้าง Object ใหม่ด้วย :Create(\"ClassName\")",
+                "ใช้ :FindFirstChild() เพื่อค้นหา Object โดยไม่ทำให้เกิด error ถ้าไม่เจอ"
+            ];
+            let currentTipIndex = 0;
+            setInterval(() => {
+                currentTipIndex = (currentTipIndex + 1) % aiTips.length;
+                aiTipElement.textContent = aiTips[currentTipIndex];
+            }, 10000); // เปลี่ยนคำแนะนำทุก 10 วินาที
 
-        let board;
-        let currentPlayer;
-        let gameActive;
-        const player = 'X';
-        const bot = 'O';
-        
-        // โหลดสถิติจาก Firebase
-        function loadGlobalStats() {
-            const statsRef = database.ref('gameStats');
-            statsRef.on('value', (snapshot) => {
-                const data = snapshot.val() || { playerWins: 0, botWins: 0, draws: 0 };
-                globalPlayerWins.textContent = data.playerWins;
-                globalBotWins.textContent = data.botWins;
-                globalDraws.textContent = data.draws;
-            });
-        }
-        
-        // อัพเดทสถิติใน Firebase
-        function updateGlobalStats(result) {
-            const statsRef = database.ref('gameStats');
-            
-            statsRef.transaction((currentStats) => {
-                if (currentStats) {
-                    if (result === 'player') currentStats.playerWins++;
-                    if (result === 'bot') currentStats.botWins++;
-                    if (result === 'draw') currentStats.draws++;
-                } else {
-                    currentStats = {
-                        playerWins: result === 'player' ? 1 : 0,
-                        botWins: result === 'bot' ? 1 : 0,
-                        draws: result === 'draw' ? 1 : 0
+            // --- UI Functions ---
+            function renderTabs() {
+                scriptTabsContainer.innerHTML = '';
+                scripts.forEach((script, index) => {
+                    const tab = document.createElement('div');
+                    tab.className = 'tab' + (index === activeScriptIndex ? ' active' : '');
+                    tab.textContent = script.name;
+                    tab.onclick = () => switchScript(index);
+                    scriptTabsContainer.appendChild(tab);
+                });
+            }
+
+            function switchScript(index) {
+                // Save current code before switching
+                scripts[activeScriptIndex].code = codeEditor.value;
+
+                activeScriptIndex = index;
+                codeEditor.value = scripts[index].code;
+                renderTabs();
+            }
+
+            function addScript() {
+                const newName = `Script${scripts.length + 1}`;
+                scripts.push({ name: newName, code: `-- นี่คือสคริปต์ใหม่: ${newName}` });
+                switchScript(scripts.length - 1);
+            }
+
+            // --- Output Functions ---
+            function clearOutput() {
+                outputChat.innerHTML = '';
+            }
+
+            function logToOutput(message, type = 'info') {
+                const line = document.createElement('div');
+                line.className = `output-line ${type}`;
+                line.textContent = message;
+                outputChat.appendChild(line);
+                outputChat.scrollTop = outputChat.scrollHeight; // Auto-scroll to bottom
+            }
+
+            // --- Core Lua Execution Logic ---
+            runButton.addEventListener('click', () => {
+                // Save the currently active script before running
+                scripts[activeScriptIndex].code = codeEditor.value;
+
+                clearOutput();
+                logToOutput("> Starting execution...", "info");
+
+                try {
+                    // 1. Initialize Lua Environment
+                    const L = fengari.lauxlib.luaL_newstate();
+                    fengari.lualib.luaL_openlibs(L);
+                    
+                    // 2. Create Mock Roblox Environment
+                    const mockGame = {
+                        Workspace: {
+                            _children: {},
+                            Create: function(className) {
+                                const newObj = {
+                                    ClassName: className,
+                                    Name: className,
+                                    Position: {x:0, y:0, z:0},
+                                    Parent: this,
+                                };
+                                this._children[className] = newObj; // Use className as a temporary unique key
+                                logToOutput(`[จำลอง] สคริปต์ได้สร้าง Object ประเภท '${className}' ขึ้นมาใน Workspace`, 'success');
+                                // We need to re-register the FindFirstChild function to capture the new object
+                                this.registerFunctions();
+                                return newObj;
+                            },
+                            FindFirstChild: function(name) {
+                                for(let key in this._children) {
+                                    if(this._children[key].Name === name) {
+                                        return this._children[key];
+                                    }
+                                }
+                                return null;
+                            },
+                            // A function to re-register JS functions into Lua context
+                            registerFunctions: function() {
+                                fengari.lua.lua_pushjs(L, this.Create.bind(this));
+                                fengari.lua.lua_setfield(L, -2, fengari.to_luastring("Create"));
+                                fengari.lua.lua_pushjs(L, this.FindFirstChild.bind(this));
+                                fengari.lua.lua_setfield(L, -2, fengari.to_luastring("FindFirstChild"));
+                            }
+                        }
                     };
-                }
-                return currentStats;
-            });
-        }
+                    
+                    // Convert JS object to Lua table and set as global 'game'
+                    fengari.lua.lua_createtable(L, 0, 1); // game table
+                    fengari.lua.lua_createtable(L, 0, 2); // Workspace table
+                    
+                    // Add children table to Workspace
+                    fengari.lua.lua_createtable(L, 0, 0);
+                    fengari.lua.lua_setfield(L, -2, fengari.to_luastring("_children"));
 
-        function initializeGame() {
-            board = ['', '', '', '', '', '', '', '', ''];
-            gameActive = true;
-            
-            // สุ่มผู้เล่นเริ่มต้น
-            currentPlayer = Math.random() < 0.5 ? player : bot;
-            
-            cells.forEach(cell => {
-                cell.textContent = '';
-                cell.classList.remove('x', 'o', 'win');
-            });
-            
-            winningLine.style.display = 'none';
-            winningLine.style.width = '0px';
+                    mockGame.Workspace.registerFunctions();
+                    
+                    fengari.lua.lua_setfield(L, -2, fengari.to_luastring("Workspace")); // Set Workspace in game
+                    fengari.lua.lua_setglobal(L, fengari.to_luastring("game"));
 
-            hideGameOverScreen();
-            clearConfetti();
-            
-            if (currentPlayer === bot) {
-                gameBoard.classList.add('locked');
-                gameInfo.textContent = `บอทกำลังเริ่ม... 🤔`;
-                setTimeout(botMove, 800);
-            } else {
-                gameBoard.classList.remove('locked');
-                gameInfo.textContent = `ตาของคุณ: ${currentPlayer}`;
-            }
-        }
-        
-        cells.forEach(cell => {
-            cell.addEventListener('click', handleCellClick);
-        });
+                    // 3. Override 'print' function
+                    fengari.lua.lua_pushjs(L, (...args) => {
+                        const message = args.map(arg => fengari.to_jsstring(arg)).join('\t');
+                        logToOutput(message, 'print');
+                        logToOutput(`[คำอธิบาย] โค้ดใช้คำสั่ง print() เพื่อแสดงข้อความ: "${message}"`, 'info');
+                    });
+                    fengari.lua.lua_setglobal(L, fengari.to_luastring("print"));
 
-        function handleCellClick(e) {
-            const clickedCell = e.target;
-            const clickedCellIndex = parseInt(clickedCell.dataset.index);
-
-            if (gameBoard.classList.contains('locked') || board[clickedCellIndex] !== '' || !gameActive) {
-                return;
-            }
-
-            makeMove(clickedCell, clickedCellIndex, currentPlayer);
-            
-            if (checkResult()) {
-                return;
-            }
-            
-            changePlayer();
-            
-            gameBoard.classList.add('locked');
-            gameInfo.textContent = `บอทกำลังคิด... 🤔`;
-
-            setTimeout(botMove, 800);
-        }
-
-        function makeMove(cellElement, index, activePlayer) {
-            board[index] = activePlayer;
-            cellElement.textContent = activePlayer;
-            cellElement.classList.add(activePlayer.toLowerCase());
-        }
-        
-        function changePlayer() {
-            currentPlayer = (currentPlayer === player) ? bot : player;
-            if(gameActive && currentPlayer === player) {
-                 gameInfo.textContent = `ตาของคุณ: ${currentPlayer}`;
-            }
-        }
-
-        function checkResult() {
-            let roundWon = false;
-            let winningCombo = [];
-            let winningConditionIndex = -1;
-            let winner = null;
-
-            for (let i = 0; i < winningConditions.length; i++) {
-                const winCondition = winningConditions[i];
-                const a = board[winCondition[0]];
-                const b = board[winCondition[1]];
-                const c = board[winCondition[2]];
-
-                if (a === '' || b === '' || c === '') continue;
-                
-                if (a === b && b === c) {
-                    roundWon = true;
-                    winner = a;
-                    winningCombo = winCondition;
-                    winningConditionIndex = i;
-                    break;
-                }
-            }
-
-            if (roundWon) {
-                gameActive = false;
-                gameBoard.classList.add('locked');
-                winningCombo.forEach(index => cells[index].classList.add('win'));
-                drawWinningLine(winningConditionIndex);
-                
-                setTimeout(() => {
-                    const message = (winner === player) ? `คุณชนะ!` : `บอทชนะ!`;
-                    gameInfo.textContent = message + ' 🎉';
-                    showGameOverScreen(message);
-                    if (winner === player) {
-                        triggerConfetti();
-                    }
-                    updateGlobalStats(winner === player ? 'player' : 'bot');
-                }, 600);
-                return true;
-            }
-
-            if (!board.includes('')) {
-                gameActive = false;
-                gameBoard.classList.add('locked');
-                gameInfo.textContent = `เสมอ! 🤝`;
-                showGameOverScreen(`เกมเสมอ!`);
-                updateGlobalStats('draw');
-                return true;
-            }
-            
-            return false;
-        }
-
-        function botMove() {
-            if (!gameActive) return;
-
-            const move = findBestMove();
-            const cellElement = cells[move];
-            makeMove(cellElement, move, bot);
-            
-            if (checkResult()) {
-                return;
-            }
-            
-            changePlayer();
-            gameBoard.classList.remove('locked');
-        }
-
-        function findBestMove() {
-            const isFirstMove = board.every(cell => cell === '');
-            if (isFirstMove) {
-                const strongFirstMoves = [0, 2, 4, 6, 8];
-                return strongFirstMoves[Math.floor(Math.random() * strongFirstMoves.length)];
-            }
-
-            function checkWinOrBlock(playerToCheck) {
-                for (let i = 0; i < winningConditions.length; i++) {
-                    const [a, b, c] = winningConditions[i];
-                    if (board[a] === playerToCheck && board[b] === playerToCheck && board[c] === '') return c;
-                    if (board[a] === playerToCheck && board[c] === playerToCheck && board[b] === '') return b;
-                    if (board[b] === playerToCheck && board[c] === playerToCheck && board[a] === '') return a;
-                }
-                return null;
-            }
-
-            let move = checkWinOrBlock(bot);
-            if (move !== null) return move;
-
-            move = checkWinOrBlock(player);
-            if (move !== null) return move;
-            
-            for (let i = 0; i < 9; i++) {
-                if (board[i] === '') {
-                    board[i] = bot;
-                    let winningOpportunities = 0;
-                    for (let j = 0; j < winningConditions.length; j++) {
-                        const [a, b, c] = winningConditions[j];
-                        const line = [board[a], board[b], board[c]];
-                        if (line.filter(p => p === bot).length === 2 && line.filter(p => p === '').length === 1) {
-                            winningOpportunities++;
+                    // 4. Execute all scripts in order
+                    let allScriptsOk = true;
+                    for (const script of scripts) {
+                        logToOutput(`--- Running ${script.name} ---`, 'info');
+                        const status = fengari.lauxlib.luaL_dostring(L, fengari.to_luastring(script.code));
+                        
+                        if (status !== fengari.lua.LUA_OK) {
+                            const errorMsg = fengari.to_jsstring(fengari.lua.lua_tostring(L, -1));
+                            const lineMatch = errorMsg.match(/\[string "..."\]:(\d+):/);
+                            const lineNumber = lineMatch ? lineMatch[1] : "ไม่ทราบ";
+                            
+                            logToOutput(`[ERROR] ในสคริปต์ '${script.name}' บรรทัดที่ ${lineNumber}:`, 'error');
+                            logToOutput(errorMsg.split(':').slice(2).join(':').trim(), 'error');
+                            
+                            allScriptsOk = false;
+                            break; // Stop execution on first error
                         }
                     }
-                    board[i] = '';
-                    if (winningOpportunities >= 2) {
-                        return i;
+
+                    if(allScriptsOk) {
+                        logToOutput("> Execution finished successfully.", "success");
                     }
+
+                } catch (e) {
+                    logToOutput("[FATAL ERROR] เกิดข้อผิดพลาดร้ายแรงกับระบบรันโค้ด:", "error");
+                    logToOutput(e.message, "error");
                 }
-            }
-            
-            for (let i = 0; i < 9; i++) {
-                if (board[i] === '') {
-                    board[i] = player;
-                     let winningOpportunities = 0;
-                    for (let j = 0; j < winningConditions.length; j++) {
-                        const [a, b, c] = winningConditions[j];
-                         const line = [board[a], board[b], board[c]];
-                        if (line.filter(p => p === player).length === 2 && line.filter(p => p === '').length === 1) {
-                            winningOpportunities++;
-                        }
-                    }
-                    board[i] = '';
-                    if (winningOpportunities >= 2) {
-                        return i;
-                    }
-                }
-            }
-            
-            if (board[4] === '') return 4;
+            });
 
-            if (board[0] === player && board[8] === '') return 8;
-            if (board[8] === player && board[0] === '') return 0;
-            if (board[2] === player && board[6] === '') return 6;
-            if (board[6] === player && board[2] === '') return 2;
+            // --- Initial Setup ---
+            aiTipElement.textContent = aiTips[0];
+            addScriptButton.onclick = addScript;
+            switchScript(0); // Load the first script initially
 
-            const emptyCorners = [0, 2, 6, 8].filter(i => board[i] === '');
-            if (emptyCorners.length > 0) return emptyCorners[0];
-
-            const emptySides = [1, 3, 5, 7].filter(i => board[i] === '');
-            if (emptySides.length > 0) return emptySides[0];
-
-            return board.findIndex(cell => cell === '');
-        }
-        
-        function drawWinningLine(index) {
-            const line = winningLine;
-            line.style.display = 'block';
-            const lineLength = 330;
-            const diagonalLength = 420;
-            switch(index) {
-                case 0: line.style.width = `0px`; line.style.transform = 'translate(10px, 55px) rotate(0deg)'; setTimeout(() => line.style.width = `${lineLength}px`, 50); break;
-                case 1: line.style.width = `0px`; line.style.transform = 'translate(10px, 175px) rotate(0deg)'; setTimeout(() => line.style.width = `${lineLength}px`, 50); break;
-                case 2: line.style.width = `0px`; line.style.transform = 'translate(10px, 295px) rotate(0deg)'; setTimeout(() => line.style.width = `${lineLength}px`, 50); break;
-                case 3: line.style.width = `0px`; line.style.transform = 'translate(-110px, 175px) rotate(90deg)'; setTimeout(() => line.style.width = `${lineLength}px`, 50); break;
-                case 4: line.style.width = `0px`; line.style.transform = 'translate(10px, 175px) rotate(90deg)'; setTimeout(() => line.style.width = `${lineLength}px`, 50); break;
-                case 5: line.style.width = `0px`; line.style.transform = 'translate(130px, 175px) rotate(90deg)'; setTimeout(() => line.style.width = `${lineLength}px`, 50); break;
-                case 6: line.style.width = `0px`; line.style.transform = 'translate(-25px, 175px) rotate(45deg)'; setTimeout(() => line.style.width = `${diagonalLength}px`, 50); break;
-                case 7: line.style.width = `0px`; line.style.transform = 'translate(-25px, 175px) rotate(-45deg)'; setTimeout(() => line.style.width = `${diagonalLength}px`, 50); break;
-            }
-        }
-
-        function showGameOverScreen(message) {
-            gameOverMessage.textContent = message;
-            gameOverOverlay.classList.add('active');
-        }
-
-        function hideGameOverScreen() {
-            gameOverOverlay.classList.remove('active');
-        }
-
-        function triggerConfetti() {
-            const colors = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#03a9f4', '#00bcd4', '#009688', '#4CAF50', '#8BC34A', '#CDDC39', '#FFEB3B', '#FFC107', '#FF9800', '#FF5722'];
-            for (let i = 0; i < 50; i++) {
-                const confetti = document.createElement('div');
-                confetti.classList.add('confetti');
-                confetti.style.left = `${Math.random() * 100}vw`;
-                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-                confetti.style.animationDelay = `${Math.random() * 0.5}s`;
-                confettiContainer.appendChild(confetti);
-                confetti.addEventListener('animationend', () => confetti.remove());
-            }
-        }
-
-        function clearConfetti() {
-            confettiContainer.innerHTML = '';
-        }
-
-        // เปิด/ปิดเมนูสถิติ
-        menuButton.addEventListener('click', () => {
-            statsOverlay.classList.add('active');
         });
-
-        closeStats.addEventListener('click', () => {
-            statsOverlay.classList.remove('active');
-        });
-
-        resetButton.addEventListener('click', initializeGame);
-        playAgainButton.addEventListener('click', initializeGame);
-
-        // โหลดสถิติเมื่อเริ่มเกม
-        loadGlobalStats();
-        initializeGame();
-
     </script>
 </body>
 </html>
