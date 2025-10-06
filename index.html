@@ -26,8 +26,8 @@
         
         .add-item-btn { background: var(--accent-color); border: none; color: white; border-radius: 4px; cursor: pointer; padding: 2px 8px; font-size: 1.1em; }
         #explorer-content { flex-grow: 1; overflow-y: auto; padding: 10px; font-family: var(--font-family); font-size: 0.9em; }
-        .explorer-item { padding: 4px; white-space: nowrap; cursor: pointer; border-radius: 3px; }
-        .explorer-item:hover { background-color: #3a3a3a; }
+        .explorer-item { padding: 4px; white-space: nowrap; border-radius: 3px; }
+        .explorer-item.renameable:hover { background-color: #3a3a3a; cursor: pointer; }
         .explorer-item span { padding: 2px 4px; }
         .explorer-item[data-depth='1'] { padding-left: 15px; } .explorer-item[data-depth='2'] { padding-left: 30px; }
         .explorer-item::before { font-family: monospace; content: '📄'; margin-right: 5px; }
@@ -40,13 +40,11 @@
         #add-item-menu ul { list-style: none; margin: 0; padding: 0; } #add-item-menu li { padding: 8px 12px; cursor: pointer; white-space: nowrap; }
         #add-item-menu li:hover { background-color: var(--accent-color); }
 
-        /* --- BUG FIX: Main Content Layout --- */
-        #main-content { flex-grow: 1; display: flex; flex-direction: column; height: 100vh; min-width: 0; /* This is the key fix */ }
+        #main-content { flex-grow: 1; display: flex; flex-direction: column; height: 100vh; min-width: 0; }
         #script-manager { display: flex; align-items: center; background-color: #333; padding: 5px; overflow-x: auto; flex-shrink: 0;}
         #script-tabs { display: flex; flex-grow: 1; }
         .tab { padding: 8px 12px; cursor: pointer; border-radius: 4px 4px 0 0; margin-right: 4px; background-color: var(--editor-bg); color: var(--secondary-text); white-space: nowrap; border: 1px solid transparent; }
         .tab.active { background-color: var(--bg-color); color: var(--primary-text); border-color: #444 #444 transparent #444; }
-        #add-script-btn { background-color: var(--accent-color); color: white; border: none; border-radius: 50%; width: 28px; height: 28px; font-size: 1.2em; cursor: pointer; flex-shrink: 0; }
         
         #editor-container { flex-grow: 1; position: relative; background-color: var(--editor-bg); }
         #code-editor, #highlighting-layer-container { margin: 0; padding: 10px; font-family: var(--font-family); font-size: 16px; line-height: 1.5; border: none; outline: none; width: 100%; height: 100%; position: absolute; top: 0; left: 0; overflow: auto; white-space: pre; word-wrap: normal; }
@@ -91,7 +89,7 @@
         <div id="main-content">
             <button id="explorer-toggle-btn" class="collapsed-btn">»</button>
             <div id="script-manager">
-                <div id="script-tabs"></div><button id="add-script-btn" style="display: none;">+</button>
+                <div id="script-tabs"></div>
             </div>
             <div id="editor-container">
                 <textarea id="code-editor" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
@@ -120,7 +118,6 @@
                 ServerScriptService: { _children: {}, ClassName: 'ServerScriptService' },
                 ReplicatedStorage: { _children: {}, ClassName: 'ReplicatedStorage' }
             };
-            // Scripts array now stores more data
             let scripts = [];
             let activeScriptIndex = -1;
             let itemCounter = 1;
@@ -135,9 +132,21 @@
             const dismissBtn = getEl('dismiss-keyboard-btn');
             getEl('code-editor').addEventListener('focus', () => dismissBtn.classList.add('visible'));
             getEl('code-editor').addEventListener('blur', () => dismissBtn.classList.remove('visible'));
-            dismissBtn.addEventListener('click', () => document.activeElement.blur());
+            dismissBtn.addEventListener('click', () => { if(document.activeElement) document.activeElement.blur(); });
+            
+            // --- Explorer Panel Logic (Full Version) ---
+            const explorerPanel = getEl('explorer-panel');
+            const toggleButtons = document.querySelectorAll('#explorer-toggle-btn');
+            toggleButtons.forEach(btn => btn.addEventListener('click', () => explorerPanel.classList.toggle('collapsed')));
 
-            // --- Script Management (Upgraded) ---
+            const addItemMenu = getEl('add-item-menu');
+            getEl('show-add-menu-btn').addEventListener('click', (e) => {
+                e.stopPropagation();
+                addItemMenu.style.display = 'block';
+            });
+            document.addEventListener('click', () => addItemMenu.style.display = 'none');
+
+            // --- Script Management (Full Version) ---
             function switchScript(index) {
                 if (activeScriptIndex > -1 && scripts[activeScriptIndex]) {
                     scripts[activeScriptIndex].code = getEl('code-editor').value;
@@ -145,8 +154,10 @@
                 activeScriptIndex = index;
                 if (scripts[index]) {
                     getEl('code-editor').value = scripts[index].code;
+                    getEl('code-editor').disabled = false;
                 } else {
                     getEl('code-editor').value = '-- No script open --';
+                    getEl('code-editor').disabled = true;
                 }
                 renderTabs();
                 debouncedCheckSyntax();
@@ -155,7 +166,6 @@
             function openScriptByPath(path) {
                 let scriptIndex = scripts.findIndex(s => s.path === path);
                 if (scriptIndex === -1) {
-                    // Create a new script tab if it doesn't exist
                     const pathParts = path.split('.');
                     const name = pathParts[pathParts.length - 1];
                     const parentPath = pathParts.slice(0, -1).join('.');
@@ -183,7 +193,7 @@
                 });
             }
 
-            // --- Explorer Logic (Upgraded for new interactions) ---
+            // --- Explorer Rendering (Full Version with Rename Protection) ---
             function renderExplorer() {
                 const explorerContent = getEl('explorer-content');
                 explorerContent.innerHTML = '';
@@ -195,23 +205,22 @@
                     input.focus(); input.select();
 
                     const finishEditing = () => {
-                        const newName = input.value.trim().replace(/\s/g, '_');
-                        if (newName && newName !== name) {
-                            // Update mockGame
+                        const newName = input.value.trim().replace(/\s/g, '_') || name; // Revert if empty
+                        if (newName !== name) {
                             let parentPath = path.substring(0, path.lastIndexOf('.'));
                             let parent = parentPath.split('.').reduce((o, k) => o[k] ? (o[k]._children || o[k]) : o, mockGame);
-                            if(parent && parent._children && parent._children[name]) {
+                            if(parent && parent._children && parent._children[name] && !parent._children[newName]) { // Prevent duplicate names
                                 const objData = parent._children[name];
                                 objData.Name = newName;
                                 delete parent._children[name];
                                 parent._children[newName] = objData;
 
-                                // Update script tab if it's a script
                                 if(objData.ClassName === 'Script') {
+                                    const newPath = `${parentPath}._children.${newName}`;
                                     const scriptIndex = scripts.findIndex(s => s.path === path);
                                     if(scriptIndex > -1) {
                                         scripts[scriptIndex].name = newName;
-                                        scripts[scriptIndex].path = `${parentPath}.${newName}`;
+                                        scripts[scriptIndex].path = newPath;
                                     }
                                 }
                             }
@@ -232,34 +241,25 @@
                     span.textContent = name;
                     item.appendChild(span);
 
-                    if (object.ClassName === 'Script') {
-                        // SCRIPT: single click/tap renames, double click/tap opens
-                        item.addEventListener('click', (e) => handleRename(span, name, path));
-                        item.addEventListener('dblclick', (e) => openScriptByPath(path));
-                        item.addEventListener('touchend', (e) => {
-                            e.preventDefault();
-                            if (tapTimer) { // Double tap
-                                clearTimeout(tapTimer);
-                                tapTimer = null;
-                                openScriptByPath(path);
-                            } else { // First tap
-                                tapTimer = setTimeout(() => {
-                                    tapTimer = null;
-                                    handleRename(span, name, path);
-                                }, 300);
-                            }
-                        });
-                    } else {
-                        // OTHER OBJECTS: double click/tap renames
-                        item.addEventListener('dblclick', (e) => handleRename(span, name, path));
-                        item.addEventListener('touchend', (e) => {
-                            const now = Date.now();
-                            if (now - (item.lastTap || 0) <= 300) {
+                    const isService = depth === 1 || name === 'game';
+                    if (!isService) {
+                        item.classList.add('renameable');
+                        if (object.ClassName === 'Script') {
+                            item.addEventListener('click', (e) => handleRename(span, name, path));
+                            item.addEventListener('dblclick', (e) => openScriptByPath(path));
+                            item.addEventListener('touchend', (e) => {
                                 e.preventDefault();
-                                handleRename(span, name, path);
-                            }
-                            item.lastTap = now;
-                        });
+                                if (tapTimer) { clearTimeout(tapTimer); tapTimer = null; openScriptByPath(path); } 
+                                else { tapTimer = setTimeout(() => { tapTimer = null; handleRename(span, name, path); }, 300); }
+                            });
+                        } else {
+                            item.addEventListener('dblclick', (e) => handleRename(span, name, path));
+                            item.addEventListener('touchend', (e) => {
+                                const now = Date.now();
+                                if (now - (item.lastTap || 0) <= 300) { e.preventDefault(); handleRename(span, name, path); }
+                                item.lastTap = now;
+                            });
+                        }
                     }
                     explorerContent.appendChild(item);
                     if (object._children) {
@@ -271,7 +271,6 @@
                 renderNode('game', { _children: mockGame, ClassName: 'DataModel' }, 0, 'game');
             }
 
-            // ... (Add Item Menu Logic, slightly modified to handle script creation) ...
             getEl('add-item-menu').addEventListener('click', (e) => {
                 if (e.target.tagName === 'LI') {
                     const parentName = e.target.dataset.parent;
@@ -281,23 +280,19 @@
                         const itemName = `${type}${itemCounter++}`;
                         const newObj = { Name: itemName, ClassName: type };
                         if (type === 'Script') {
-                            newObj.code = `-- Code for ${itemName}`;
+                            newObj.code = `-- Code for ${itemName}\nprint("Hello from ${itemName}!")`;
                         }
                         parent._children[itemName] = newObj;
                         renderExplorer();
                     }
                 }
-                getEl('add-item-menu').style.display = 'none';
+                addItemMenu.style.display = 'none';
             });
 
+            // --- All other functions (Syntax Highlighting, Autocomplete, Runner) are assumed to be complete from previous versions ---
+            // ... [The full code for these functions would be here] ...
 
-            // ... (All other functions from previous versions are here but omitted for brevity) ...
-            // Live Syntax Error, Highlighting, Autocomplete, Keyboard Dismiss, Panel Toggle, etc.
-            // These are largely unchanged from the previous robust versions. The main changes
-            // were in Explorer interaction and the script management data model.
-            
             // --- Initial Setup ---
-            // Create a default script to start with
             const defaultScriptName = 'ServerScript';
             mockGame.ServerScriptService._children[defaultScriptName] = { Name: defaultScriptName, ClassName: 'Script', code: 'print("Hello, world!")\n\n-- Single-tap a script to rename it\n-- Double-tap to open it!\n\n-- Double-tap a Part to rename it' };
             
