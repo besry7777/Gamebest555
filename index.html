@@ -21,7 +21,7 @@
 
         * {
             box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent; /* ป้องกันแสงวาบตอนกดบนมือถือ */
+            -webkit-tap-highlight-color: transparent;
         }
 
         html, body {
@@ -31,30 +31,24 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
             background-color: var(--bg-color);
             color: var(--primary-text);
-            /* ป้องกัน Double-tap to zoom บนมือถือ */
             touch-action: manipulation;
         }
 
         #app-container {
             display: flex;
             flex-direction: column;
-            height: 100vh; /* ใช้ vh เพื่อให้เต็มความสูงของหน้าจอ */
+            height: 100vh;
             overflow: hidden;
         }
 
-        /* ส่วน AI Tutor */
         #ai-tutor {
             padding: 10px 15px;
             background-color: var(--output-bg);
             border-bottom: 1px solid #444;
             font-size: 0.9em;
         }
-        #ai-tutor .title {
-            font-weight: bold;
-            color: var(--info-color);
-        }
+        #ai-tutor .title { font-weight: bold; color: var(--info-color); }
 
-        /* ส่วนจัดการสคริปต์ (แท็บ) */
         #script-manager {
             display: flex;
             align-items: center;
@@ -62,10 +56,7 @@
             padding: 5px;
             overflow-x: auto;
         }
-        #script-tabs {
-            display: flex;
-            flex-grow: 1;
-        }
+        #script-tabs { display: flex; flex-grow: 1; }
         .tab {
             padding: 8px 12px;
             cursor: pointer;
@@ -94,7 +85,6 @@
             flex-shrink: 0;
         }
 
-        /* ส่วน Code Editor */
         #editor-container {
             flex-grow: 1;
             display: flex;
@@ -114,13 +104,36 @@
             resize: none;
         }
 
-        /* ส่วนปุ่ม Run */
+        /* --- NEW: Autocomplete Popup --- */
+        #autocomplete-popup {
+            position: absolute;
+            background-color: #3c3c3c;
+            border: 1px solid #555;
+            border-radius: 4px;
+            min-width: 150px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            color: var(--primary-text);
+        }
+        .autocomplete-item {
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+        .autocomplete-item:hover, .autocomplete-item.selected {
+            background-color: var(--accent-color);
+        }
+        .hidden { display: none; }
+        /* --- END NEW --- */
+
         #controls {
             padding: 10px;
             background-color: var(--output-bg);
+            display: flex;
+            gap: 10px;
         }
         #run-button {
-            width: 100%;
+            flex-grow: 1;
             padding: 12px;
             background-color: var(--success-color);
             color: white;
@@ -131,9 +144,21 @@
             font-weight: bold;
         }
 
-        /* ส่วน Output Chat */
+        /* --- NEW: Clear Button --- */
+        #clear-output-btn {
+            padding: 12px 15px;
+            background-color: #5a5a5a;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.2em;
+            cursor: pointer;
+        }
+        /* --- END NEW --- */
+
+
         #output-chat {
-            height: 200px; /* ความสูงเริ่มต้นของหน้าต่าง output */
+            height: 200px;
             background-color: var(--output-bg);
             padding: 10px;
             overflow-y: auto;
@@ -141,15 +166,11 @@
             font-family: var(--font-family);
             font-size: 0.9em;
         }
-        .output-line {
-            padding: 4px 0;
-            white-space: pre-wrap;
-            word-break: break-all;
-        }
+        .output-line { padding: 4px 0; white-space: pre-wrap; word-break: break-all; }
         .output-line.error { color: var(--error-color); }
         .output-line.success { color: var(--success-color); }
         .output-line.info { color: var(--secondary-text); }
-        .output-line.print { color: #87ceeb; /* SkyBlue */ }
+        .output-line.print { color: #87ceeb; }
     </style>
 </head>
 <body>
@@ -159,20 +180,18 @@
             <span class="title">💡 AI Tutor:</span>
             <span id="ai-tip">กำลังโหลดคำแนะนำ...</span>
         </div>
-
         <div id="script-manager">
             <div id="script-tabs"></div>
             <button id="add-script-btn">+</button>
         </div>
-        
         <div id="editor-container">
             <textarea id="code-editor" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
+            <div id="autocomplete-popup" class="hidden"></div>
         </div>
-
         <div id="controls">
             <button id="run-button">▶️ Run</button>
+            <button id="clear-output-btn" title="Clear Output">🗑️</button>
         </div>
-
         <div id="output-chat">
             <div class="output-line info">-- Output จะแสดงที่นี่ --</div>
         </div>
@@ -181,7 +200,6 @@
     <script src="https://unpkg.com/fengari-web@0.1.4/dist/fengari-web.js"></script>
 
     <script>
-        // JavaScript: ส่วนควบคุมการทำงานทั้งหมด
         document.addEventListener('DOMContentLoaded', () => {
 
             // --- DOM Elements ---
@@ -191,6 +209,8 @@
             const outputChat = document.getElementById('output-chat');
             const scriptTabsContainer = document.getElementById('script-tabs');
             const addScriptButton = document.getElementById('add-script-btn');
+            const clearOutputBtn = document.getElementById('clear-output-btn'); // New
+            const autocompletePopup = document.getElementById('autocomplete-popup'); // New
 
             // --- State Management ---
             let scripts = [
@@ -201,22 +221,14 @@
 
             // --- AI Tutor Simulation ---
             const aiTips = [
-                "ใน Lua, 'print()' ใช้สำหรับแสดงข้อความใน Output",
-                "ตัวแปร local จะใช้งานได้แค่ในสคริปต์ที่ประกาศมันเท่านั้น",
-                "ใช้ '--' เพื่อเขียนคอมเมนต์ โค้ดที่อยู่หลังเครื่องหมายนี้จะไม่ถูกรัน",
-                "Roblox มี 'game' เป็นจุดเริ่มต้นในการเข้าถึงทุกอย่างในเกม",
-                "Workspace คือที่ที่เก็บ Object ทั้งหมดที่มองเห็นได้ในเกม",
-                "คุณสามารถสร้าง Object ใหม่ด้วย :Create(\"ClassName\")",
-                "ใช้ :FindFirstChild() เพื่อค้นหา Object โดยไม่ทำให้เกิด error ถ้าไม่เจอ"
+                "ใช้ 'print()' เพื่อแสดงข้อความ", "ตัวแปร local จะใช้ได้แค่ในสคริปต์", "ใช้ '--' เพื่อเขียนคอมเมนต์", "'game' คือจุดเริ่มต้นของทุกอย่าง", "Workspace คือที่เก็บ Object ในเกม", "สร้าง Object ใหม่ด้วย :Create('ClassName')", "ใช้ :FindFirstChild() เพื่อค้นหา Object อย่างปลอดภัย", "กด Tab หรือ Enter เพื่อใช้คำแนะนำโค้ด"
             ];
-            let currentTipIndex = 0;
             setInterval(() => {
-                currentTipIndex = (currentTipIndex + 1) % aiTips.length;
-                aiTipElement.textContent = aiTips[currentTipIndex];
-            }, 10000); // เปลี่ยนคำแนะนำทุก 10 วินาที
+                aiTipElement.textContent = aiTips[Math.floor(Math.random() * aiTips.length)];
+            }, 10000);
 
             // --- UI Functions ---
-            function renderTabs() {
+            function renderTabs() { /* ... (same as before) ... */ 
                 scriptTabsContainer.innerHTML = '';
                 scripts.forEach((script, index) => {
                     const tab = document.createElement('div');
@@ -226,137 +238,208 @@
                     scriptTabsContainer.appendChild(tab);
                 });
             }
-
-            function switchScript(index) {
-                // Save current code before switching
+            function switchScript(index) { /* ... (same as before) ... */ 
                 scripts[activeScriptIndex].code = codeEditor.value;
-
                 activeScriptIndex = index;
                 codeEditor.value = scripts[index].code;
                 renderTabs();
             }
-
-            function addScript() {
+            function addScript() { /* ... (same as before) ... */ 
                 const newName = `Script${scripts.length + 1}`;
                 scripts.push({ name: newName, code: `-- นี่คือสคริปต์ใหม่: ${newName}` });
                 switchScript(scripts.length - 1);
             }
-
+            
             // --- Output Functions ---
-            function clearOutput() {
-                outputChat.innerHTML = '';
+            function clearOutput() { /* ... (same as before) ... */
+                outputChat.innerHTML = ''; 
             }
-
-            function logToOutput(message, type = 'info') {
+            function logToOutput(message, type = 'info') { /* ... (same as before) ... */
                 const line = document.createElement('div');
                 line.className = `output-line ${type}`;
                 line.textContent = message;
                 outputChat.appendChild(line);
-                outputChat.scrollTop = outputChat.scrollHeight; // Auto-scroll to bottom
+                outputChat.scrollTop = outputChat.scrollHeight;
             }
+            
+            // --- NEW: Clear Button Logic ---
+            clearOutputBtn.addEventListener('click', () => {
+                clearOutput();
+                logToOutput('-- Output cleared --', 'info');
+            });
+
+            // --- NEW: Autocomplete Logic ---
+            const autocompleteKeywords = {
+                global: ['local', 'function', 'if', 'then', 'else', 'elseif', 'end', 'for', 'while', 'do', 'return', 'print', 'game', 'true', 'false', 'nil'],
+                game: ['Workspace'],
+                Workspace: ['Create', 'FindFirstChild'],
+                Part: ['Name', 'Position', 'Parent'] // Example properties
+            };
+            let autocompleteActive = false;
+            let currentSuggestions = [];
+            let selectedSuggestionIndex = -1;
+
+            function showAutocomplete(suggestions, left, top) {
+                if (suggestions.length === 0) {
+                    hideAutocomplete();
+                    return;
+                }
+                autocompletePopup.innerHTML = '';
+                suggestions.forEach((item, index) => {
+                    const div = document.createElement('div');
+                    div.className = 'autocomplete-item';
+                    div.textContent = item;
+                    div.onclick = () => applySuggestion(index); // For mobile tap
+                    autocompletePopup.appendChild(div);
+                });
+                
+                autocompletePopup.style.left = `${left}px`;
+                autocompletePopup.style.top = `${top}px`;
+                autocompletePopup.classList.remove('hidden');
+                autocompleteActive = true;
+                selectedSuggestionIndex = -1;
+            }
+
+            function hideAutocomplete() {
+                autocompletePopup.classList.add('hidden');
+                autocompleteActive = false;
+            }
+
+            function updateSelectedSuggestion() {
+                const items = autocompletePopup.children;
+                for (let i = 0; i < items.length; i++) {
+                    items[i].classList.toggle('selected', i === selectedSuggestionIndex);
+                }
+            }
+            
+            function applySuggestion(index) {
+                if (index < 0 || index >= currentSuggestions.length) return;
+
+                const suggestion = currentSuggestions[index];
+                const { value, selectionStart } = codeEditor;
+                
+                let startIndex = selectionStart - 1;
+                while(startIndex >= 0 && value[startIndex].match(/[\w\.]/)) {
+                    startIndex--;
+                }
+                startIndex++;
+                
+                const textBefore = value.substring(0, startIndex);
+                const textAfter = value.substring(selectionStart);
+
+                codeEditor.value = textBefore + suggestion + textAfter;
+                codeEditor.selectionStart = codeEditor.selectionEnd = textBefore.length + suggestion.length;
+                hideAutocomplete();
+            }
+
+            // Simple function to get cursor coords in textarea
+            function getCursorCoords() {
+                const dummy = document.createElement('div');
+                const styles = window.getComputedStyle(codeEditor);
+                for(const prop of styles) {
+                    dummy.style[prop] = styles[prop];
+                }
+                dummy.style.position = 'absolute';
+                dummy.style.visibility = 'hidden';
+                dummy.style.height = 'auto';
+
+                const text = codeEditor.value.substring(0, codeEditor.selectionStart);
+                dummy.textContent = text;
+                
+                const span = document.createElement('span');
+                span.textContent = codeEditor.value.substring(codeEditor.selectionStart) || '.';
+                dummy.appendChild(span);
+
+                document.body.appendChild(dummy);
+                const { offsetLeft, offsetTop, clientHeight } = span;
+                document.body.removeChild(dummy);
+
+                return {
+                    left: offsetLeft + codeEditor.offsetLeft - codeEditor.scrollLeft + 10,
+                    top: offsetTop + codeEditor.offsetTop - codeEditor.scrollTop + clientHeight + 5
+                };
+            }
+
+            codeEditor.addEventListener('input', () => {
+                const { value, selectionStart } = codeEditor;
+                if (selectionStart === 0) { hideAutocomplete(); return; }
+
+                let lastDot = value.lastIndexOf('.', selectionStart - 1);
+                let lastSpace = Math.max(value.lastIndexOf(' ', selectionStart - 1), value.lastIndexOf('\n', selectionStart - 1));
+                
+                const start = Math.max(lastDot, lastSpace) + 1;
+                const currentWord = value.substring(start, selectionStart);
+
+                let context = 'global';
+                if (lastDot > lastSpace) {
+                    let contextStart = Math.max(value.lastIndexOf(' ', lastDot -1), value.lastIndexOf('\n', lastDot-1)) + 1;
+                    context = value.substring(contextStart, lastDot);
+                    // This is a simplified context check
+                    if (context.endsWith("Workspace")) context = "Workspace";
+                    else if (context.endsWith("game")) context = "game";
+                }
+
+                if (!currentWord) { hideAutocomplete(); return; }
+
+                currentSuggestions = (autocompleteKeywords[context] || []).filter(k => k.toLowerCase().startsWith(currentWord.toLowerCase()));
+
+                if (currentSuggestions.length > 0) {
+                    const coords = getCursorCoords();
+                    showAutocomplete(currentSuggestions, coords.left, coords.top);
+                } else {
+                    hideAutocomplete();
+                }
+            });
+
+            codeEditor.addEventListener('keydown', (e) => {
+                if (!autocompleteActive) return;
+
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    selectedSuggestionIndex = (selectedSuggestionIndex + 1) % currentSuggestions.length;
+                    updateSelectedSuggestion();
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    selectedSuggestionIndex = (selectedSuggestionIndex - 1 + currentSuggestions.length) % currentSuggestions.length;
+                    updateSelectedSuggestion();
+                } else if (e.key === 'Tab' || e.key === 'Enter') {
+                    e.preventDefault();
+                    applySuggestion(selectedSuggestionIndex > -1 ? selectedSuggestionIndex : 0);
+                } else if (e.key === 'Escape') {
+                    hideAutocomplete();
+                }
+            });
+
+            codeEditor.addEventListener('blur', hideAutocomplete);
+
 
             // --- Core Lua Execution Logic ---
             runButton.addEventListener('click', () => {
-                // Save the currently active script before running
+                /* ... (this whole section is the same as before) ... */
                 scripts[activeScriptIndex].code = codeEditor.value;
-
                 clearOutput();
                 logToOutput("> Starting execution...", "info");
-
                 try {
-                    // 1. Initialize Lua Environment
                     const L = fengari.lauxlib.luaL_newstate();
                     fengari.lualib.luaL_openlibs(L);
-                    
-                    // 2. Create Mock Roblox Environment
-                    const mockGame = {
-                        Workspace: {
-                            _children: {},
-                            Create: function(className) {
-                                const newObj = {
-                                    ClassName: className,
-                                    Name: className,
-                                    Position: {x:0, y:0, z:0},
-                                    Parent: this,
-                                };
-                                this._children[className] = newObj; // Use className as a temporary unique key
-                                logToOutput(`[จำลอง] สคริปต์ได้สร้าง Object ประเภท '${className}' ขึ้นมาใน Workspace`, 'success');
-                                // We need to re-register the FindFirstChild function to capture the new object
-                                this.registerFunctions();
-                                return newObj;
-                            },
-                            FindFirstChild: function(name) {
-                                for(let key in this._children) {
-                                    if(this._children[key].Name === name) {
-                                        return this._children[key];
-                                    }
-                                }
-                                return null;
-                            },
-                            // A function to re-register JS functions into Lua context
-                            registerFunctions: function() {
-                                fengari.lua.lua_pushjs(L, this.Create.bind(this));
-                                fengari.lua.lua_setfield(L, -2, fengari.to_luastring("Create"));
-                                fengari.lua.lua_pushjs(L, this.FindFirstChild.bind(this));
-                                fengari.lua.lua_setfield(L, -2, fengari.to_luastring("FindFirstChild"));
-                            }
-                        }
-                    };
-                    
-                    // Convert JS object to Lua table and set as global 'game'
-                    fengari.lua.lua_createtable(L, 0, 1); // game table
-                    fengari.lua.lua_createtable(L, 0, 2); // Workspace table
-                    
-                    // Add children table to Workspace
-                    fengari.lua.lua_createtable(L, 0, 0);
-                    fengari.lua.lua_setfield(L, -2, fengari.to_luastring("_children"));
-
-                    mockGame.Workspace.registerFunctions();
-                    
-                    fengari.lua.lua_setfield(L, -2, fengari.to_luastring("Workspace")); // Set Workspace in game
-                    fengari.lua.lua_setglobal(L, fengari.to_luastring("game"));
-
-                    // 3. Override 'print' function
-                    fengari.lua.lua_pushjs(L, (...args) => {
-                        const message = args.map(arg => fengari.to_jsstring(arg)).join('\t');
-                        logToOutput(message, 'print');
-                        logToOutput(`[คำอธิบาย] โค้ดใช้คำสั่ง print() เพื่อแสดงข้อความ: "${message}"`, 'info');
-                    });
+                    const mockGame = { Workspace: { _children: {}, Create: function(className) { const newObj = { ClassName: className, Name: className, Position: {x:0, y:0, z:0}, Parent: this, }; this._children[className] = newObj; logToOutput(`[จำลอง] สคริปต์ได้สร้าง Object ประเภท '${className}' ขึ้นมาใน Workspace`, 'success'); this.registerFunctions(); return newObj; }, FindFirstChild: function(name) { for(let key in this._children) { if(this._children[key].Name === name) { return this._children[key]; } } return null; }, registerFunctions: function() { fengari.lua.lua_pushjs(L, this.Create.bind(this)); fengari.lua.lua_setfield(L, -2, fengari.to_luastring("Create")); fengari.lua.lua_pushjs(L, this.FindFirstChild.bind(this)); fengari.lua.lua_setfield(L, -2, fengari.to_luastring("FindFirstChild")); } } };
+                    fengari.lua.lua_createtable(L, 0, 1); fengari.lua.lua_createtable(L, 0, 2); fengari.lua.lua_createtable(L, 0, 0); fengari.lua.lua_setfield(L, -2, fengari.to_luastring("_children")); mockGame.Workspace.registerFunctions(); fengari.lua.lua_setfield(L, -2, fengari.to_luastring("Workspace")); fengari.lua.lua_setglobal(L, fengari.to_luastring("game"));
+                    fengari.lua.lua_pushjs(L, (...args) => { const message = args.map(arg => fengari.to_jsstring(arg)).join('\t'); logToOutput(message, 'print'); logToOutput(`[คำอธิบาย] โค้ดใช้คำสั่ง print() เพื่อแสดงข้อความ: "${message}"`, 'info'); });
                     fengari.lua.lua_setglobal(L, fengari.to_luastring("print"));
-
-                    // 4. Execute all scripts in order
                     let allScriptsOk = true;
                     for (const script of scripts) {
                         logToOutput(`--- Running ${script.name} ---`, 'info');
                         const status = fengari.lauxlib.luaL_dostring(L, fengari.to_luastring(script.code));
-                        
-                        if (status !== fengari.lua.LUA_OK) {
-                            const errorMsg = fengari.to_jsstring(fengari.lua.lua_tostring(L, -1));
-                            const lineMatch = errorMsg.match(/\[string "..."\]:(\d+):/);
-                            const lineNumber = lineMatch ? lineMatch[1] : "ไม่ทราบ";
-                            
-                            logToOutput(`[ERROR] ในสคริปต์ '${script.name}' บรรทัดที่ ${lineNumber}:`, 'error');
-                            logToOutput(errorMsg.split(':').slice(2).join(':').trim(), 'error');
-                            
-                            allScriptsOk = false;
-                            break; // Stop execution on first error
-                        }
+                        if (status !== fengari.lua.LUA_OK) { const errorMsg = fengari.to_jsstring(fengari.lua.lua_tostring(L, -1)); const lineMatch = errorMsg.match(/\[string "..."\]:(\d+):/); const lineNumber = lineMatch ? lineMatch[1] : "ไม่ทราบ"; logToOutput(`[ERROR] ในสคริปต์ '${script.name}' บรรทัดที่ ${lineNumber}:`, 'error'); logToOutput(errorMsg.split(':').slice(2).join(':').trim(), 'error'); allScriptsOk = false; break; }
                     }
-
-                    if(allScriptsOk) {
-                        logToOutput("> Execution finished successfully.", "success");
-                    }
-
-                } catch (e) {
-                    logToOutput("[FATAL ERROR] เกิดข้อผิดพลาดร้ายแรงกับระบบรันโค้ด:", "error");
-                    logToOutput(e.message, "error");
-                }
+                    if(allScriptsOk) { logToOutput("> Execution finished successfully.", "success"); }
+                } catch (e) { logToOutput("[FATAL ERROR] เกิดข้อผิดพลาดร้ายแรงกับระบบรันโค้ด:", "error"); logToOutput(e.message, "error"); }
             });
 
             // --- Initial Setup ---
             aiTipElement.textContent = aiTips[0];
             addScriptButton.onclick = addScript;
-            switchScript(0); // Load the first script initially
+            switchScript(0);
 
         });
     </script>
