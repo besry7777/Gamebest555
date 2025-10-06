@@ -165,22 +165,22 @@
                 if (sceneHistoryIndex < sceneHistory.length - 1) sceneHistory = sceneHistory.slice(0, sceneHistoryIndex + 1);
                 sceneHistory.push(action); sceneHistoryIndex++; updateUndoRedoButtons();
             }
-            function getObjectByPath(path) {
-                return path.split('.').reduce((o, k) => (o && o._children) ? o._children[k] : (o ? o[k] : undefined), { _children: mockGame });
-            }
-            function getParentByPath(path) {
-                 return path.split('.').slice(0, -1).reduce((o, k) => (o && o._children) ? o._children[k] : (o ? o[k] : undefined), { _children: mockGame });
-            }
+            function getObjectByPath(path) { return path.split('.').reduce((o, k) => (o && o._children) ? o._children[k] : (o ? o[k] : undefined), { _children: mockGame }); }
+            function getParentByPath(path) { return path.split('.').slice(0, -1).reduce((o, k) => (o && o._children) ? o._children[k] : (o ? o[k] : undefined), { _children: mockGame }); }
             function applyAction(action, isUndo) {
                  let parent, oldName, newName, path;
                  switch(action.type) {
                     case 'ADD':
                         parent = getParentByPath(action.path);
-                        if (isUndo) delete parent._children[action.name]; else parent._children[action.name] = action.objectData;
+                        if (parent && parent._children) {
+                            if (isUndo) delete parent._children[action.name]; else parent._children[action.name] = action.objectData;
+                        }
                         break;
                     case 'DELETE':
                         parent = getParentByPath(action.path);
-                        if (isUndo) parent._children[action.name] = action.objectData; else delete parent._children[action.name];
+                        if (parent && parent._children) {
+                            if (isUndo) parent._children[action.name] = action.objectData; else delete parent._children[action.name];
+                        }
                         break;
                     case 'RENAME':
                         oldName = isUndo ? action.newName : action.oldName;
@@ -289,7 +289,8 @@
                         item.addEventListener('click', (e) => { 
                             e.stopPropagation();
                             if (selectedObjectPath === path) {
-                                handleRename(span, name, path);
+                                if (object.ClassName === 'Script') openScriptByPath(path);
+                                else handleRename(span, name, path);
                             } else {
                                 selectedObjectPath = path; renderExplorer(); lastFocusedElement = explorerContent;
                             }
