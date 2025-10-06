@@ -165,21 +165,35 @@
                 if (sceneHistoryIndex < sceneHistory.length - 1) sceneHistory = sceneHistory.slice(0, sceneHistoryIndex + 1);
                 sceneHistory.push(action); sceneHistoryIndex++; updateUndoRedoButtons();
             }
-            function getObjectByPath(path) { return path.split('.').reduce((o, k) => (o && o._children) ? o._children[k] : (o ? o[k] : undefined), { _children: mockGame }); }
-            function getParentByPath(path) { return path.split('.').slice(0, -1).reduce((o, k) => (o && o._children) ? o._children[k] : (o ? o[k] : undefined), { _children: mockGame }); }
+            function getObjectByPath(path) { 
+                if (!path) return null;
+                return path.split('.').reduce((o, k) => {
+                    if (o && o._children) return o._children[k];
+                    return o ? o[k] : undefined;
+                }, { _children: mockGame });
+            }
+            function getParentByPath(path) { 
+                if (!path) return null;
+                const parts = path.split('.');
+                if (parts.length <= 1) return null;
+                const parentPath = parts.slice(0, -1).join('.');
+                return getObjectByPath(parentPath);
+            }
             function applyAction(action, isUndo) {
                  let parent, oldName, newName, path;
                  switch(action.type) {
                     case 'ADD':
                         parent = getParentByPath(action.path);
                         if (parent && parent._children) {
-                            if (isUndo) delete parent._children[action.name]; else parent._children[action.name] = action.objectData;
+                            if (isUndo) delete parent._children[action.name]; 
+                            else parent._children[action.name] = action.objectData;
                         }
                         break;
                     case 'DELETE':
                         parent = getParentByPath(action.path);
                         if (parent && parent._children) {
-                            if (isUndo) parent._children[action.name] = action.objectData; else delete parent._children[action.name];
+                            if (isUndo) parent._children[action.name] = action.objectData; 
+                            else delete parent._children[action.name];
                         }
                         break;
                     case 'RENAME':
@@ -210,13 +224,27 @@
                 redoBtn.disabled = !canTextUndo && sceneHistoryIndex >= sceneHistory.length - 1;
                 deleteBtn.disabled = !selectedObjectPath;
             }
-            undoBtn.addEventListener('click', () => { if (lastFocusedElement === codeEditor) document.execCommand('undo'); else undoScene(); });
-            redoBtn.addEventListener('click', () => { if (lastFocusedElement === codeEditor) document.execCommand('redo'); else redoScene(); });
+            undoBtn.addEventListener('click', () => { 
+                if (lastFocusedElement === codeEditor) {
+                    document.execCommand('undo');
+                } else {
+                    undoScene();
+                }
+            });
+            redoBtn.addEventListener('click', () => { 
+                if (lastFocusedElement === codeEditor) {
+                    document.execCommand('redo');
+                } else {
+                    redoScene();
+                }
+            });
 
             const toggleButtons = document.querySelectorAll('#explorer-toggle-btn');
             toggleButtons.forEach(btn => btn.addEventListener('click', () => explorerPanel.classList.toggle('collapsed')));
             document.addEventListener('click', (e) => { 
-                addItemMenu.style.display = 'none';
+                if (!addItemMenu.contains(e.target)) {
+                    addItemMenu.style.display = 'none';
+                }
                 if (!explorerContent.contains(e.target)) {
                     selectedObjectPath = null;
                     renderExplorer();
@@ -226,9 +254,16 @@
             function switchScript(index) {
                 if (activeScriptIndex > -1 && scripts[activeScriptIndex]) scripts[activeScriptIndex].code = codeEditor.value;
                 activeScriptIndex = index;
-                if (scripts[index]) { codeEditor.value = scripts[index].code; codeEditor.disabled = false; } 
-                else { codeEditor.value = '-- ไม่มีสคริปต์ที่เปิดอยู่ --'; codeEditor.disabled = true; }
-                renderTabs(); requestAnimationFrame(debouncedCheckSyntax);
+                if (scripts[index]) { 
+                    codeEditor.value = scripts[index].code; 
+                    codeEditor.disabled = false; 
+                } else { 
+                    codeEditor.value = '-- ไม่มีสคริปต์ที่เปิดอยู่ --'; 
+                    codeEditor.disabled = true; 
+                }
+                renderTabs(); 
+                requestAnimationFrame(debouncedCheckSyntax);
+                updateHighlighting();
             }
             function openScriptByPath(path) {
                 let scriptIndex = scripts.findIndex(s => s.path === path);
@@ -250,73 +285,131 @@
                 }
             }
             function renderTabs() {
-                const tabsContainer = getEl('script-tabs'); tabsContainer.innerHTML = '';
+                const tabsContainer = getEl('script-tabs'); 
+                tabsContainer.innerHTML = '';
                 scripts.forEach((script, index) => {
                     const tab = document.createElement('div');
                     tab.className = 'tab' + (index === activeScriptIndex ? ' active' : '');
-                    tab.textContent = script.name; tab.onclick = () => switchScript(index);
+                    tab.textContent = script.name; 
+                    tab.onclick = () => switchScript(index);
+                    
+                    // Add close button to tab
+                    const closeBtn = document.createElement('span');
+                    closeBtn.textContent = ' ×';
+                    closeBtn.style.cursor = 'pointer';
+                    closeBtn.style.marginLeft = '8px';
+                    closeBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        closeScriptByPath(script.path);
+                    };
+                    tab.appendChild(closeBtn);
+                    
                     tabsContainer.appendChild(tab);
                 });
             }
 
             function renderExplorer() {
                 explorerContent.innerHTML = '';
+                
                 function handleRename(span, name, path) {
                     const input = document.createElement('input');
-                    input.type = 'text'; input.value = name; input.className = 'explorer-item-input';
+                    input.type = 'text'; 
+                    input.value = name; 
+                    input.className = 'explorer-item-input';
                     span.parentElement.replaceChild(input, span);
-                    setTimeout(() => { try { input.focus(); input.select(); } catch(e){} }, 0); 
+                    setTimeout(() => { 
+                        try { 
+                            input.focus(); 
+                            input.select(); 
+                        } catch(e){} 
+                    }, 0); 
+                    
                     const finishEditing = () => {
                         const newName = input.value.trim().replace(/\s/g, '_') || name;
                         if (newName !== name) {
-                             recordSceneAction({ type: 'RENAME', path: path, oldName: name, newName: newName });
-                             applyAction(sceneHistory[sceneHistory.length-1], false);
+                            recordSceneAction({ 
+                                type: 'RENAME', 
+                                path: path, 
+                                oldName: name, 
+                                newName: newName 
+                            });
+                            applyAction(sceneHistory[sceneHistory.length-1], false);
                         }
                         renderExplorer();
                     };
+                    
                     input.addEventListener('blur', finishEditing);
-                    input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); });
+                    input.addEventListener('keydown', e => { 
+                        if (e.key === 'Enter') input.blur(); 
+                        if (e.key === 'Escape') renderExplorer();
+                    });
                 }
+                
                 function renderNode(name, object, depth, path) {
                     const item = document.createElement('div');
                     item.className = 'explorer-item';
                     if (path === selectedObjectPath) item.classList.add('selected');
-                    item.dataset.depth = depth; item.dataset.type = object.ClassName;
-                    const span = document.createElement('span'); span.textContent = name; item.appendChild(span);
+                    item.dataset.depth = depth; 
+                    item.dataset.type = object.ClassName;
+                    
+                    const span = document.createElement('span'); 
+                    span.textContent = name; 
+                    item.appendChild(span);
+                    
                     const isService = depth === 1;
+                    
                     if (!isService && name !== 'game') {
                         item.classList.add('renameable');
+                        
+                        // Single click to select
                         item.addEventListener('click', (e) => { 
                             e.stopPropagation();
-                            if (selectedObjectPath === path) {
-                                if (object.ClassName === 'Script') openScriptByPath(path);
-                                else handleRename(span, name, path);
-                            } else {
-                                selectedObjectPath = path; renderExplorer(); lastFocusedElement = explorerContent;
-                            }
+                            selectedObjectPath = path; 
+                            renderExplorer(); 
+                            lastFocusedElement = explorerContent;
                             updateUndoRedoButtons(); 
                         });
+                        
+                        // Double click to open/rename
+                        let clickTimer = null;
                         item.addEventListener('dblclick', (e) => {
-                            if (object.ClassName === 'Script') openScriptByPath(path);
-                            else handleRename(span, name, path);
+                            e.stopPropagation();
+                            clearTimeout(clickTimer);
+                            if (object.ClassName === 'Script') {
+                                openScriptByPath(path);
+                            } else {
+                                handleRename(span, name, path);
+                            }
                         });
                     }
+                    
                     if (isService) {
                         const plusBtn = document.createElement('button');
-                        plusBtn.className = 'add-child-btn'; plusBtn.textContent = '+';
+                        plusBtn.className = 'add-child-btn'; 
+                        plusBtn.textContent = '+';
                         plusBtn.onclick = (e) => {
                             e.stopPropagation();
                             const rect = plusBtn.getBoundingClientRect();
-                            addItemMenu.style.left = rect.left + 'px'; addItemMenu.style.top = rect.bottom + 'px';
-                            addItemMenu.dataset.parentPath = path; addItemMenu.style.display = 'block';
+                            addItemMenu.style.left = rect.left + 'px'; 
+                            addItemMenu.style.top = rect.bottom + 'px';
+                            addItemMenu.dataset.parentPath = path; 
+                            addItemMenu.style.display = 'block';
                         };
                         item.appendChild(plusBtn);
                     }
+                    
                     explorerContent.appendChild(item);
-                    if (object._children) { for (const childName in object._children) { renderNode(childName, object._children[childName], depth + 1, `${path}._children.${childName}`); } }
+                    
+                    if (object._children) { 
+                        for (const childName in object._children) { 
+                            renderNode(childName, object._children[childName], depth + 1, `${path}._children.${childName}`); 
+                        } 
+                    }
                 }
+                
                 renderNode('game', { _children: mockGame, ClassName: 'DataModel' }, 0, 'game');
             }
+            
             addItemMenu.addEventListener('click', (e) => {
                 if (e.target.tagName === 'LI') {
                     const parentPath = addItemMenu.dataset.parentPath;
@@ -326,19 +419,31 @@
                         const itemName = `${type}${itemCounter++}`;
                         const newObj = { Name: itemName, ClassName: type };
                         if (type === 'Script') newObj.code = `-- Code for ${itemName}\nprint("Hello from ${itemName}!")`;
-                        recordSceneAction({ type: 'ADD', path: `${parentPath}._children.${itemName}`, name: itemName, objectData: newObj });
-                        parent._children[itemName] = newObj; renderExplorer();
+                        recordSceneAction({ 
+                            type: 'ADD', 
+                            path: `${parentPath}._children.${itemName}`, 
+                            name: itemName, 
+                            objectData: newObj 
+                        });
+                        parent._children[itemName] = newObj; 
+                        renderExplorer();
                     }
                 }
                 addItemMenu.style.display = 'none';
             });
+            
             deleteBtn.addEventListener('click', () => {
                 if (!selectedObjectPath) return;
                 const name = selectedObjectPath.substring(selectedObjectPath.lastIndexOf('.') + 1);
                 const parent = getParentByPath(selectedObjectPath);
                 if (parent && parent._children && parent._children[name]) {
                     const objectData = JSON.parse(JSON.stringify(parent._children[name]));
-                    recordSceneAction({ type: 'DELETE', path: selectedObjectPath, name: name, objectData: objectData });
+                    recordSceneAction({ 
+                        type: 'DELETE', 
+                        path: selectedObjectPath, 
+                        name: name, 
+                        objectData: objectData 
+                    });
                     if (objectData.ClassName === 'Script') closeScriptByPath(selectedObjectPath);
                     delete parent._children[name];
                     selectedObjectPath = null;
@@ -346,32 +451,49 @@
                 }
             });
             
-            const debounce = (func, delay) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => func.apply(this, a), delay); }; };
+            const debounce = (func, delay) => { 
+                let t; 
+                return (...a) => { 
+                    clearTimeout(t); 
+                    t = setTimeout(() => func.apply(this, a), delay); 
+                }; 
+            };
+            
             const knownGlobals = new Set(['game', 'print', 'workspace', 'wait', 'script', 'math', 'Vector3', 'CFrame', 'Color3', 'Instance', 'pcall', 'xpcall', 'tostring', 'tonumber', 'type']);
             const keywords = new Set(['local', 'function', 'if', 'then', 'else', 'elseif', 'end', 'for', 'while', 'do', 'return', 'and', 'or', 'not', 'break', 'in', 'repeat', 'until']);
             
             function updateHighlighting() {
                 if (isHighlighting) return;
-                 isHighlighting = true;
+                isHighlighting = true;
+                
                 const text = codeEditor.value;
                 const lines = text.split('\n');
                 let html = '';
                 const knownVariables = new Set();
+                
+                // Extract known variables from code
                 text.replace(/(?:local|function)\s+([\w_]+)/g, (_, name) => knownVariables.add(name));
                 text.replace(/(\w+)\s*=\s*function/g, (_, name) => knownVariables.add(name));
                 text.replace(/for\s+([\w_,\s]+)\s+in/g, (match, names) => {
                     names.split(',').forEach(name => knownVariables.add(name.trim()));
                 });
+                
                 const stringPattern = /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')/;
                 const commentPattern = /(--.*)/;
-                for(let i=0; i < lines.length; i++) {
+                
+                for(let i = 0; i < lines.length; i++) {
                     let lineHtml = '';
                     const parts = lines[i].split(new RegExp(`(${stringPattern.source}|${commentPattern.source})`)).filter(Boolean);
+                    
                     parts.forEach(part => {
-                        if (part.match(stringPattern)) lineHtml += `<span class="hl-string">${part.replace(/</g, '&lt;')}</span>`; 
-                        else if (part.match(commentPattern)) lineHtml += `<span class="hl-comment">${part.replace(/</g, '&lt;')}</span>`; 
-                        else {
+                        if (part.match(stringPattern)) {
+                            lineHtml += `<span class="hl-string">${part.replace(/</g, '&lt;')}</span>`;
+                        } else if (part.match(commentPattern)) {
+                            lineHtml += `<span class="hl-comment">${part.replace(/</g, '&lt;')}</span>`;
+                        } else {
                             let codePart = part.replace(/</g, '&lt;');
+                            
+                            // Improved highlighting logic
                             codePart = codePart.replace(/\b(\w+)\b/g, (word) => {
                                 if (keywords.has(word)) return `<span class="hl-keyword">${word}</span>`;
                                 if (knownGlobals.has(word)) return `<span class="hl-global">${word}</span>`;
@@ -380,45 +502,99 @@
                                 if (/[ก-๙]/.test(word)) return `<span class="hl-thai-error">${word}</span>`;
                                 return `<span class="hl-unknown-var">${word}</span>`;
                             });
+                            
                             lineHtml += codePart;
                         }
                     });
-                    if (syntaxError && syntaxError.line === i + 1) html += `<span class="syntax-error">${lineHtml || ' '}</span>\n`; 
-                    else html += `${lineHtml}\n`;
+                    
+                    if (syntaxError && syntaxError.line === i + 1) {
+                        html += `<span class="syntax-error">${lineHtml || ' '}</span>\n`;
+                    } else {
+                        html += `${lineHtml}\n`;
+                    }
                 }
-                requestAnimationFrame(() => { highlightingLayer.innerHTML = html; isHighlighting = false; });
+                
+                requestAnimationFrame(() => { 
+                    highlightingLayer.innerHTML = html; 
+                    isHighlighting = false; 
+                });
             }
+            
             function checkSyntax() {
-                 try {
+                try {
                     const L = fengari.lauxlib.luaL_newstate();
                     const status = fengari.lauxlib.luaL_loadstring(L, fengari.to_luastring(codeEditor.value));
                     if (status !== fengari.lua.LUA_OK) {
                         const errorMsg = fengari.to_jsstring(fengari.lua.lua_tostring(L, -1));
                         const lineMatch = errorMsg.match(/\[string "..."\]:(\d+):/);
                         syntaxError = { line: lineMatch ? parseInt(lineMatch[1]) : -1 };
-                    } else { syntaxError = null; }
+                    } else {
+                        syntaxError = null;
+                    }
                     fengari.lua.lua_close(L);
-                } catch (e) { syntaxError = null; }
+                } catch (e) {
+                    syntaxError = null;
+                }
+                updateHighlighting();
             }
+            
             const debouncedCheckSyntax = debounce(checkSyntax, 300);
-            codeEditor.addEventListener('input', () => { debouncedCheckSyntax(); requestAnimationFrame(updateHighlighting); });
-            codeEditor.addEventListener('scroll', () => { getEl('highlighting-layer-container').scrollTop = codeEditor.scrollTop; getEl('highlighting-layer-container').scrollLeft = codeEditor.scrollLeft; });
+            codeEditor.addEventListener('input', () => { 
+                debouncedCheckSyntax(); 
+                updateHighlighting(); 
+            });
+            
+            codeEditor.addEventListener('scroll', () => { 
+                getEl('highlighting-layer-container').scrollTop = codeEditor.scrollTop; 
+                getEl('highlighting-layer-container').scrollLeft = codeEditor.scrollLeft; 
+            });
 
+            function logToOutput(message, type = 'info') {
+                const line = document.createElement('div');
+                line.className = `output-line ${type}`;
+                line.textContent = message;
+                outputChat.appendChild(line);
+                outputChat.scrollTop = outputChat.scrollHeight;
+            }
+            
             getEl('run-button').addEventListener('click', () => {
-                const logToOutput = (m, t = 'info') => { const l=document.createElement('div');l.className=`output-line ${t}`;l.textContent=m;outputChat.appendChild(l);outputChat.scrollTop=outputChat.scrollHeight;};
                 outputChat.innerHTML = '';
                 logToOutput("> Starting execution...", "info");
+                
                 try {
                     let executionGame = JSON.parse(JSON.stringify(mockGame));
-                    function getObjectByPathForExec(path, root) { return path.split('.').reduce((o, k) => (o && o._children) ? o._children[k] : (o ? o[k] : undefined), { _children: root }); }
+                    
+                    function getObjectByPathForExec(path, root) {
+                        return path.split('.').reduce((o, k) => {
+                            if (o && o._children) return o._children[k];
+                            return o ? o[k] : undefined;
+                        }, { _children: root });
+                    }
+                    
                     const serverScripts = executionGame.ServerScriptService._children;
                     for (const scriptName in serverScripts) {
-                         if (serverScripts[scriptName].ClassName === 'Script') {
-                            const L = fengari.lauxlib.luaL_newstate(); fengari.lualib.luaL_openlibs(L);
-                            fengari.lua.lua_pushjs(L, executionGame); fengari.lua.lua_setglobal(L, fengari.to_luastring("game"));
+                        if (serverScripts[scriptName].ClassName === 'Script') {
+                            const L = fengari.lauxlib.luaL_newstate(); 
+                            fengari.lualib.luaL_openlibs(L);
+                            
+                            fengari.lua.lua_pushjs(L, executionGame); 
+                            fengari.lua.lua_setglobal(L, fengari.to_luastring("game"));
+                            
                             const scriptProxy = { Parent: executionGame.ServerScriptService, Name: scriptName };
-                            fengari.lua.lua_pushjs(L, scriptProxy); fengari.lua.lua_setglobal(L, fengari.to_luastring("script"));
-                            fengari.lua.lua_pushjs(L, (...args) => { const msg = args.map(a => fengari.to_jsstring(a)).join('\t'); logToOutput(msg, 'print'); }); fengari.lua.lua_setglobal(L, fengari.to_luastring("print"));
+                            fengari.lua.lua_pushjs(L, scriptProxy); 
+                            fengari.lua.lua_setglobal(L, fengari.to_luastring("script"));
+                            
+                            fengari.lua.lua_pushjs(L, (...args) => { 
+                                const msg = args.map(a => {
+                                    if (typeof a === 'object' && a !== null) {
+                                        return JSON.stringify(a);
+                                    }
+                                    return fengari.to_jsstring(a);
+                                }).join('\t'); 
+                                logToOutput(msg, 'print'); 
+                            }); 
+                            fengari.lua.lua_setglobal(L, fengari.to_luastring("print"));
+                            
                             fengari.lauxlib.luaL_dostring(L, fengari.to_luastring(`
                                 local metatables = {}
                                 metatables.Part = {
@@ -435,24 +611,36 @@
                             const status = fengari.lauxlib.luaL_dostring(L, fengari.to_luastring(serverScripts[scriptName].code));
                             if (status !== fengari.lua.LUA_OK) {
                                 const errorMsg = fengari.to_jsstring(fengari.lua.lua_tostring(L, -1));
-                                logToOutput(`[ERROR] in ${scriptName}: ${errorMsg.split(": ").slice(1).join(": ")}`, 'error'); break;
+                                logToOutput(`[ERROR] in ${scriptName}: ${errorMsg.split(": ").slice(1).join(": ")}`, 'error'); 
+                                break;
                             }
-                         }
+                        }
                     }
                     logToOutput("> Execution finished.", "success");
-                    mockGame = executionGame; renderExplorer();
-                } catch (e) { logToOutput("[FATAL JS ERROR]: " + e.message, 'error'); }
+                    mockGame = executionGame; 
+                    renderExplorer();
+                } catch (e) { 
+                    logToOutput("[FATAL JS ERROR]: " + e.message, 'error'); 
+                }
             });
+            
             getEl('clear-output-btn').addEventListener('click', () => outputChat.innerHTML = '');
 
+            // Initialize tutorials
             Object.keys(tutorials).forEach(name => {
-                mockGame.ServerScriptService._children[name] = { Name: name, ClassName: 'Script', code: tutorials[name] };
+                mockGame.ServerScriptService._children[name] = { 
+                    Name: name, 
+                    ClassName: 'Script', 
+                    code: tutorials[name] 
+                };
             });
+            
+            // Initialize the application
             renderExplorer();
             openScriptByPath('game.ServerScriptService._children.01_พื้นฐาน');
             updateUndoRedoButtons();
             logToOutput("สตูดิโอพร้อมใช้งานแล้ว!", "info");
-        });
+        }); 
     </script>
 </body>
 </html>
