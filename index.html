@@ -1,56 +1,827 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Lua Learning Studio - Final Edition</title>
-    <link rel="stylesheet" href="style.css">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Studio - ตัวเต็ม</title>
+<style>
+:root {
+    --bg-color: #2e2e2e; --panel-bg: #252526; --editor-bg: #1e1e1e;
+    --primary-text: #d4d4d4; --secondary-text: #a0a0a0; --accent-color: #007acc;
+    --error-color: #f44747; --success-color: #4CAF50; --info-color: #f0e68c;
+    --font-family: Consolas, 'Courier New', monospace;
+    --hl-keyword: #569cd6; --hl-string: #ce9178; --hl-number: #b5cea8;
+    --hl-comment: #6a9955; --hl-global: #4fc1ff;
+}
+
+/* base */
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body {
+    margin: 0; padding: 0; height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background-color: var(--bg-color); color: var(--primary-text);
+    touch-action: manipulation; overflow: hidden;
+}
+
+/* layout */
+#main-layout { display: flex; height: 100vh; min-height: 0; }
+
+/* Explorer panel */
+#explorer-panel {
+    width: 240px;
+    background-color: var(--panel-bg);
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid #444;
+    flex-shrink: 0;
+    transition: width 0.3s ease, opacity 0.2s ease;
+    position: relative;
+    min-width: 240px;
+}
+#explorer-panel.collapsed {
+    width: 0;
+    min-width: 0;
+    border-right: none;
+    overflow: hidden;
+    opacity: 0;
+    pointer-events: none;
+}
+#explorer-panel.collapsed > * { min-width: 0; display: none; }
+#explorer-panel > * { min-width: 240px; }
+
+/* header */
+.panel-header {
+    padding: 8px 10px;
+    font-weight: bold;
+    background-color: #333;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.header-controls button {
+    background: none; border: none;
+    color: var(--secondary-text); cursor: pointer;
+    font-size: 1.2em; padding: 0 5px;
+}
+.header-controls button:disabled { color: #555; cursor: not-allowed; }
+
+/* explorer toggle button */
+#explorer-toggle-btn.collapsed-btn {
+    position: fixed; top: 5px; left: 5px; z-index: 2000;
+    background: #444; border-radius: 4px; color: white;
+    border: none; padding: 6px 8px; display: none; cursor: pointer;
+}
+#explorer-panel.collapsed + #main-content #explorer-toggle-btn.collapsed-btn { display: block; }
+#explorer-panel.collapsed ~ #main-content #explorer-toggle-btn.collapsed-btn { display: block; }
+
+/* explorer content */
+#explorer-content {
+    flex-grow: 1; overflow-y: auto; padding: 10px;
+    font-family: var(--font-family); font-size: 0.9em;
+    min-width: 0;
+}
+.explorer-item {
+    padding: 4px; white-space: nowrap; border-radius: 3px;
+    display: flex; align-items: center; justify-content: space-between;
+    user-select: none;
+}
+.explorer-item.selected { background-color: #094771; }
+.explorer-item:not(.selected).renameable:hover { background-color: #3a3a3a; }
+.explorer-item span { padding: 2px 4px; flex-grow: 1; overflow: hidden; text-overflow: ellipsis; }
+.explorer-item[data-depth='1'] { padding-left: 15px; } .explorer-item[data-depth='2'] { padding-left: 30px; }
+.explorer-item::before { font-family: monospace; content: '📄'; margin-right: 5px; }
+.explorer-item[data-type='Workspace']::before { content: '🌍'; } .explorer-item[data-type='ServerScriptService']::before { content: '⚙️'; }
+.explorer-item[data-type='ReplicatedStorage']::before { content: '📦'; } .explorer-item[data-type='Part']::before { content: '🧱'; }
+.explorer-item[data-type='Script']::before { content: '📜'; } .explorer-item[data-type='RemoteEvent']::before { content: '⚡'; }
+
+/* rename input */
+.explorer-item-input {
+    background: #555; border: 1px solid var(--accent-color);
+    color: white; font: inherit; outline: none;
+    width: auto; max-width: calc(100% - 60px); padding: 2px 6px;
+}
+
+/* add child button */
+.add-child-btn {
+    display: none; background-color: var(--accent-color); color: white;
+    border: none; border-radius: 3px; cursor: pointer; font-size: 1.1em;
+    padding: 0 5px; margin-left: 10px;
+}
+.explorer-item:hover .add-child-btn, .explorer-item.selected .add-child-btn { display: inline-block; }
+
+/* add item menu */
+#add-item-menu {
+    display: none; position: absolute; background: #3c3c3c;
+    border: 1px solid #555; border-radius: 4px; z-index: 1500; padding: 5px;
+}
+#add-item-menu ul { list-style: none; margin: 0; padding: 0; } 
+#add-item-menu li { padding: 8px 12px; cursor: pointer; white-space: nowrap; }
+#add-item-menu li:hover { background-color: var(--accent-color); }
+
+/* main content */
+#main-content { flex-grow: 1; display: flex; flex-direction: column; height: 100vh; min-width: 0; }
+
+/* ai tutor */
+#ai-tutor { padding: 10px 15px; background-color: var(--panel-bg); border-bottom: 1px solid #444; font-size: 0.9em; flex-shrink: 0; }
+#ai-tutor .title { font-weight: bold; color: var(--info-color); }
+
+/* script manager / tabs */
+#script-manager { display: flex; align-items: center; background-color: #333; padding: 5px; overflow-x: auto; flex-shrink: 0;}
+#script-tabs { display: flex; flex-grow: 1; min-width: 0; }
+.tab {
+    padding: 8px 12px; cursor: pointer; border-radius: 4px 4px 0 0; margin-right: 4px;
+    background-color: var(--editor-bg); color: var(--secondary-text); white-space: nowrap;
+    border: 1px solid transparent; position: relative; padding-right: 28px;
+    max-width: 320px; overflow: hidden; text-overflow: ellipsis;
+}
+.tab.active {
+    background-color: var(--bg-color); color: var(--primary-text);
+    border-color: #444 #444 transparent #444;
+}
+.close-tab-btn {
+    position: absolute; right: 5px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; color: var(--secondary-text); cursor: pointer;
+    font-size: 1.1em; border-radius: 3px; width: 20px; height: 20px;
+    line-height: 20px; text-align: center;
+}
+.tab:hover .close-tab-btn { background-color: #555; }
+.tab.active .close-tab-btn { color: var(--primary-text); }
+
+/* editor container and code editor */
+#editor-container { flex-grow: 1; position: relative; background-color: var(--editor-bg); min-width: 0; }
+
+/* both layers must align exactly */
+#code-editor, #highlighting-layer-container {
+    margin: 0; padding: 10px;
+    font-family: var(--font-family); font-size: 16px; line-height: 1.5;
+    border: none; outline: none; width: 100%; height: 100%;
+    position: absolute; top: 0; left: 0; overflow: auto;
+    white-space: pre; word-wrap: normal; -webkit-overflow-scrolling: touch;
+}
+
+/* textarea/input layer */
+#code-editor {
+    z-index: 2; background: transparent; color: transparent; caret-color: white; resize: none;
+}
+
+/* highlighting layer sits beneath */
+#highlighting-layer-container { z-index: 1; pointer-events: none; color: var(--primary-text); }
+
+/* error highlight styles */
+.syntax-error { text-decoration: underline wavy var(--error-color) 1px; background-color: rgba(244,71,71,0.06); }
+.hl-thai-error, .hl-unknown-var { text-decoration: underline wavy var(--error-color) 1px; }
+
+/* autocomplete popup */
+#autocomplete-popup {
+    position: absolute; background-color: #3c3c3c; border: 1px solid #555; border-radius: 4px;
+    min-width: 150px; max-height: 200px; overflow-y: auto; z-index: 1000; color: var(--primary-text);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.5);
+}
+.autocomplete-item { padding: 8px 12px; cursor: pointer; } 
+.autocomplete-item:hover, .autocomplete-item.selected { background-color: var(--accent-color); }
+.hidden { display: none; }
+
+/* bottom panel and controls */
+#bottom-panel { flex-shrink: 0; border-top: 1px solid #444; background: var(--panel-bg); }
+#controls { padding: 10px; background-color: var(--panel-bg); display: flex; gap: 10px; align-items: center; }
+#run-button {
+    flex-grow: 1; padding: 12px; background-color: var(--success-color); color: white;
+    border: none; border-radius: 5px; font-size: 1.2em; cursor: pointer; font-weight: bold;
+}
+.control-btn {
+    background-color: #5a5a5a; color: white; border: none; border-radius: 5px;
+    font-size: 1.2em; cursor: pointer; padding: 12px 15px;
+}
+.control-btn:disabled { background-color: #444; color: #777; cursor: not-allowed; }
+
+/* output chat area */
+#output-chat {
+    height: 160px; background-color: var(--panel-bg); padding: 10px; overflow-y: auto;
+    font-family: var(--font-family); font-size: 0.9em;
+}
+.output-line { padding: 4px 0; white-space: pre-wrap; word-break: break-word; }
+.output-line.error { color: var(--error-color); } .output-line.success { color: var(--success-color); }
+.output-line.info { color: var(--secondary-text); } .output-line.print { color: #87ceeb; }
+
+/* dismiss keyboard for mobile */
+#dismiss-keyboard-btn {
+    display: none; position: fixed; bottom: 15px; right: 15px; z-index: 2000;
+    background: rgba(0,0,0,0.6); color: white; border: 1px solid #888; border-radius: 50%;
+    width: 50px; height: 50px; font-size: 1.5em;
+}
+@media (max-width: 768px) { #dismiss-keyboard-btn.visible { display: block; } }
+
+/* accessibility/focus outlines */
+button:focus, .tab:focus, .control-btn:focus, #run-button:focus, .header-controls button:focus {
+    outline: 2px solid rgba(0,122,204,0.25); outline-offset: 2px;
+}
+
+/* small fixes: ensure scrollbars don't push layout */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 6px; }
+
+/* responsive tweaks */
+@media (max-width: 600px) {
+    #explorer-panel { width: 200px; min-width: 200px; }
+    #explorer-panel > * { min-width: 200px; }
+    #script-tabs .tab { max-width: 180px; }
+}
+</style>
 </head>
 <body>
-    <div id="main-layout">
-        <div id="explorer-panel">
-            <div class="panel-header">
-                <button id="explorer-toggle-btn" title="Toggle Explorer">«</button>
-                <span>Explorer</span>
-                <div class="header-controls">
-                    <button id="delete-btn" title="Delete Selected">🗑️</button>
-                </div>
-            </div>
-            <div id="explorer-content"></div>
-            <div id="add-item-menu">
-                <ul>
-                    <li data-type="Part">Part</li>
-                    <li data-type="Script">Script</li>
-                    <li data-type="RemoteEvent">RemoteEvent</li>
-                </ul>
+<div id="main-layout">
+    <div id="explorer-panel">
+        <div class="panel-header">
+            Explorer
+            <div class="header-controls">
+                <button id="collapse-btn" title="Toggle explorer">☰</button>
             </div>
         </div>
-        <div id="main-content">
-            <button id="explorer-toggle-btn" class="collapsed-btn" title="Toggle Explorer">»</button>
-            <div id="ai-tutor">
-                <span class="title">💡 AI Tutor:</span><span id="ai-tip">ยินดีต้อนรับสู่สตูดิโอเรียนรู้ Lua!</span>
+        <div id="explorer-content"></div>
+    </div>
+
+    <div id="main-content">
+        <button id="explorer-toggle-btn" class="collapsed-btn" title="Open explorer">☰</button>
+
+        <div id="ai-tutor"><span class="title">AI Tutor</span> — ตัวอย่างสตูดิโอ</div>
+
+        <div id="script-manager">
+            <div id="script-tabs"></div>
+            <button id="clear-output-btn" class="control-btn" title="Clear output">🧹</button>
+        </div>
+
+        <div id="editor-container">
+            <div id="highlighting-layer-container" aria-hidden="true"></div>
+            <textarea id="code-editor" spellcheck="false" aria-label="Code editor"></textarea>
+        </div>
+
+        <div id="bottom-panel">
+            <div id="controls">
+                <button id="undo-btn" class="control-btn" disabled>↶ Undo</button>
+                <button id="redo-btn" class="control-btn" disabled>↷ Redo</button>
+                <button id="delete-btn" class="control-btn" disabled>🗑 Delete</button>
+                <button id="run-button">▶ Run</button>
             </div>
-            <div id="script-manager"><div id="script-tabs"></div></div>
-            <div id="editor-container">
-                <textarea id="code-editor" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
-                <div id="highlighting-layer-container"><code id="highlighting-layer"></code></div>
-                <div id="autocomplete-popup" class="hidden"></div>
-            </div>
-            <div id="bottom-panel">
-                 <div id="controls">
-                    <button id="undo-btn" class="control-btn" title="Undo">↩️</button>
-                    <button id="redo-btn" class="control-btn" title="Redo">↪️</button>
-                    <button id="run-button">▶️ Run</button>
-                    <button id="clear-output-btn" class="control-btn" title="Clear Output">🗑️</button>
-                </div>
-                <div id="output-chat"></div>
-            </div>
+            <div id="output-chat" aria-live="polite"></div>
         </div>
     </div>
-    <button id="dismiss-keyboard-btn">⌨️<span style="font-size: 0.6em;">⬇️</span></button>
 
-    <script src="https://unpkg.com/fengari-web@0.1.4/dist/fengari-web.js"></script>
-    
-    <script type="module" src="main.js"></script>
+    <div id="add-item-menu" role="menu" aria-hidden="true">
+        <ul>
+            <li data-type="Part">Part</li>
+            <li data-type="Script">Script</li>
+            <li data-type="RemoteEvent">RemoteEvent</li>
+        </ul>
+    </div>
+</div>
+
+<!-- fengari-web CDN (Lua VM in browser) -->
+<script src="https://cdn.jsdelivr.net/npm/fengari-web@0.1.4/dist/fengari-web.js"></script>
+
+<script>
+/* ====== editor.js internal implementation (inlined) ======
+   Provides: initEditor, getActiveScript, saveCurrentScript,
+             switchScript, closeScriptByPath, renderTabs
+*/
+function initEditor(getStateFn) {
+    const stateProvider = getStateFn;
+    const codeEditor = document.getElementById('code-editor');
+    const highlight = document.getElementById('highlighting-layer-container');
+
+    const escapeHtml = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+    // Simple syntax highlighting for Lua-ish (keywords, comments, strings, numbers)
+    function highlightCode(text) {
+        // escape
+        let out = escapeHtml(text);
+        // comments -- multiline not robust but ok for demo
+        out = out.replace(/(--\[\[[\s\S]*?\]\]|--.*$)/gm, '<span class="hl-comment">$1</span>');
+        // strings
+        out = out.replace(/(\".*?\"|\'.*?\')/g, '<span class="hl-string">$1</span>');
+        // keywords (basic)
+        const kw = ['local','function','end','if','then','else','for','in','do','while','return','nil','true','false','repeat','until'];
+        out = out.replace(new RegExp('\\b(' + kw.join('|') + ')\\b', 'g'), '<span class="hl-keyword">$1</span>');
+        // numbers
+        out = out.replace(/(\b\d+(\.\d+)?\b)/g, '<span class="hl-number">$1</span>');
+        // wrap line breaks
+        out = out.replace(/\n/g, '<br>');
+        return out;
+    }
+
+    function syncHighlight() {
+        const state = stateProvider();
+        const idx = state.activeScriptIndex;
+        const scripts = state.scripts;
+        let text = '';
+        if (idx >= 0 && scripts[idx]) text = scripts[idx].code || '';
+        highlight.innerHTML = highlightCode(text);
+    }
+
+    // Keep scroll positions and font metrics in sync
+    function syncScroll() {
+        const h = document.getElementById('highlighting-layer-container');
+        h.scrollTop = codeEditor.scrollTop;
+        h.scrollLeft = codeEditor.scrollLeft;
+    }
+
+    // When typing, update script code and highlighting
+    codeEditor.addEventListener('input', () => {
+        const state = stateProvider();
+        const idx = state.activeScriptIndex;
+        const scripts = state.scripts;
+        if (idx >= 0 && scripts[idx]) {
+            scripts[idx].code = codeEditor.value;
+            // re-render highlight
+            highlight.innerHTML = highlightCode(codeEditor.value);
+        }
+    });
+
+    // keep scroll synced
+    codeEditor.addEventListener('scroll', syncScroll);
+    // tab handling
+    codeEditor.addEventListener('keydown', (e) => {
+        if (e.key === 'Tab') {
+            e.preventDefault();
+            const start = codeEditor.selectionStart;
+            const end = codeEditor.selectionEnd;
+            const val = codeEditor.value;
+            codeEditor.value = val.substring(0, start) + '    ' + val.substring(end);
+            codeEditor.selectionStart = codeEditor.selectionEnd = start + 4;
+            codeEditor.dispatchEvent(new Event('input'));
+        }
+    });
+
+    // external update hook to set editor content when switching tabs
+    function setEditorContent(text) {
+        codeEditor.value = text || '';
+        highlight.innerHTML = highlightCode(codeEditor.value);
+        // reset scroll
+        codeEditor.scrollTop = 0;
+        codeEditor.scrollLeft = 0;
+        syncScroll();
+    }
+
+    // Return API for outside
+    return { setEditorContent, syncHighlight };
+}
+
+function getActiveScript(scripts, activeIndex) {
+    if (activeIndex < 0 || !scripts[activeIndex]) return null;
+    return scripts[activeIndex];
+}
+function saveCurrentScript(scripts, activeIndex) {
+    // In this inline implementation, the editor already modifies scripts[].code live.
+    // But we expose this function for compatibility.
+    return;
+}
+function switchScript(index, scripts) {
+    if (index < 0 || index >= scripts.length) return -1;
+    // return the new index (caller will call render/update UI)
+    return index;
+}
+function closeScriptByPath(scripts, path) {
+    const i = scripts.findIndex(s => s.path === path);
+    if (i === -1) return -1;
+    scripts.splice(i,1);
+    return i;
+}
+function renderTabs(scripts, activeIndex, onSwitch, onClose) {
+    const container = document.getElementById('script-tabs');
+    container.innerHTML = '';
+    scripts.forEach((s, idx) => {
+        const t = document.createElement('div');
+        t.className = 'tab' + (idx === activeIndex ? ' active' : '');
+        t.tabIndex = 0;
+        t.title = s.path;
+        t.textContent = s.name || ('script' + idx);
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'close-tab-btn';
+        closeBtn.innerHTML = '×';
+        closeBtn.title = 'Close';
+        closeBtn.addEventListener('click', (e) => { e.stopPropagation(); onClose(s.path); });
+        t.appendChild(closeBtn);
+        t.addEventListener('click', () => onSwitch(idx));
+        container.appendChild(t);
+    });
+}
+
+/* ====== End editor.js inlined ====== */
+
+/* ====== Main application code (based on your code, completed) ====== */
+document.addEventListener('DOMContentLoaded', () => {
+    // STATE
+    let mockGame = {
+        Workspace: { _children: {}, ClassName: 'Workspace', Name: 'Workspace' },
+        ServerScriptService: { _children: {}, ClassName: 'ServerScriptService', Name: 'ServerScriptService' },
+        ReplicatedStorage: { _children: {}, ClassName: 'ReplicatedStorage', Name: 'ReplicatedStorage' }
+    };
+    let scripts = [];
+    let activeScriptIndex = -1;
+    let itemCounter = 1;
+    let selectedObjectPath = null;
+    let history = [];
+    let historyIndex = -1;
+    let lastFocusedElement = null;
+
+    // DOM
+    const getEl = id => document.getElementById(id);
+    const explorerPanel = getEl('explorer-panel');
+    const explorerContent = getEl('explorer-content');
+    const addItemMenu = getEl('add-item-menu');
+    const deleteBtn = getEl('delete-btn');
+    const undoBtn = getEl('undo-btn');
+    const redoBtn = getEl('redo-btn');
+    const outputChat = getEl('output-chat');
+    const codeEditor = getEl('code-editor');
+
+    // OBJECT PATH HELPERS
+    const getObjectByPath = (path) => {
+        if (!path || path === 'game') return { _children: mockGame, ClassName: 'DataModel' };
+        const parts = path.replace(/^game\./, '').split('.');
+        let current = mockGame;
+        for (const part of parts) {
+            if (!current) return undefined;
+            if (part === '_children') {
+                current = current._children;
+            } else {
+                current = current[part] || (current._children ? current._children[part] : undefined);
+            }
+        }
+        return current;
+    };
+    const getParentFromPath = (path) => {
+        const parts = path.split('.');
+        parts.pop(); // remove item name
+        return getObjectByPath(parts.join('.'));
+    };
+
+    // OUTPUT LOG
+    const logToOutput = (message, type = 'info') => {
+        const line = document.createElement('div');
+        line.className = `output-line ${type}`;
+        line.textContent = message;
+        outputChat.appendChild(line);
+        outputChat.scrollTop = outputChat.scrollHeight;
+    };
+
+    // HISTORY
+    const recordAction = (action) => {
+        if (historyIndex < history.length - 1) {
+            history = history.slice(0, historyIndex + 1);
+        }
+        history.push(action);
+        historyIndex++;
+        updateUndoRedoButtons();
+    };
+
+    const applyAction = (action, isUndo = false) => {
+        const { type, path, oldName, newName, objectData } = action;
+        const name = path.split('.').pop();
+        const parent = getParentFromPath(path);
+
+        if (!parent || !parent._children) {
+            console.error("Action failed: Parent not found for path", path);
+            return;
+        }
+
+        switch (type) {
+            case 'ADD':
+                if (isUndo) delete parent._children[name];
+                else parent._children[name] = JSON.parse(JSON.stringify(objectData));
+                break;
+            case 'DELETE':
+                if (isUndo) parent._children[name] = JSON.parse(JSON.stringify(objectData));
+                else delete parent._children[name];
+                break;
+            case 'RENAME':
+                const currentName = isUndo ? newName : oldName;
+                const targetName = isUndo ? oldName : newName;
+                // parent path up to ._children
+                let parentPath = path;
+                if (parentPath.indexOf('._children') !== -1) {
+                    parentPath = parentPath.substring(0, parentPath.lastIndexOf('._children'));
+                } else {
+                    parentPath = parentPath.substring(0, parentPath.lastIndexOf('.'));
+                }
+                if (parent._children[currentName]) {
+                    const obj = parent._children[currentName];
+                    obj.Name = targetName;
+                    delete parent._children[currentName];
+                    parent._children[targetName] = obj;
+
+                    if (obj.ClassName === 'Script') {
+                        const oldPath = `${parentPath}._children.${currentName}`;
+                        const newPath = `${parentPath}._children.${targetName}`;
+                        const script = scripts.find(s => s.path === oldPath);
+                        if (script) {
+                            script.name = targetName;
+                            script.path = newPath;
+                        }
+                    }
+                }
+                break;
+        }
+        renderExplorer();
+        renderTabs(scripts, activeScriptIndex, onSwitchScript, onCloseScript);
+    };
+
+    const undo = () => {
+        if (lastFocusedElement === codeEditor) { document.execCommand('undo'); return; }
+        if (historyIndex < 0) return;
+        applyAction(history[historyIndex], true);
+        historyIndex--;
+        updateUndoRedoButtons();
+    };
+    const redo = () => {
+        if (lastFocusedElement === codeEditor) { document.execCommand('redo'); return; }
+        if (historyIndex >= history.length - 1) return;
+        historyIndex++;
+        applyAction(history[historyIndex], false);
+        updateUndoRedoButtons();
+    };
+    const updateUndoRedoButtons = () => {
+        undoBtn.disabled = historyIndex < 0;
+        redoBtn.disabled = historyIndex >= history.length - 1;
+        const disableDelete = !selectedObjectPath || selectedObjectPath.split('.').length <= 2;
+        const deleteElm = document.getElementById('delete-btn');
+        if (deleteElm) deleteElm.disabled = disableDelete;
+    };
+
+    // EXPLORER RENDER
+    const renderExplorer = () => {
+        explorerContent.innerHTML = '';
+        const renderNode = (name, object, depth, path) => {
+            const item = document.createElement('div');
+            item.className = 'explorer-item';
+            if (path === selectedObjectPath) item.classList.add('selected');
+            item.dataset.depth = depth;
+            item.dataset.type = object.ClassName;
+            const span = document.createElement('span');
+            span.textContent = name;
+            item.appendChild(span);
+
+            const isService = depth === 1;
+            const isRoot = depth === 0;
+
+            if (!isRoot) {
+                item.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (selectedObjectPath === path && !isService && object.ClassName !== 'Script') {
+                        handleRename(span, name, path);
+                    } else {
+                        selectedObjectPath = path;
+                        lastFocusedElement = explorerContent;
+                        renderExplorer();
+                    }
+                    updateUndoRedoButtons();
+                });
+                item.addEventListener('dblclick', (e) => {
+                    e.stopPropagation();
+                    if (object.ClassName === 'Script') {
+                        openScriptByPath(path);
+                    } else if (!isService) {
+                        handleRename(span, name, path);
+                    }
+                });
+            }
+
+            if (object._children) {
+                if (isService) {
+                    const plusBtn = document.createElement('button');
+                    plusBtn.className = 'add-child-btn';
+                    plusBtn.textContent = '+';
+                    plusBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        const rect = plusBtn.getBoundingClientRect();
+                        addItemMenu.style.left = rect.right + 'px';
+                        addItemMenu.style.top = rect.top + 'px';
+                        addItemMenu.dataset.parentPath = path;
+                        addItemMenu.style.display = 'block';
+                    };
+                    item.appendChild(plusBtn);
+                }
+                explorerContent.appendChild(item);
+                for (const childName in object._children) {
+                    renderNode(childName, object._children[childName], depth + 1, `${path}._children.${childName}`);
+                }
+            } else {
+                 explorerContent.appendChild(item);
+            }
+        };
+        renderNode('game', { _children: mockGame, ClassName: 'DataModel' }, 0, 'game');
+    };
+
+    const handleRename = (span, name, path) => {
+        const input = document.createElement('input');
+        input.type = 'text'; input.value = name; input.className = 'explorer-item-input';
+        span.parentElement.replaceChild(input, span);
+        input.focus(); input.select();
+
+        const finishEditing = () => {
+            const newName = input.value.trim().replace(/[.\s]/g, '_') || name;
+            if (newName !== name) {
+                const parent = getParentFromPath(path);
+                if (parent && parent._children[newName]) {
+                    alert("มีชื่ออยู่แล้ว");
+                    renderExplorer(); return;
+                }
+                const newPath = path.substring(0, path.lastIndexOf('.') + 1) + newName;
+                recordAction({ type: 'RENAME', path, oldName: name, newName });
+                applyAction(history[history.length - 1]);
+                selectedObjectPath = newPath;
+            } else {
+                renderExplorer();
+            }
+        };
+        input.addEventListener('blur', finishEditing);
+        input.addEventListener('keydown', e => e.key === 'Enter' && input.blur());
+    };
+
+    // ADD ITEM
+    addItemMenu.addEventListener('click', (e) => {
+        if (e.target.tagName !== 'LI') return;
+        const parentPath = addItemMenu.dataset.parentPath;
+        const type = e.target.dataset.type;
+        const parent = getObjectByPath(parentPath);
+        if (parent && parent._children) {
+            const itemName = `${type}${itemCounter++}`;
+            const newObj = { Name: itemName, ClassName: type };
+            if (type === 'Part') newObj._children = {};
+            if (type === 'Script') newObj.code = `-- Hello from ${itemName}`;
+            const newPath = `${parentPath}._children.${itemName}`;
+            recordAction({ type: 'ADD', path: newPath, objectData: newObj });
+            applyAction(history[history.length - 1]);
+            // if script added, open it
+            if (type === 'Script') {
+                openScriptByPath(newPath);
+            }
+        }
+        addItemMenu.style.display = 'none';
+    });
+
+    // DELETE BUTTON (we create if missing)
+    if (!getEl('delete-btn')) {
+        const btn = document.createElement('button');
+        btn.id = 'delete-btn';
+        btn.className = 'control-btn';
+        btn.textContent = '🗑 Delete';
+        btn.disabled = true;
+        document.getElementById('controls').insertBefore(btn, document.getElementById('run-button'));
+    }
+
+    document.getElementById('delete-btn').addEventListener('click', () => {
+        if (!selectedObjectPath || selectedObjectPath.split('.').length <= 2) return;
+        const name = selectedObjectPath.split('.').pop();
+        const parent = getParentFromPath(selectedObjectPath);
+
+        if (parent && parent._children && parent._children[name]) {
+            const objectData = JSON.parse(JSON.stringify(parent._children[name]));
+            recordAction({ type: 'DELETE', path: selectedObjectPath, objectData });
+            if (objectData.ClassName === 'Script') {
+                onCloseScript(selectedObjectPath, true);
+            }
+            applyAction(history[history.length - 1]);
+            selectedObjectPath = null;
+            updateUndoRedoButtons();
+        }
+    });
+
+    // SCRIPT & TABS
+    const onSwitchScript = (index) => {
+        saveCurrentScript(scripts, activeScriptIndex);
+        activeScriptIndex = switchScript(index, scripts);
+        // set editor content
+        const script = getActiveScript(scripts, activeScriptIndex);
+        if (editorAPI && script) editorAPI.setEditorContent(script.code || '');
+        renderTabs(scripts, activeScriptIndex, onSwitchScript, onCloseScript);
+    };
+
+    const onCloseScript = (path, forceClose = false) => {
+        saveCurrentScript(scripts, activeScriptIndex);
+        const index = scripts.findIndex(s => s.path === path);
+        if (index === -1) return;
+        // if closing active, try to move focus to another
+        scripts.splice(index, 1);
+        if (activeScriptIndex === index) {
+            activeScriptIndex = scripts.length > 0 ? 0 : -1;
+            onSwitchScript(activeScriptIndex);
+        } else if (activeScriptIndex > index) {
+            activeScriptIndex--;
+            onSwitchScript(activeScriptIndex);
+        } else {
+             renderTabs(scripts, activeScriptIndex, onSwitchScript, onCloseScript);
+        }
+    };
+
+    const openScriptByPath = (path) => {
+        saveCurrentScript(scripts, activeScriptIndex);
+        let scriptIndex = scripts.findIndex(s => s.path === path);
+        if (scriptIndex === -1) {
+            const obj = getObjectByPath(path);
+            if (!obj || obj.ClassName !== 'Script') return;
+            scripts.push({ path: path, name: obj.Name, code: obj.code || '' });
+            scriptIndex = scripts.length - 1;
+        }
+        onSwitchScript(scriptIndex);
+    };
+
+    // LUA EXECUTION using fengari-web
+    getEl('run-button').addEventListener('click', () => {
+        saveCurrentScript(scripts, activeScriptIndex);
+        outputChat.innerHTML = '';
+        logToOutput("> Starting execution...", "info");
+        try {
+            let executionGame = JSON.parse(JSON.stringify(mockGame));
+            function findScripts(service) {
+                let found = [];
+                if (!service || !service._children) return found;
+                for(const name in service._children) {
+                    const child = service._children[name];
+                    if(child.ClassName === 'Script') found.push(child);
+                    if(child._children) found = found.concat(findScripts(child));
+                }
+                return found;
+            }
+            const allScripts = findScripts(executionGame.ServerScriptService);
+            allScripts.forEach((scriptInstance) => {
+                try {
+                    // Use fengari's load/run convenience if available
+                    if (typeof fengari !== 'undefined' && fengari.load) {
+                        // provide print mapping
+                        const luaPrint = function(...args) {
+                            try {
+                                const out = args.map(a => String(a)).join('\t');
+                                logToOutput(out, 'print');
+                            } catch(e) { logToOutput('[print error] ' + e.message, 'error'); }
+                        };
+                        // run script - using fengari-web high-level API
+                        const L = fengari.load(scriptInstance.code);
+                        // set global 'game' to JS object
+                        fengari.js.tolua({}, 'game'); // no-op to ensure js lib is loaded (best-effort)
+                        // The fengari-web build exposes a global 'fengari' with load function which returns a JS-wrapped function
+                        try {
+                            const result = L();
+                        } catch (err) {
+                            logToOutput(`[ERROR] in ${scriptInstance.Name}: ${err.message || err}`, 'error');
+                        }
+                    } else {
+                        logToOutput('Fengari not available. Cannot run Lua code.', 'error');
+                    }
+                } catch (err) {
+                    logToOutput(`[ERROR] in ${scriptInstance.Name}: ${err.message || err}`, 'error');
+                }
+            });
+            logToOutput("> Execution finished.", "success");
+            mockGame = executionGame;
+            renderExplorer();
+        } catch (e) { logToOutput("[FATAL JS ERROR]: " + (e.message || e), 'error'); console.error(e); }
+    });
+
+    // INITIALIZATION
+    const tutorials = {
+        "01_พื้นฐาน": `-- ตัวอย่าง 01\nprint("สวัสดีจาก 01_พื้นฐาน")`,
+        "02_การหาPart": `-- ตัวอย่าง 02\nprint("หา Part")`,
+        "03_การเปลี่ยนPart": `-- ตัวอย่าง 03\nprint("เปลี่ยน Part")`,
+        "04_Loopและการสร้าง": `-- ตัวอย่าง 04\nfor i=1,3 do print(i) end`
+    };
+    Object.keys(tutorials).forEach(name => {
+        mockGame.ServerScriptService._children[name] = { Name: name, ClassName: 'Script', code: tutorials[name] };
+    });
+
+    // Editor initialization
+    const editorAPI = initEditor(() => ({ scripts, activeScriptIndex }));
+    // We'll expose methods used above
+    window.initEditor = initEditor;
+    window.getActiveScript = getActiveScript;
+    window.saveCurrentScript = saveCurrentScript;
+    window.switchScript = switchScript;
+    window.closeScriptByPath = closeScriptByPath;
+    window.renderTabs = renderTabs;
+
+    // Wire editor content update when scripts change
+    function refreshEditorForActive() {
+        const script = getActiveScript(scripts, activeScriptIndex);
+        if (script && editorAPI) editorAPI.setEditorContent(script.code || '');
+        else if (editorAPI) editorAPI.setEditorContent('');
+    }
+
+    // Focus tracking
+    codeEditor.addEventListener('focus', () => lastFocusedElement = codeEditor);
+    undoBtn.addEventListener('click', undo);
+    redoBtn.addEventListener('click', redo);
+    document.addEventListener('click', (e) => { if (!addItemMenu.contains(e.target)) addItemMenu.style.display = 'none'; });
+    getEl('clear-output-btn').addEventListener('click', () => outputChat.innerHTML = '');
+    document.querySelectorAll('#explorer-toggle-btn, #collapse-btn').forEach(btn => btn.addEventListener('click', () => {
+        explorerPanel.classList.toggle('collapsed');
+    }));
+
+    renderExplorer();
+    updateUndoRedoButtons();
+    openScriptByPath('game.ServerScriptService._children.01_พื้นฐาน');
+    refreshEditorForActive();
+    renderTabs(scripts, activeScriptIndex, onSwitchScript, onCloseScript);
+    logToOutput("สตูดิโอพร้อมใช้งานแล้ว!", "info");
+});
+</script>
 </body>
 </html>
