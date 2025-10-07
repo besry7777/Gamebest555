@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Lua Learning Studio - Final Edition</title>
+    <title>Lua Learning Studio - Final Edition (Corrected)</title>
     <style>
         :root {
             --bg-color: #2e2e2e; --panel-bg: #252526; --editor-bg: #1e1e1e;
@@ -29,7 +29,7 @@
         .explorer-item { padding: 4px; white-space: nowrap; border-radius: 3px; display: flex; align-items: center; justify-content: space-between; user-select: none; }
         .explorer-item.selected { background-color: #094771; }
         .explorer-item:not(.selected).renameable:hover { background-color: #3a3a3a; }
-        .explorer-item span { padding: 2px 4px; flex-grow: 1; }
+        .explorer-item span { padding: 2px 4px; flex-grow: 1; cursor: default; }
         .explorer-item[data-depth='1'] { padding-left: 15px; } .explorer-item[data-depth='2'] { padding-left: 30px; }
         .explorer-item::before { font-family: monospace; content: '📄'; margin-right: 5px; }
         .explorer-item[data-type='Workspace']::before { content: '🌍'; } .explorer-item[data-type='ServerScriptService']::before { content: '⚙️'; }
@@ -48,14 +48,17 @@
         #ai-tutor .title { font-weight: bold; color: var(--info-color); }
         #script-manager { display: flex; align-items: center; background-color: #333; padding: 5px; overflow-x: auto; flex-shrink: 0;}
         #script-tabs { display: flex; flex-grow: 1; }
-        .tab { padding: 8px 12px; cursor: pointer; border-radius: 4px 4px 0 0; margin-right: 4px; background-color: var(--editor-bg); color: var(--secondary-text); white-space: nowrap; border: 1px solid transparent; }
+        .tab { padding: 8px 12px; cursor: pointer; border-radius: 4px 4px 0 0; margin-right: 4px; background-color: var(--editor-bg); color: var(--secondary-text); white-space: nowrap; border: 1px solid transparent; display: flex; align-items: center; }
         .tab.active { background-color: var(--bg-color); color: var(--primary-text); border-color: #444 #444 transparent #444; }
+        .tab-close-btn { margin-left: 8px; cursor: pointer; font-weight: bold; padding: 0 4px; border-radius: 3px; }
+        .tab-close-btn:hover { background-color: rgba(255,255,255,0.1); }
         
         #editor-container { flex-grow: 1; position: relative; background-color: var(--editor-bg); }
         #code-editor, #highlighting-layer-container { margin: 0; padding: 10px; font-family: var(--font-family); font-size: 16px; line-height: 1.5; border: none; outline: none; width: 100%; height: 100%; position: absolute; top: 0; left: 0; overflow: auto; white-space: pre; word-wrap: normal; }
         #code-editor { z-index: 1; background: transparent; color: transparent; caret-color: white; resize: none; }
         #highlighting-layer-container { z-index: 0; pointer-events: none; }
-        .syntax-error, .hl-thai-error, .hl-unknown-var { text-decoration: underline wavy var(--error-color) 1px; }
+        .syntax-error-line { background-color: rgba(244, 71, 71, 0.2); }
+        .hl-thai-error, .hl-unknown-var { text-decoration: underline wavy var(--error-color) 1px; }
 
         #autocomplete-popup { position: absolute; background-color: #3c3c3c; border: 1px solid #555; border-radius: 4px; min-width: 150px; max-height: 200px; overflow-y: auto; z-index: 1000; color: var(--primary-text); }
         .autocomplete-item { padding: 8px 12px; cursor: pointer; } .autocomplete-item:hover, .autocomplete-item.selected { background-color: var(--accent-color); }
@@ -76,7 +79,6 @@
 </head>
 <body>
     <div id="main-layout">
-        <!-- Explorer Panel -->
         <div id="explorer-panel">
             <div class="panel-header">
                 <button id="explorer-toggle-btn" title="Toggle Explorer">«</button>
@@ -90,7 +92,6 @@
                 <ul><li data-type="Part">Part</li><li data-type="Script">Script</li><li data-type="RemoteEvent">RemoteEvent</li></ul>
             </div>
         </div>
-        <!-- Main Content Area -->
         <div id="main-content">
             <button id="explorer-toggle-btn" class="collapsed-btn" title="Toggle Explorer">»</button>
             <div id="ai-tutor">
@@ -99,7 +100,7 @@
             <div id="script-manager"><div id="script-tabs"></div></div>
             <div id="editor-container">
                 <textarea id="code-editor" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
-                <div id="highlighting-layer-container"><code id="highlighting-layer"></code></div>
+                <div id="highlighting-layer-container"><pre><code id="highlighting-layer"></code></pre></div>
                 <div id="autocomplete-popup" class="hidden"></div>
             </div>
             <div id="bottom-panel">
@@ -118,6 +119,7 @@
     <script src="https://unpkg.com/fengari-web@0.1.4/dist/fengari-web.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // --- Element References ---
             const getEl = id => document.getElementById(id);
             const codeEditor = getEl('code-editor');
             const outputChat = getEl('output-chat');
@@ -131,10 +133,11 @@
             const addItemMenu = getEl('add-item-menu');
             const explorerPanel = getEl('explorer-panel');
             
+            // --- Application State ---
             let mockGame = {
-                Workspace: { _children: {}, ClassName: 'Workspace' },
-                ServerScriptService: { _children: {}, ClassName: 'ServerScriptService' },
-                ReplicatedStorage: { _children: {}, ClassName: 'ReplicatedStorage' }
+                Workspace: { _children: {}, ClassName: 'Workspace', _path: 'game.Workspace' },
+                ServerScriptService: { _children: {}, ClassName: 'ServerScriptService', _path: 'game.ServerScriptService' },
+                ReplicatedStorage: { _children: {}, ClassName: 'ReplicatedStorage', _path: 'game.ReplicatedStorage' }
             };
             let scripts = [];
             let activeScriptIndex = -1;
@@ -146,51 +149,50 @@
             let sceneHistoryIndex = -1;
             let isHighlighting = false;
 
+            // --- Initial Data ---
             const tutorials = {
-                "01_พื้นฐาน": `--[[ บทเรียนที่ 1: พื้นฐาน --\n\n-- 'local' ใช้สร้างตัวแปรที่ใช้ได้แค่ในสคริปต์นี้\nlocal ข้อความ = "สวัสดีสตูดิโอ!" -- ชื่อตัวแปรภาษาไทยจะถูกขีดเส้นใต้\nlocal คะแนน = 100\n\n-- print() ใช้แสดงผลในหน้าต่าง Output\nprint("ยินดีต้อนรับ!")\nprint("คะแนนของคุณคือ:", คะแนน)\n\nlocal testRandom = kdjcjc -- คำที่ไม่รู้จักจะถูกขีดเส้นใต้ด้วย\n]]`,
-                "02_การหาPart": `--[[ บทเรียนที่ 2: การค้นหา Part\n\n-- เพิ่ม Part ชื่อ "MySpecialPart" ใน Workspace ก่อนรัน\n\nlocal partToFind = game.Workspace:FindFirstChild("MySpecialPart")\n\nif partToFind then\n\tprint("เจอแล้ว! Part:", partToFind.Name)\nelse\n\tprint("หา Part ไม่เจอ!")\nend\n]]`,
-                "03_การเปลี่ยนPart": `--[[ บทเรียนที่ 3: การเปลี่ยนคุณสมบัติของ Part\n\n-- เพิ่ม Part ชื่อ "TestPart" ใน Workspace ก่อนรัน\n\nlocal testPart = game.Workspace:FindFirstChild("TestPart")\n\nif testPart then\n\ttestPart.Name = "ChangedNamePart"\n\ttestPart.Transparency = 0.5\n\ttestPart.Anchored = true\n\tprint("เปลี่ยนคุณสมบัติของ", testPart.Name, "เรียบร้อย!")\nend\n]]`,
-                "04_Loopและการสร้าง": `--[[ บทเรียนที่ 4: Loop และการสร้าง Part\n\n-- 'for loop' คือการทำงานซ้ำๆ\nprint("กำลังสร้าง Part...")\n\nfor i = 1, 5 do\n\tlocal newPart = Instance.new("Part")\n\tnewPart.Name = "LoopPart_" .. i\n\tnewPart.Parent = game.Workspace -- .Parent คือการกำหนดว่า Part จะไปอยู่ที่ไหน\n\tprint("สร้าง Part:", newPart.Name)\nend\n\nprint("สร้างเสร็จแล้ว!")\n]]`
+                "01_พื้นฐาน": `--[[ บทเรียนที่ 1: พื้นฐาน --\n\n-- 'local' ใช้สร้างตัวแปรที่ใช้ได้แค่ในสคริปต์นี้\nlocal ข้อความ = "สวัสดีสตูดิโอ!" -- ชื่อตัวแปรภาษาไทยจะถูกขีดเส้นใต้\nlocal คะแนน = 100\n\n-- print() ใช้แสดงผลในหน้าต่าง Output\nprint("ยินดีต้อนรับ!")\nprint("คะแนนของคุณคือ:", คะแนน)\n\n--[[ \nนี่คือคอมเมนต์หลายบรรทัด\nมันจะไม่ถูกรัน\n]]\n\n-- local testRandom = kdjcjc -- คำที่ไม่รู้จักจะถูกขีดเส้นใต้ด้วย\n`,
+                "02_การหาPart": `--[[ บทเรียนที่ 2: การค้นหา Part\n\n-- เพิ่ม Part ชื่อ "MySpecialPart" ใน Workspace ก่อนรัน\n-- ลองเปลี่ยนชื่อ Part ใน Explorer แล้วรันดู!\n\nlocal partToFind = game.Workspace:FindFirstChild("MySpecialPart")\n\nif partToFind then\n\tprint("เจอแล้ว! Part:", partToFind.Name)\nelse\n\tprint("หา Part 'MySpecialPart' ไม่เจอ!")\nend\n]]`,
+                "03_การเปลี่ยนPart": `--[[ บทเรียนที่ 3: การเปลี่ยนคุณสมบัติของ Part\n\n-- เพิ่ม Part ชื่อ "TestPart" ใน Workspace ก่อนรัน\n\nlocal testPart = game.Workspace:FindFirstChild("TestPart")\n\nif testPart then\n\tprint("ชื่อเดิม:", testPart.Name)\n\ttestPart.Name = "ChangedNamePart"\n\t\n\tprint("เปลี่ยนความโปร่งใสเป็น 0.5")\n\ttestPart.Transparency = 0.5\n\t\n\tprint("ยึด Part ให้อยู่กับที่")\n\ttestPart.Anchored = true\n\tprint("เปลี่ยนคุณสมบัติของ", testPart.Name, "เรียบร้อย!")\nend\n]]`,
+                "04_Loopและการสร้าง": `--[[ บทเรียนที่ 4: Loop และการสร้าง Part\n\n-- 'for loop' คือการทำงานซ้ำๆ\nprint("กำลังสร้าง Part...")\n\nfor i = 1, 5 do\n\tlocal newPart = Instance.new("Part")\n\tnewPart.Name = "LoopPart_" .. i\n\tnewPart.Parent = game.Workspace -- .Parent คือการกำหนดว่า Part จะไปอยู่ที่ไหน\n\tprint("สร้าง Part:", newPart.Name)\nend\n\nprint("สร้างเสร็จแล้ว! ดูใน Explorer ได้เลย")\n]]`
             };
              const aiTips = [ "ใช้ :FindFirstChild() เพื่อค้นหาของอย่างปลอดภัย", "ตัวแปร local จะทำงานเร็วกว่าตัวแปร global", "ใช้คอมเมนต์ (--) เพื่ออธิบายโค้ดที่ซับซ้อน", "Instance.new(\"Part\") ใช้สำหรับสร้าง Part ใหม่", "สคริปต์จะรู้จัก script.Parent ได้" ];
-            setInterval(() => { aiTipElement.textContent = aiTips[Math.floor(Math.random() * aiTips.length)]; }, 10000);
+            setInterval(() => { aiTipElement.textContent = ` ${aiTips[Math.floor(Math.random() * aiTips.length)]}`; }, 10000);
             
+            // --- Mobile & Focus Management ---
             let lastTouchEnd = 0;
             document.body.addEventListener('touchend', (e) => { const now = Date.now(); if (now - lastTouchEnd <= 300) e.preventDefault(); lastTouchEnd = now; }, false);
-            codeEditor.addEventListener('focus', () => { dismissBtn.classList.add('visible'); lastFocusedElement = codeEditor; });
-            codeEditor.addEventListener('blur', () => dismissBtn.classList.remove('visible'));
+            codeEditor.addEventListener('focus', () => { dismissBtn.classList.add('visible'); lastFocusedElement = codeEditor; updateUndoRedoButtons(); });
+            codeEditor.addEventListener('blur', () => { dismissBtn.classList.remove('visible'); });
             dismissBtn.addEventListener('click', () => { if(document.activeElement) document.activeElement.blur(); });
 
+            // --- Scene Undo/Redo System ---
             function recordSceneAction(action) {
                 if (sceneHistoryIndex < sceneHistory.length - 1) sceneHistory = sceneHistory.slice(0, sceneHistoryIndex + 1);
                 sceneHistory.push(action); sceneHistoryIndex++; updateUndoRedoButtons();
             }
+            // CORRECTION: Switched to path-based object retrieval for better robustness.
             function getObjectByPath(path) { 
                 if (!path) return null;
-                return path.split('.').reduce((o, k) => {
-                    if (o && o._children) return o._children[k];
-                    return o ? o[k] : undefined;
-                }, { _children: mockGame });
+                return path.split('.').reduce((o, k) => o && o[k], { game: mockGame }).game;
             }
-            function getParentByPath(path) { 
-                if (!path) return null;
-                const parts = path.split('.');
-                if (parts.length <= 1) return null;
-                const parentPath = parts.slice(0, -1).join('.');
+            function getParentByPath(path) {
+                if (!path || !path.includes('.')) return null;
+                const parentPath = path.substring(0, path.lastIndexOf('.'));
                 return getObjectByPath(parentPath);
             }
             function applyAction(action, isUndo) {
-                 let parent, oldName, newName, path;
+                 let parent, oldName, newName, path, obj;
                  switch(action.type) {
                     case 'ADD':
-                        parent = getParentByPath(action.path);
+                        parent = getObjectByPath(action.parentPath);
                         if (parent && parent._children) {
                             if (isUndo) delete parent._children[action.name]; 
                             else parent._children[action.name] = action.objectData;
                         }
                         break;
                     case 'DELETE':
-                        parent = getParentByPath(action.path);
+                        parent = getObjectByPath(action.parentPath);
                         if (parent && parent._children) {
                             if (isUndo) parent._children[action.name] = action.objectData; 
                             else delete parent._children[action.name];
@@ -199,18 +201,29 @@
                     case 'RENAME':
                         oldName = isUndo ? action.newName : action.oldName;
                         newName = isUndo ? action.oldName : action.newName;
-                        path = action.path.substring(0, action.path.lastIndexOf('.') + 1) + oldName;
-                        parent = getParentByPath(path);
+                        parent = getObjectByPath(action.parentPath);
+                        
                         if (parent && parent._children && parent._children[oldName]) {
-                            const obj = parent._children[oldName];
+                            obj = parent._children[oldName];
                             obj.Name = newName;
+                            obj._path = `${action.parentPath}._children.${newName}`;
                             delete parent._children[oldName];
                             parent._children[newName] = obj;
-                            if (obj.ClassName === 'Script') {
-                                const newPath = `${action.path.substring(0, action.path.lastIndexOf('.') + 1)}${newName}`;
-                                const script = scripts.find(s => s.path === path);
-                                if (script) { script.name = newName; script.path = newPath; }
+                            
+                            // CORRECTION: Robustly update paths for open scripts and selected item.
+                            const oldPathPrefix = `${action.parentPath}._children.${oldName}`;
+                            const newPathPrefix = `${action.parentPath}._children.${newName}`;
+                            if (selectedObjectPath && selectedObjectPath.startsWith(oldPathPrefix)) {
+                                selectedObjectPath = selectedObjectPath.replace(oldPathPrefix, newPathPrefix);
                             }
+                            scripts.forEach(s => {
+                                if (s.path === oldPathPrefix) {
+                                    s.name = newName;
+                                    s.path = newPathPrefix;
+                                } else if (s.path.startsWith(oldPathPrefix)) {
+                                    s.path = s.path.replace(oldPathPrefix, newPathPrefix);
+                                }
+                            });
                         }
                         break;
                  }
@@ -220,37 +233,27 @@
             function redoScene() { if (sceneHistoryIndex >= sceneHistory.length - 1) return; sceneHistoryIndex++; applyAction(sceneHistory[sceneHistoryIndex], false); updateUndoRedoButtons(); renderExplorer(); }
             function updateUndoRedoButtons() {
                 const canTextUndo = lastFocusedElement === codeEditor;
+                // For simplicity, we assume browsers handle text undo/redo states.
                 undoBtn.disabled = !canTextUndo && sceneHistoryIndex < 0;
                 redoBtn.disabled = !canTextUndo && sceneHistoryIndex >= sceneHistory.length - 1;
                 deleteBtn.disabled = !selectedObjectPath;
             }
-            undoBtn.addEventListener('click', () => { 
-                if (lastFocusedElement === codeEditor) {
-                    document.execCommand('undo');
-                } else {
-                    undoScene();
-                }
-            });
-            redoBtn.addEventListener('click', () => { 
-                if (lastFocusedElement === codeEditor) {
-                    document.execCommand('redo');
-                } else {
-                    redoScene();
-                }
-            });
+            undoBtn.addEventListener('click', () => { lastFocusedElement === codeEditor ? document.execCommand('undo') : undoScene(); });
+            redoBtn.addEventListener('click', () => { lastFocusedElement === codeEditor ? document.execCommand('redo') : redoScene(); });
 
+            // --- UI Panel Logic ---
             const toggleButtons = document.querySelectorAll('#explorer-toggle-btn');
             toggleButtons.forEach(btn => btn.addEventListener('click', () => explorerPanel.classList.toggle('collapsed')));
             document.addEventListener('click', (e) => { 
-                if (!addItemMenu.contains(e.target)) {
-                    addItemMenu.style.display = 'none';
-                }
-                if (!explorerContent.contains(e.target)) {
+                if (!addItemMenu.contains(e.target)) addItemMenu.style.display = 'none';
+                if (!e.target.closest('#explorer-panel')) {
                     selectedObjectPath = null;
                     renderExplorer();
+                    updateUndoRedoButtons();
                 }
             });
 
+            // --- Script Management ---
             function switchScript(index) {
                 if (activeScriptIndex > -1 && scripts[activeScriptIndex]) scripts[activeScriptIndex].code = codeEditor.value;
                 activeScriptIndex = index;
@@ -258,18 +261,17 @@
                     codeEditor.value = scripts[index].code; 
                     codeEditor.disabled = false; 
                 } else { 
-                    codeEditor.value = '-- ไม่มีสคริปต์ที่เปิดอยู่ --'; 
+                    codeEditor.value = '-- No script is open --'; 
                     codeEditor.disabled = true; 
                 }
                 renderTabs(); 
-                requestAnimationFrame(debouncedCheckSyntax);
-                updateHighlighting();
+                debouncedUpdateHighlighting();
             }
             function openScriptByPath(path) {
                 let scriptIndex = scripts.findIndex(s => s.path === path);
                 if (scriptIndex === -1) {
                     const obj = getObjectByPath(path);
-                    if (!obj) return;
+                    if (!obj || obj.ClassName !== 'Script') return;
                     scripts.push({ path: path, name: obj.Name, code: obj.code || `-- Code for ${obj.Name}` });
                     scriptIndex = scripts.length - 1;
                 }
@@ -279,9 +281,13 @@
                 const index = scripts.findIndex(s => s.path === path);
                 if (index > -1) {
                     scripts.splice(index, 1);
-                    if (activeScriptIndex === index) switchScript(scripts.length > 0 ? 0 : -1);
-                    else if (activeScriptIndex > index) switchScript(activeScriptIndex - 1);
-                    else renderTabs();
+                    if (activeScriptIndex === index) {
+                        switchScript(scripts.length > 0 ? Math.max(0, index - 1) : -1);
+                    } else if (activeScriptIndex > index) {
+                        switchScript(activeScriptIndex - 1);
+                    } else {
+                        renderTabs();
+                    }
                 }
             }
             function renderTabs() {
@@ -289,111 +295,74 @@
                 tabsContainer.innerHTML = '';
                 scripts.forEach((script, index) => {
                     const tab = document.createElement('div');
-                    tab.className = 'tab' + (index === activeScriptIndex ? ' active' : '');
-                    tab.textContent = script.name; 
+                    tab.className = `tab${index === activeScriptIndex ? ' active' : ''}`;
                     tab.onclick = () => switchScript(index);
                     
-                    // Add close button to tab
+                    const tabName = document.createElement('span');
+                    tabName.textContent = script.name;
+                    tab.appendChild(tabName);
+                    
                     const closeBtn = document.createElement('span');
-                    closeBtn.textContent = ' ×';
-                    closeBtn.style.cursor = 'pointer';
-                    closeBtn.style.marginLeft = '8px';
-                    closeBtn.onclick = (e) => {
-                        e.stopPropagation();
-                        closeScriptByPath(script.path);
-                    };
+                    closeBtn.className = 'tab-close-btn';
+                    closeBtn.textContent = '×';
+                    closeBtn.onclick = (e) => { e.stopPropagation(); closeScriptByPath(script.path); };
                     tab.appendChild(closeBtn);
                     
                     tabsContainer.appendChild(tab);
                 });
             }
 
+            // --- Explorer Rendering ---
             function renderExplorer() {
                 explorerContent.innerHTML = '';
                 
                 function handleRename(span, name, path) {
                     const input = document.createElement('input');
-                    input.type = 'text'; 
-                    input.value = name; 
-                    input.className = 'explorer-item-input';
+                    input.type = 'text'; input.value = name; input.className = 'explorer-item-input';
                     span.parentElement.replaceChild(input, span);
-                    setTimeout(() => { 
-                        try { 
-                            input.focus(); 
-                            input.select(); 
-                        } catch(e){} 
-                    }, 0); 
+                    setTimeout(() => { try { input.focus(); input.select(); } catch(e){} }, 0); 
                     
                     const finishEditing = () => {
-                        const newName = input.value.trim().replace(/\s/g, '_') || name;
-                        if (newName !== name) {
-                            recordSceneAction({ 
-                                type: 'RENAME', 
-                                path: path, 
-                                oldName: name, 
-                                newName: newName 
-                            });
+                        const newName = input.value.trim().replace(/[.\s]/g, '_') || name;
+                        const parent = getParentByPath(path);
+                        if (newName !== name && parent && parent._children && !parent._children[newName]) {
+                            recordSceneAction({ type: 'RENAME', parentPath: parent._path, oldName: name, newName: newName });
                             applyAction(sceneHistory[sceneHistory.length-1], false);
                         }
                         renderExplorer();
                     };
                     
                     input.addEventListener('blur', finishEditing);
-                    input.addEventListener('keydown', e => { 
-                        if (e.key === 'Enter') input.blur(); 
-                        if (e.key === 'Escape') renderExplorer();
-                    });
+                    input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); if (e.key === 'Escape') renderExplorer(); });
                 }
                 
                 function renderNode(name, object, depth, path) {
                     const item = document.createElement('div');
                     item.className = 'explorer-item';
                     if (path === selectedObjectPath) item.classList.add('selected');
-                    item.dataset.depth = depth; 
-                    item.dataset.type = object.ClassName;
+                    item.dataset.depth = depth; item.dataset.type = object.ClassName;
                     
-                    const span = document.createElement('span'); 
-                    span.textContent = name; 
-                    item.appendChild(span);
+                    const span = document.createElement('span'); span.textContent = name; item.appendChild(span);
                     
                     const isService = depth === 1;
-                    
                     if (!isService && name !== 'game') {
                         item.classList.add('renameable');
-                        
-                        // Single click to select
-                        item.addEventListener('click', (e) => { 
-                            e.stopPropagation();
-                            selectedObjectPath = path; 
-                            renderExplorer(); 
-                            lastFocusedElement = explorerContent;
-                            updateUndoRedoButtons(); 
-                        });
-                        
-                        // Double click to open/rename
-                        let clickTimer = null;
+                        item.addEventListener('click', (e) => { e.stopPropagation(); selectedObjectPath = path; renderExplorer(); lastFocusedElement = explorerContent; updateUndoRedoButtons(); });
                         item.addEventListener('dblclick', (e) => {
                             e.stopPropagation();
-                            clearTimeout(clickTimer);
-                            if (object.ClassName === 'Script') {
-                                openScriptByPath(path);
-                            } else {
-                                handleRename(span, name, path);
-                            }
+                            if (object.ClassName === 'Script') openScriptByPath(path);
+                            else handleRename(span, name, path);
                         });
                     }
                     
-                    if (isService) {
+                    if (object._children) { // Only allow adding children to services and Workspace for now
                         const plusBtn = document.createElement('button');
-                        plusBtn.className = 'add-child-btn'; 
-                        plusBtn.textContent = '+';
+                        plusBtn.className = 'add-child-btn'; plusBtn.textContent = '+';
                         plusBtn.onclick = (e) => {
                             e.stopPropagation();
                             const rect = plusBtn.getBoundingClientRect();
-                            addItemMenu.style.left = rect.left + 'px'; 
-                            addItemMenu.style.top = rect.bottom + 'px';
-                            addItemMenu.dataset.parentPath = path; 
-                            addItemMenu.style.display = 'block';
+                            addItemMenu.style.left = rect.left + 'px'; addItemMenu.style.top = rect.bottom + 'px';
+                            addItemMenu.dataset.parentPath = path; addItemMenu.style.display = 'block';
                         };
                         item.appendChild(plusBtn);
                     }
@@ -401,15 +370,15 @@
                     explorerContent.appendChild(item);
                     
                     if (object._children) { 
-                        for (const childName in object._children) { 
+                        Object.keys(object._children).sort().forEach(childName => { 
                             renderNode(childName, object._children[childName], depth + 1, `${path}._children.${childName}`); 
-                        } 
+                        }); 
                     }
                 }
-                
                 renderNode('game', { _children: mockGame, ClassName: 'DataModel' }, 0, 'game');
             }
             
+            // --- Explorer Item Management ---
             addItemMenu.addEventListener('click', (e) => {
                 if (e.target.tagName === 'LI') {
                     const parentPath = addItemMenu.dataset.parentPath;
@@ -417,14 +386,9 @@
                     const parent = getObjectByPath(parentPath);
                     if (parent && parent._children) {
                         const itemName = `${type}${itemCounter++}`;
-                        const newObj = { Name: itemName, ClassName: type };
+                        const newObj = { Name: itemName, ClassName: type, _children: {}, _path: `${parentPath}._children.${itemName}` };
                         if (type === 'Script') newObj.code = `-- Code for ${itemName}\nprint("Hello from ${itemName}!")`;
-                        recordSceneAction({ 
-                            type: 'ADD', 
-                            path: `${parentPath}._children.${itemName}`, 
-                            name: itemName, 
-                            objectData: newObj 
-                        });
+                        recordSceneAction({ type: 'ADD', parentPath, name: itemName, objectData: newObj });
                         parent._children[itemName] = newObj; 
                         renderExplorer();
                     }
@@ -433,17 +397,12 @@
             });
             
             deleteBtn.addEventListener('click', () => {
-                if (!selectedObjectPath) return;
+                if (!selectedObjectPath || selectedObjectPath.split('.').length <= 2) return; // Can't delete services
                 const name = selectedObjectPath.substring(selectedObjectPath.lastIndexOf('.') + 1);
                 const parent = getParentByPath(selectedObjectPath);
                 if (parent && parent._children && parent._children[name]) {
                     const objectData = JSON.parse(JSON.stringify(parent._children[name]));
-                    recordSceneAction({ 
-                        type: 'DELETE', 
-                        path: selectedObjectPath, 
-                        name: name, 
-                        objectData: objectData 
-                    });
+                    recordSceneAction({ type: 'DELETE', parentPath: parent._path, name, objectData });
                     if (objectData.ClassName === 'Script') closeScriptByPath(selectedObjectPath);
                     delete parent._children[name];
                     selectedObjectPath = null;
@@ -451,73 +410,55 @@
                 }
             });
             
-            const debounce = (func, delay) => { 
-                let t; 
-                return (...a) => { 
-                    clearTimeout(t); 
-                    t = setTimeout(() => func.apply(this, a), delay); 
-                }; 
-            };
+            // --- Syntax Highlighting ---
+            const debounce = (func, delay) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => func.apply(this, a), delay); }; };
             
             const knownGlobals = new Set(['game', 'print', 'workspace', 'wait', 'script', 'math', 'Vector3', 'CFrame', 'Color3', 'Instance', 'pcall', 'xpcall', 'tostring', 'tonumber', 'type']);
             const keywords = new Set(['local', 'function', 'if', 'then', 'else', 'elseif', 'end', 'for', 'while', 'do', 'return', 'and', 'or', 'not', 'break', 'in', 'repeat', 'until']);
             
+            // IMPROVEMENT: More robust highlighting that supports multiline comments/strings and is debounced for performance.
             function updateHighlighting() {
                 if (isHighlighting) return;
                 isHighlighting = true;
                 
                 const text = codeEditor.value;
-                const lines = text.split('\n');
-                let html = '';
                 const knownVariables = new Set();
-                
-                // Extract known variables from code
                 text.replace(/(?:local|function)\s+([\w_]+)/g, (_, name) => knownVariables.add(name));
                 text.replace(/(\w+)\s*=\s*function/g, (_, name) => knownVariables.add(name));
                 text.replace(/for\s+([\w_,\s]+)\s+in/g, (match, names) => {
                     names.split(',').forEach(name => knownVariables.add(name.trim()));
                 });
+
+                const escapeHtml = (str) => str.replace(/</g, '&lt;').replace(/>/g, '&gt;');
                 
-                const stringPattern = /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')/;
-                const commentPattern = /(--.*)/;
+                const tokenRegex = /(--\[\[[\s\S]*?\]\])|(--[^\r\n]*)|("(?:\\[\s\S]|[^"\\])*")|('(?:\\[\s\S]|[^'\\])*')|(\b(?:[0-9]*\.?[0-9]+)\b)|(\b\w+\b)|([\s\S])/g;
+                let html = '';
                 
-                for(let i = 0; i < lines.length; i++) {
-                    let lineHtml = '';
-                    const parts = lines[i].split(new RegExp(`(${stringPattern.source}|${commentPattern.source})`)).filter(Boolean);
-                    
-                    parts.forEach(part => {
-                        if (part.match(stringPattern)) {
-                            lineHtml += `<span class="hl-string">${part.replace(/</g, '&lt;')}</span>`;
-                        } else if (part.match(commentPattern)) {
-                            lineHtml += `<span class="hl-comment">${part.replace(/</g, '&lt;')}</span>`;
-                        } else {
-                            let codePart = part.replace(/</g, '&lt;');
-                            
-                            // Improved highlighting logic
-                            codePart = codePart.replace(/\b(\w+)\b/g, (word) => {
-                                if (keywords.has(word)) return `<span class="hl-keyword">${word}</span>`;
-                                if (knownGlobals.has(word)) return `<span class="hl-global">${word}</span>`;
-                                if (knownVariables.has(word)) return `<span>${word}</span>`;
-                                if (!isNaN(parseFloat(word)) && !word.includes('_')) return `<span class="hl-number">${word}</span>`;
-                                if (/[ก-๙]/.test(word)) return `<span class="hl-thai-error">${word}</span>`;
-                                return `<span class="hl-unknown-var">${word}</span>`;
-                            });
-                            
-                            lineHtml += codePart;
-                        }
-                    });
-                    
-                    if (syntaxError && syntaxError.line === i + 1) {
-                        html += `<span class="syntax-error">${lineHtml || ' '}</span>\n`;
+                text.replace(tokenRegex, (match, mlComment, slComment, dString, sString, number, word, other) => {
+                    if (mlComment || slComment) html += `<span class="hl-comment">${escapeHtml(match)}</span>`;
+                    else if (dString || sString) html += `<span class="hl-string">${escapeHtml(match)}</span>`;
+                    else if (number) html += `<span class="hl-number">${match}</span>`;
+                    else if (word) {
+                        if (keywords.has(word)) html += `<span class="hl-keyword">${word}</span>`;
+                        else if (knownGlobals.has(word)) html += `<span class="hl-global">${word}</span>`;
+                        else if (knownVariables.has(word)) html += `<span>${word}</span>`;
+                        else if (/[ก-๙]/.test(word)) html += `<span class="hl-thai-error">${word}</span>`;
+                        else html += `<span class="hl-unknown-var">${word}</span>`;
                     } else {
-                        html += `${lineHtml}\n`;
+                        html += escapeHtml(other);
                     }
+                    return match; // Required for replace function
+                });
+
+                if (syntaxError) {
+                    const lines = html.split('\n');
+                    if(lines[syntaxError.line -1]) {
+                        lines[syntaxError.line - 1] = `<span class="syntax-error-line">${lines[syntaxError.line - 1]}</span>`;
+                    }
+                    html = lines.join('\n');
                 }
                 
-                requestAnimationFrame(() => { 
-                    highlightingLayer.innerHTML = html; 
-                    isHighlighting = false; 
-                });
+                requestAnimationFrame(() => { highlightingLayer.innerHTML = html; isHighlighting = false; });
             }
             
             function checkSyntax() {
@@ -527,28 +468,19 @@
                     if (status !== fengari.lua.LUA_OK) {
                         const errorMsg = fengari.to_jsstring(fengari.lua.lua_tostring(L, -1));
                         const lineMatch = errorMsg.match(/\[string "..."\]:(\d+):/);
-                        syntaxError = { line: lineMatch ? parseInt(lineMatch[1]) : -1 };
-                    } else {
-                        syntaxError = null;
-                    }
+                        syntaxError = { line: lineMatch ? parseInt(lineMatch[1]) : -1, message: errorMsg };
+                    } else { syntaxError = null; }
                     fengari.lua.lua_close(L);
-                } catch (e) {
-                    syntaxError = null;
-                }
+                } catch (e) { syntaxError = null; }
                 updateHighlighting();
             }
             
             const debouncedCheckSyntax = debounce(checkSyntax, 300);
-            codeEditor.addEventListener('input', () => { 
-                debouncedCheckSyntax(); 
-                updateHighlighting(); 
-            });
-            
-            codeEditor.addEventListener('scroll', () => { 
-                getEl('highlighting-layer-container').scrollTop = codeEditor.scrollTop; 
-                getEl('highlighting-layer-container').scrollLeft = codeEditor.scrollLeft; 
-            });
+            const debouncedUpdateHighlighting = debounce(updateHighlighting, 150);
+            codeEditor.addEventListener('input', () => { debouncedCheckSyntax(); debouncedUpdateHighlighting(); });
+            codeEditor.addEventListener('scroll', () => { getEl('highlighting-layer-container').scrollTop = codeEditor.scrollTop; getEl('highlighting-layer-container').scrollLeft = codeEditor.scrollLeft; });
 
+            // --- Lua Execution Engine ---
             function logToOutput(message, type = 'info') {
                 const line = document.createElement('div');
                 line.className = `output-line ${type}`;
@@ -558,57 +490,118 @@
             }
             
             getEl('run-button').addEventListener('click', () => {
-                outputChat.innerHTML = '';
-                logToOutput("> Starting execution...", "info");
+                outputChat.innerHTML = ''; logToOutput("> Starting execution...", "info");
                 
                 try {
-                    let executionGame = JSON.parse(JSON.stringify(mockGame));
+                    let executionGame = JSON.parse(JSON.stringify(mockGame)); // Deep copy for sandbox
                     
-                    function getObjectByPathForExec(path, root) {
-                        return path.split('.').reduce((o, k) => {
-                            if (o && o._children) return o._children[k];
-                            return o ? o[k] : undefined;
-                        }, { _children: root });
-                    }
+                    const L = fengari.lauxlib.luaL_newstate(); fengari.lualib.luaL_openlibs(L);
                     
+                    // -- Custom print function --
+                    fengari.lua.lua_pushjs(L, (...args) => { 
+                        const msg = args.map(a => typeof a === 'object' && a !== null ? JSON.stringify(a, null, 2) : fengari.to_jsstring(a)).join('\t'); 
+                        logToOutput(msg, 'print'); 
+                    }); 
+                    fengari.lua.lua_setglobal(L, fengari.to_luastring("print"));
+                    
+                    // CORRECTION/IMPROVEMENT: A much more powerful sandbox that simulates Roblox instances.
+                    // This allows properties like .Name and .Parent to work correctly.
+                    const sandboxSetup = `
+                        local js = require "js"
+                        local raw_execution_game = js.global:getObject("executionGame")
+                        
+                        -- Object tracking and proxy cache
+                        local objects_by_path = {}
+                        local get_object_proxy
+                        
+                        local function find_js_obj_by_path(path)
+                            local parts = {}
+                            for part in string.gmatch(path, "[^%.]+") do table.insert(parts, part) end
+                            local current = raw_execution_game
+                            for i = 2, #parts do
+                                if current == nil then return nil end
+                                current = current[parts[i]]
+                            end
+                            return current
+                        end
+
+                        local instance_metatable = {
+                            __index = function(t, k)
+                                local internal = t._internal
+                                if k == "Name" or k == "ClassName" or k == "Transparency" or k == "Anchored" then
+                                    return internal[k]
+                                end
+                                if internal._children and internal._children[k] then
+                                    return get_object_proxy(internal._children[k])
+                                end
+                                if k == "FindFirstChild" then
+                                    return function(_, childName)
+                                        if internal._children and internal._children[childName] then
+                                            return get_object_proxy(internal._children[childName])
+                                        end
+                                        return nil
+                                    end
+                                end
+                                return nil
+                            end,
+                            __newindex = function(t, k, v)
+                                local internal = t._internal
+                                if k == "Name" or k == "Transparency" or k == "Anchored" then
+                                    internal[k] = v
+                                elseif k == "Parent" then
+                                    local old_parent_js = find_js_obj_by_path(string.match(internal._path, "(.*)._children"))
+                                    if old_parent_js and old_parent_js._children then
+                                        old_parent_js._children[internal.Name] = nil
+                                    end
+                                    
+                                    local new_parent_js = v._internal
+                                    if new_parent_js and new_parent_js._children then
+                                         new_parent_js._children[internal.Name] = internal
+                                         internal._path = new_parent_js._path .. "._children." .. internal.Name
+                                    end
+                                    internal.Parent = v -- for script.Parent reference
+                                end
+                            end
+                        }
+                        
+                        get_object_proxy = function(js_obj)
+                            if not js_obj or not js_obj._path then return js_obj end
+                            if objects_by_path[js_obj._path] then return objects_by_path[js_obj._path] end
+                            
+                            local proxy = { _internal = js_obj }
+                            setmetatable(proxy, instance_metatable)
+                            objects_by_path[js_obj._path] = proxy
+                            return proxy
+                        end
+
+                        function Instance.new(className)
+                            local name = className .. " (new)"
+                            local new_js_obj = { Name = name, ClassName = className, _children = {} }
+                            return get_object_proxy(new_js_obj)
+                        end
+                        
+                        game = get_object_proxy(raw_execution_game)
+                        workspace = game.Workspace
+                    `;
+                    
+                    fengari.lua.lua_pushjs(L, { getObject: (name) => { if(name === 'executionGame') return executionGame; } });
+                    fengari.lua.lua_setglobal(L, fengari.to_luastring("js_global"));
+                    fengari.lauxlib.luaL_dostring(L, fengari.to_luastring(sandboxSetup));
+
+                    // -- Execute Scripts --
                     const serverScripts = executionGame.ServerScriptService._children;
                     for (const scriptName in serverScripts) {
                         if (serverScripts[scriptName].ClassName === 'Script') {
-                            const L = fengari.lauxlib.luaL_newstate(); 
-                            fengari.lualib.luaL_openlibs(L);
+                            const scriptObject = serverScripts[scriptName];
                             
-                            fengari.lua.lua_pushjs(L, executionGame); 
-                            fengari.lua.lua_setglobal(L, fengari.to_luastring("game"));
-                            
-                            const scriptProxy = { Parent: executionGame.ServerScriptService, Name: scriptName };
-                            fengari.lua.lua_pushjs(L, scriptProxy); 
-                            fengari.lua.lua_setglobal(L, fengari.to_luastring("script"));
-                            
-                            fengari.lua.lua_pushjs(L, (...args) => { 
-                                const msg = args.map(a => {
-                                    if (typeof a === 'object' && a !== null) {
-                                        return JSON.stringify(a);
-                                    }
-                                    return fengari.to_jsstring(a);
-                                }).join('\t'); 
-                                logToOutput(msg, 'print'); 
-                            }); 
-                            fengari.lua.lua_setglobal(L, fengari.to_luastring("print"));
-                            
+                            // Set the 'script' global variable for the currently running script
                             fengari.lauxlib.luaL_dostring(L, fengari.to_luastring(`
-                                local metatables = {}
-                                metatables.Part = {
-                                    __index = function(t, k) return rawget(t, k) end
-                                }
-                                function Instance.new(type) 
-                                    local obj = {ClassName=type, _children={}}
-                                    function obj:FindFirstChild(name) return obj._children and obj._children[name] or nil end
-                                    return setmetatable(obj, metatables[type])
-                                end
+                                local script_js_obj = find_js_obj_by_path("${scriptObject._path}")
+                                script = get_object_proxy(script_js_obj)
                             `));
 
                             logToOutput(`--- Running ${scriptName} ---`, 'info');
-                            const status = fengari.lauxlib.luaL_dostring(L, fengari.to_luastring(serverScripts[scriptName].code));
+                            const status = fengari.lauxlib.luaL_dostring(L, fengari.to_luastring(scriptObject.code));
                             if (status !== fengari.lua.LUA_OK) {
                                 const errorMsg = fengari.to_jsstring(fengari.lua.lua_tostring(L, -1));
                                 logToOutput(`[ERROR] in ${scriptName}: ${errorMsg.split(": ").slice(1).join(": ")}`, 'error'); 
@@ -616,6 +609,7 @@
                             }
                         }
                     }
+                    fengari.lua.lua_close(L);
                     logToOutput("> Execution finished.", "success");
                     mockGame = executionGame; 
                     renderExplorer();
@@ -626,20 +620,19 @@
             
             getEl('clear-output-btn').addEventListener('click', () => outputChat.innerHTML = '');
 
-            // Initialize tutorials
-            Object.keys(tutorials).forEach(name => {
-                mockGame.ServerScriptService._children[name] = { 
-                    Name: name, 
-                    ClassName: 'Script', 
-                    code: tutorials[name] 
-                };
-            });
+            // --- Initialization ---
+            function initialize() {
+                Object.keys(tutorials).forEach(name => {
+                    const path = `game.ServerScriptService._children.${name}`;
+                    mockGame.ServerScriptService._children[name] = { Name: name, ClassName: 'Script', code: tutorials[name], _path: path };
+                });
+                renderExplorer();
+                openScriptByPath('game.ServerScriptService._children.01_พื้นฐาน');
+                updateUndoRedoButtons();
+                logToOutput("Studio is ready!", "info");
+            }
             
-            // Initialize the application
-            renderExplorer();
-            openScriptByPath('game.ServerScriptService._children.01_พื้นฐาน');
-            updateUndoRedoButtons();
-            logToOutput("สตูดิโอพร้อมใช้งานแล้ว!", "info");
+            initialize();
         }); 
     </script>
 </body>
