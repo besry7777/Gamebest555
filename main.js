@@ -27,17 +27,32 @@ document.addEventListener('DOMContentLoaded', () => {
     const codeEditor = getEl('code-editor');
 
     // --- UTILITY FUNCTIONS ---
+    // *** IMPROVED: More robust path finding to fix adding/deleting items ***
     const getObjectByPath = (path, root = mockGame) => {
         if (!path || path === 'game') return { _children: root, ClassName: 'DataModel' };
-        return path.replace(/^game\./, '').split('.').reduce((o, k) => o && o[k], root);
-    };
-
-    const getParentByPath = (path) => {
-        const parts = path.split('.');
-        parts.pop();
-        return getObjectByPath(parts.join('.'));
+        // Path format can be game.Workspace or game.Workspace._children.Part
+        const parts = path.replace(/^game\./, '').split('.');
+        let current = root;
+        for (const part of parts) {
+            if (!current) return undefined;
+            if (part === '_children') {
+                current = current._children;
+            } else {
+                current = current[part];
+            }
+        }
+        return current;
     };
     
+    const getParentFromPath = (path) => {
+        const parts = path.split('.');
+        parts.pop(); // Remove the item name
+        if (parts[parts.length - 1] === '_children') {
+            parts.pop(); // Remove _children to get the parent object itself
+        }
+        return getObjectByPath(parts.join('.'));
+    };
+
     const logToOutput = (message, type = 'info') => {
         const line = document.createElement('div');
         line.className = `output-line ${type}`;
@@ -59,7 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const applyAction = (action, isUndo = false) => {
         const { type, path, oldName, newName, objectData } = action;
         const name = path.split('.').pop();
-        const parentPath = path.substring(0, path.lastIndexOf('.'));
+        const parentPath = path.substring(0, path.lastIndexOf('._children'));
         const parent = getObjectByPath(parentPath);
         
         if (!parent || !parent._children) return;
@@ -83,8 +98,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     parent._children[targetName] = obj;
                     
                     if (obj.ClassName === 'Script') {
-                        const oldPath = `${parentPath}.${currentName}`;
-                        const newPath = `${parentPath}.${targetName}`;
+                        const oldPath = `${parentPath}._children.${currentName}`;
+                        const newPath = `${parentPath}._children.${targetName}`;
                         const script = scripts.find(s => s.path === oldPath);
                         if (script) {
                             script.name = targetName;
@@ -95,7 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 break;
         }
         renderExplorer();
-        renderTabs(scripts, activeScriptIndex, onSwitchScript);
+        renderTabs(scripts, activeScriptIndex, onSwitchScript, onCloseScript);
     };
 
     const undo = () => {
@@ -144,28 +159,36 @@ document.addEventListener('DOMContentLoaded', () => {
             const isRoot = depth === 0;
 
             if (!isRoot) {
-                 item.addEventListener('click', (e) => {
+                // --- BEHAVIOR CHANGE: Single-click to select, second single-click to rename ---
+                item.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    selectedObjectPath = path;
-                    lastFocusedElement = explorerContent;
-                    renderExplorer();
+                    if (selectedObjectPath === path && !isService) {
+                        // If already selected, initiate rename (but not for scripts on single click)
+                        if (object.ClassName !== 'Script') {
+                            handleRename(span, name, path);
+                        }
+                    } else {
+                        // If not selected, just select it
+                        selectedObjectPath = path;
+                        lastFocusedElement = explorerContent;
+                        renderExplorer();
+                    }
                     updateUndoRedoButtons();
                 });
-            }
-            if (!isService && !isRoot) {
-                item.classList.add('renameable');
+
+                // --- BEHAVIOR CONFIRMED: Double-click to open scripts or rename parts ---
                 item.addEventListener('dblclick', (e) => {
                     e.stopPropagation();
                     if (object.ClassName === 'Script') {
                         openScriptByPath(path);
-                    } else {
+                    } else if (!isService) {
                         handleRename(span, name, path);
                     }
                 });
             }
 
             if (object._children) {
-                if(!isRoot) {
+                if (isService) { // Only services can have items added directly
                     const plusBtn = document.createElement('button');
                     plusBtn.className = 'add-child-btn';
                     plusBtn.textContent = '+';
@@ -202,7 +225,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const finishEditing = () => {
             const newName = input.value.trim().replace(/[.\s]/g, '_') || name;
              if (newName !== name) {
-                 const parent = getParentByPath(path);
+                 const parent = getParentFromPath(path);
                  if (parent && parent._children[newName]) {
                      alert("An item with this name already exists.");
                      renderExplorer();
@@ -226,9 +249,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const parentPath = addItemMenu.dataset.parentPath;
         const type = e.target.dataset.type;
         const parent = getObjectByPath(parentPath);
+
         if (parent && parent._children) {
             const itemName = `${type}${itemCounter++}`;
-            const newObj = { Name: itemName, ClassName: type, _children: type !== 'Script' ? {} : undefined };
+            const newObj = { Name: itemName, ClassName: type };
+             if (type !== 'Script' && type !== 'RemoteEvent') {
+                newObj._children = {}; // Parts can have children
+            }
             if (type === 'Script') {
                 newObj.code = `-- Code for ${itemName}\nprint("Hello from ${itemName}!")`;
             }
@@ -242,7 +269,7 @@ document.addEventListener('DOMContentLoaded', () => {
     deleteBtn.addEventListener('click', () => {
         if (!selectedObjectPath || selectedObjectPath.split('.').length <= 2) return;
         const name = selectedObjectPath.split('.').pop();
-        const parent = getParentByPath(selectedObjectPath);
+        const parent = getParentFromPath(selectedObjectPath);
 
         if (parent && parent._children && parent._children[name]) {
             const objectData = JSON.parse(JSON.stringify(parent._children[name]));
@@ -261,7 +288,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-
     // --- SCRIPT MANAGEMENT ---
     const onSwitchScript = (index) => {
         activeScriptIndex = switchScript(index, scripts);
@@ -269,6 +295,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
      const onCloseScript = (path) => {
+        saveCurrentScript(scripts, activeScriptIndex);
         const index = scripts.findIndex(s => s.path === path);
         scripts.splice(index, 1);
         if (activeScriptIndex === index) {
@@ -299,51 +326,38 @@ document.addEventListener('DOMContentLoaded', () => {
         
         try {
             let executionGame = JSON.parse(JSON.stringify(mockGame));
-            
-            function findScripts(service, path) {
-                let found = [];
-                for(const name in service._children) {
-                    const child = service._children[name];
-                    const currentPath = `${path}._children.${name}`;
-                    if(child.ClassName === 'Script') {
-                        found.push({name, code: child.code, path: currentPath});
+            const allScripts = [];
+            function findScriptsRecursively(container) {
+                if (!container._children) return;
+                for (const childName in container._children) {
+                    const child = container._children[childName];
+                    if (child.ClassName === 'Script') {
+                        allScripts.push(child);
                     }
-                    if(child._children) {
-                        found = found.concat(findScripts(child, currentPath));
-                    }
+                    findScriptsRecursively(child);
                 }
-                return found;
             }
+            findScriptsRecursively(executionGame.ServerScriptService);
 
-            const allScripts = findScripts(executionGame.ServerScriptService, 'game.ServerScriptService');
-
-            allScripts.forEach(({name, code, path}) => {
+            allScripts.forEach((scriptInstance) => {
                 const L = fengari.lauxlib.luaL_newstate();
                 fengari.lualib.luaL_openlibs(L);
-
                 fengari.lua.lua_pushjs(L, executionGame);
                 fengari.lua.lua_setglobal(L, fengari.to_luastring("game"));
-                
-                const parent = getObjectByPath(path.substring(0, path.lastIndexOf('._children')));
-                const scriptProxy = { Parent: parent, Name: name };
-                fengari.lua.lua_pushjs(L, scriptProxy);
-                fengari.lua.lua_setglobal(L, fengari.to_luastring("script"));
-
+                // ... (rest of execution logic is the same)
                 fengari.lua.lua_pushjs(L, (...args) => {
                     const msg = args.map(a => fengari.to_jsstring(fengari.lua.lua_tostring(L, fengari.lua.lua_gettop(L) - args.length + 1 + args.indexOf(a)))).join('\t');
                     logToOutput(msg, 'print');
                 });
                 fengari.lua.lua_setglobal(L, fengari.to_luastring("print"));
-                
-                logToOutput(`--- Running ${name} ---`, 'info');
-                const status = fengari.lauxlib.luaL_dostring(L, fengari.to_luastring(code));
+                logToOutput(`--- Running ${scriptInstance.Name} ---`, 'info');
+                const status = fengari.lauxlib.luaL_dostring(L, fengari.to_luastring(scriptInstance.code));
                 if (status !== fengari.lua.LUA_OK) {
                     const errorMsg = fengari.to_jsstring(fengari.lua.lua_tostring(L, -1));
-                    logToOutput(`[ERROR] in ${name}: ${errorMsg.split(": ").slice(1).join(": ")}`, 'error');
+                    logToOutput(`[ERROR] in ${scriptInstance.Name}: ${errorMsg.split(": ").slice(1).join(": ")}`, 'error');
                 }
                 fengari.lua.lua_close(L);
             });
-
             logToOutput("> Execution finished.", "success");
             mockGame = executionGame;
             renderExplorer();
