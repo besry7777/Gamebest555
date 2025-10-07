@@ -16,6 +16,7 @@ let autocomplete = {
     startPos: 0
 };
 
+// --- BEHAVIOR CHANGE: Reduced debounce delay for faster highlighting ---
 const debounce = (func, delay) => {
     let timeout;
     return (...args) => {
@@ -60,7 +61,6 @@ const updateHighlighting = () => {
 
         // Comments
         lineHtml = lineHtml.replace(/(--\[\[[\s\S]*?\]\])|(--.*)/g, '<span class="hl-comment">$&</span>');
-
         // Strings
         lineHtml = lineHtml.replace(/("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')/g, '<span class="hl-string">$&</span>');
 
@@ -71,14 +71,10 @@ const updateHighlighting = () => {
             if (!isNaN(parseFloat(word)) && !word.match(/[a-zA-Z_]/)) return `<span class="hl-number">${word}</span>`;
             if (knownVariables.has(word)) return `<span>${word}</span>`;
             if (/[ก-๙]/.test(word)) return `<span class="hl-thai-error">${word}</span>`;
-            // Check if it's a property of a known object (basic check)
             if (lineHtml.includes('.' + word) || lineHtml.includes(':' + word)) return `<span>${word}</span>`;
             return `<span class="hl-unknown-var">${word}</span>`;
         });
         
-        // Restore comments and strings from placeholders if needed
-        // This regex approach is simplified; for perfect highlighting, a proper tokenizer is needed.
-
         if (syntaxError && syntaxError.line === i + 1) {
             html += `<div class="syntax-error">${lineHtml || ' '}</div>`;
         } else {
@@ -97,10 +93,7 @@ const checkSyntax = () => {
         if (status !== fengari.lua.LUA_OK) {
             const errorMsg = fengari.to_jsstring(fengari.lua.lua_tostring(L, -1));
             const lineMatch = errorMsg.match(/\[string "..."\]:(\d+):/);
-            syntaxError = {
-                line: lineMatch ? parseInt(lineMatch[1]) : -1,
-                message: errorMsg
-            };
+            syntaxError = { line: lineMatch ? parseInt(lineMatch[1]) : -1, message: errorMsg };
         } else {
             syntaxError = null;
         }
@@ -110,9 +103,10 @@ const checkSyntax = () => {
     }
     updateHighlighting();
 };
-const debouncedCheckSyntax = debounce(checkSyntax, 300);
+// *** MODIFIED: Faster response time for syntax highlighting ***
+const debouncedCheckSyntax = debounce(checkSyntax, 120);
 
-// --- AUTOCOMPLETE ---
+// --- AUTOCOMPLETE --- (Logic is the same as before)
 const showAutocomplete = () => {
     const { selectionStart } = codeEditor;
     const textToCursor = codeEditor.value.substring(0, selectionStart);
@@ -145,7 +139,6 @@ const showAutocomplete = () => {
     });
     autocompletePopup.innerHTML = itemsHtml;
     
-    // Position popup (this is a simplified positioning)
     const lineHeight = 24; // approx
     const line = textToCursor.split('\n').length;
     const col = textToCursor.split('\n').pop().length;
@@ -177,7 +170,7 @@ const navigateAutocomplete = (e) => {
         hideAutocomplete();
         return;
     } else {
-        return; // Don't update for other keys
+        return;
     }
 
     Array.from(autocompletePopup.children).forEach((child, i) => {
@@ -255,7 +248,8 @@ export function initEditor(stateGetter) {
     
     codeEditor.addEventListener('input', () => {
         debouncedCheckSyntax();
-        showAutocomplete();
+        // A short delay helps prevent the popup from flickering on fast typing
+        setTimeout(showAutocomplete, 50); 
     });
 
     codeEditor.addEventListener('keydown', navigateAutocomplete);
