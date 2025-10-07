@@ -1,113 +1,56 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8">
-  <title>เกมทายคำเร็ว!</title>
-  <style>
-    body { font-family: sans-serif; text-align: center; background: #f0f0f0; }
-    #game { margin-top: 50px; }
-    button { padding: 10px 20px; font-size: 16px; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Lua Learning Studio - Final Edition</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>🎮 เกมทายคำเร็ว!</h1>
-  <div id="game">
-    <input id="roomId" placeholder="ชื่อห้อง (เช่น room1)">
-    <button id="createRoom">สร้างห้อง</button>
-    <button id="joinRoom">เข้าห้อง</button>
-    <p id="status"></p>
-    <div id="wordArea" style="display:none;">
-      <h2 id="wordToGuess"></h2>
-      <input id="guessInput" placeholder="พิมพ์คำตอบ...">
-      <button id="submitGuess">ตอบ</button>
-      <p id="result"></p>
+    <div id="main-layout">
+        <div id="explorer-panel">
+            <div class="panel-header">
+                <button id="explorer-toggle-btn" title="Toggle Explorer">«</button>
+                <span>Explorer</span>
+                <div class="header-controls">
+                    <button id="delete-btn" title="Delete Selected">🗑️</button>
+                </div>
+            </div>
+            <div id="explorer-content"></div>
+            <div id="add-item-menu">
+                <ul>
+                    <li data-type="Part">Part</li>
+                    <li data-type="Script">Script</li>
+                    <li data-type="RemoteEvent">RemoteEvent</li>
+                </ul>
+            </div>
+        </div>
+        <div id="main-content">
+            <button id="explorer-toggle-btn" class="collapsed-btn" title="Toggle Explorer">»</button>
+            <div id="ai-tutor">
+                <span class="title">💡 AI Tutor:</span><span id="ai-tip">ยินดีต้อนรับสู่สตูดิโอเรียนรู้ Lua!</span>
+            </div>
+            <div id="script-manager"><div id="script-tabs"></div></div>
+            <div id="editor-container">
+                <textarea id="code-editor" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
+                <div id="highlighting-layer-container"><code id="highlighting-layer"></code></div>
+                <div id="autocomplete-popup" class="hidden"></div>
+            </div>
+            <div id="bottom-panel">
+                 <div id="controls">
+                    <button id="undo-btn" class="control-btn" title="Undo">↩️</button>
+                    <button id="redo-btn" class="control-btn" title="Redo">↪️</button>
+                    <button id="run-button">▶️ Run</button>
+                    <button id="clear-output-btn" class="control-btn" title="Clear Output">🗑️</button>
+                </div>
+                <div id="output-chat"></div>
+            </div>
+        </div>
     </div>
-  </div>
+    <button id="dismiss-keyboard-btn">⌨️<span style="font-size: 0.6em;">⬇️</span></button>
 
-  <!-- Firebase SDK -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, doc, setDoc, getDoc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyBcxVAP08XMiPMoqElaKM7AYY_2z08oWok",
-      authDomain: "xobybestry777.firebaseapp.com",
-      projectId: "xobybestry777",
-      storageBucket: "xobybestry777.firebasestorage.app",
-      messagingSenderId: "380539937989",
-      appId: "1:380539937989:web:48049ed77f45327e033cac",
-      measurementId: "G-YZWTKXL285"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    const createBtn = document.getElementById("createRoom");
-    const joinBtn = document.getElementById("joinRoom");
-    const statusEl = document.getElementById("status");
-    const wordArea = document.getElementById("wordArea");
-    const wordEl = document.getElementById("wordToGuess");
-    const guessInput = document.getElementById("guessInput");
-    const resultEl = document.getElementById("result");
-    const submitGuess = document.getElementById("submitGuess");
-
-    let currentPlayer = "player" + Math.floor(Math.random() * 1000);
-    let roomRef;
-
-    const words = ["แมว", "ดวงจันทร์", "โทรศัพท์", "โต๊ะ", "ต้นไม้"];
-
-    createBtn.onclick = async () => {
-      const roomId = document.getElementById("roomId").value;
-      const randomWord = words[Math.floor(Math.random() * words.length)];
-      roomRef = doc(db, "rooms", roomId);
-      await setDoc(roomRef, {
-        players: [currentPlayer],
-        currentWord: randomWord,
-        guessed: ""
-      });
-      statusEl.textContent = "ห้องถูกสร้างแล้ว รอเพื่อนเข้าร่วม...";
-      startListening();
-    };
-
-    joinBtn.onclick = async () => {
-      const roomId = document.getElementById("roomId").value;
-      roomRef = doc(db, "rooms", roomId);
-      const docSnap = await getDoc(roomRef);
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        data.players.push(currentPlayer);
-        await updateDoc(roomRef, { players: data.players });
-        statusEl.textContent = "เข้าร่วมห้องสำเร็จ!";
-        startListening();
-      } else {
-        statusEl.textContent = "ไม่พบห้องนี้!";
-      }
-    };
-
-    function startListening() {
-      onSnapshot(roomRef, (snapshot) => {
-        const data = snapshot.data();
-        if (data.players.length >= 2) {
-          statusEl.textContent = "เริ่มเกม!";
-          wordArea.style.display = "block";
-          wordEl.textContent = "ทายคำ: " + data.currentWord[0] + " _ _";
-        }
-        if (data.guessed === data.currentWord) {
-          resultEl.textContent = "🎉 มีคนทายถูกแล้ว!";
-        }
-      });
-    }
-
-    submitGuess.onclick = async () => {
-      const guess = guessInput.value.trim();
-      const docSnap = await getDoc(roomRef);
-      const data = docSnap.data();
-      if (guess === data.currentWord) {
-        await updateDoc(roomRef, { guessed: guess });
-      } else {
-        resultEl.textContent = "ผิด! ลองใหม่อีกครั้ง";
-      }
-    };
-  </script>
+    <script src="https://unpkg.com/fengari-web@0.1.4/dist/fengari-web.js"></script>
+    
+    <script type="module" src="main.js"></script>
 </body>
 </html>
