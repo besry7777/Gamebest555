@@ -1,639 +1,113 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Lua Learning Studio - Final Edition (Corrected)</title>
-    <style>
-        :root {
-            --bg-color: #2e2e2e; --panel-bg: #252526; --editor-bg: #1e1e1e;
-            --primary-text: #d4d4d4; --secondary-text: #a0a0a0; --accent-color: #007acc;
-            --error-color: #f44747; --success-color: #4CAF50; --info-color: #f0e68c;
-            --font-family: Consolas, 'Courier New', monospace;
-            --hl-keyword: #569cd6; --hl-string: #ce9178; --hl-number: #b5cea8;
-            --hl-comment: #6a9955; --hl-global: #4fc1ff;
-        }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        html, body { margin: 0; padding: 0; height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background-color: var(--bg-color); color: var(--primary-text); touch-action: manipulation; overflow: hidden; }
-        #main-layout { display: flex; height: 100vh; }
-
-        #explorer-panel { width: 240px; background-color: var(--panel-bg); display: flex; flex-direction: column; border-right: 1px solid #444; flex-shrink: 0; transition: width 0.3s ease; position: relative; }
-        #explorer-panel.collapsed { width: 0; border-right: none; }
-        #explorer-panel > * { min-width: 240px; }
-        .panel-header { padding: 8px 10px; font-weight: bold; background-color: #333; display: flex; justify-content: space-between; align-items: center; }
-        .header-controls button { background: none; border: none; color: var(--secondary-text); cursor: pointer; font-size: 1.2em; padding: 0 5px; }
-        .header-controls button:disabled { color: #555; cursor: not-allowed; }
-        #explorer-toggle-btn.collapsed-btn { position: fixed; top: 5px; left: 5px; z-index: 2000; background: #444; border-radius: 4px; display: none;}
-        #explorer-panel.collapsed + #main-content #explorer-toggle-btn.collapsed-btn { display: block; }
-        #explorer-content { flex-grow: 1; overflow-y: auto; padding: 10px; font-family: var(--font-family); font-size: 0.9em; }
-        .explorer-item { padding: 4px; white-space: nowrap; border-radius: 3px; display: flex; align-items: center; justify-content: space-between; user-select: none; }
-        .explorer-item.selected { background-color: #094771; }
-        .explorer-item:not(.selected).renameable:hover { background-color: #3a3a3a; }
-        .explorer-item span { padding: 2px 4px; flex-grow: 1; cursor: default; }
-        .explorer-item[data-depth='1'] { padding-left: 15px; } .explorer-item[data-depth='2'] { padding-left: 30px; }
-        .explorer-item::before { font-family: monospace; content: '📄'; margin-right: 5px; }
-        .explorer-item[data-type='Workspace']::before { content: '🌍'; } .explorer-item[data-type='ServerScriptService']::before { content: '⚙️'; }
-        .explorer-item[data-type='ReplicatedStorage']::before { content: '📦'; } .explorer-item[data-type='Part']::before { content: '🧱'; }
-        .explorer-item[data-type='Script']::before { content: '📜'; } .explorer-item[data-type='RemoteEvent']::before { content: '⚡'; }
-        .explorer-item-input { background: #555; border: 1px solid var(--accent-color); color: white; font: inherit; outline: none; width: 120px; }
-        .add-child-btn { display: none; background-color: var(--accent-color); color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 1.1em; padding: 0 5px; margin-left: 10px; }
-        .explorer-item:hover .add-child-btn, .explorer-item.selected .add-child-btn { display: inline-block; }
-        
-        #add-item-menu { display: none; position: absolute; background: #3c3c3c; border: 1px solid #555; border-radius: 4px; z-index: 1500; padding: 5px; }
-        #add-item-menu ul { list-style: none; margin: 0; padding: 0; } #add-item-menu li { padding: 8px 12px; cursor: pointer; white-space: nowrap; }
-        #add-item-menu li:hover { background-color: var(--accent-color); }
-        
-        #main-content { flex-grow: 1; display: flex; flex-direction: column; height: 100vh; min-width: 0; }
-        #ai-tutor { padding: 10px 15px; background-color: var(--panel-bg); border-bottom: 1px solid #444; font-size: 0.9em; flex-shrink: 0; }
-        #ai-tutor .title { font-weight: bold; color: var(--info-color); }
-        #script-manager { display: flex; align-items: center; background-color: #333; padding: 5px; overflow-x: auto; flex-shrink: 0;}
-        #script-tabs { display: flex; flex-grow: 1; }
-        .tab { padding: 8px 12px; cursor: pointer; border-radius: 4px 4px 0 0; margin-right: 4px; background-color: var(--editor-bg); color: var(--secondary-text); white-space: nowrap; border: 1px solid transparent; display: flex; align-items: center; }
-        .tab.active { background-color: var(--bg-color); color: var(--primary-text); border-color: #444 #444 transparent #444; }
-        .tab-close-btn { margin-left: 8px; cursor: pointer; font-weight: bold; padding: 0 4px; border-radius: 3px; }
-        .tab-close-btn:hover { background-color: rgba(255,255,255,0.1); }
-        
-        #editor-container { flex-grow: 1; position: relative; background-color: var(--editor-bg); }
-        #code-editor, #highlighting-layer-container { margin: 0; padding: 10px; font-family: var(--font-family); font-size: 16px; line-height: 1.5; border: none; outline: none; width: 100%; height: 100%; position: absolute; top: 0; left: 0; overflow: auto; white-space: pre; word-wrap: normal; }
-        #code-editor { z-index: 1; background: transparent; color: transparent; caret-color: white; resize: none; }
-        #highlighting-layer-container { z-index: 0; pointer-events: none; }
-        .syntax-error-line { background-color: rgba(244, 71, 71, 0.2); }
-        .hl-thai-error, .hl-unknown-var { text-decoration: underline wavy var(--error-color) 1px; }
-
-        #autocomplete-popup { position: absolute; background-color: #3c3c3c; border: 1px solid #555; border-radius: 4px; min-width: 150px; max-height: 200px; overflow-y: auto; z-index: 1000; color: var(--primary-text); }
-        .autocomplete-item { padding: 8px 12px; cursor: pointer; } .autocomplete-item:hover, .autocomplete-item.selected { background-color: var(--accent-color); }
-        .hidden { display: none; }
-
-        #bottom-panel { flex-shrink: 0; border-top: 1px solid #444; }
-        #controls { padding: 10px; background-color: var(--panel-bg); display: flex; gap: 10px; align-items: center; }
-        #run-button { flex-grow: 1; padding: 12px; background-color: var(--success-color); color: white; border: none; border-radius: 5px; font-size: 1.2em; cursor: pointer; font-weight: bold; }
-        .control-btn { background-color: #5a5a5a; color: white; border: none; border-radius: 5px; font-size: 1.2em; cursor: pointer; padding: 12px 15px; }
-        .control-btn:disabled { background-color: #444; color: #777; cursor: not-allowed; }
-        
-        #output-chat { height: 160px; background-color: var(--panel-bg); padding: 10px; overflow-y: auto; font-family: var(--font-family); font-size: 0.9em; }
-        .output-line { padding: 4px 0; white-space: pre-wrap; word-break: break-all; } .output-line.error { color: var(--error-color); } .output-line.success { color: var(--success-color); } .output-line.info { color: var(--secondary-text); } .output-line.print { color: #87ceeb; }
-
-        #dismiss-keyboard-btn { display: none; position: fixed; bottom: 15px; right: 15px; z-index: 2000; background: rgba(0,0,0,0.6); color: white; border: 1px solid #888; border-radius: 50%; width: 50px; height: 50px; font-size: 1.5em; }
-        @media (max-width: 768px) { #dismiss-keyboard-btn.visible { display: block; } }
-    </style>
+  <meta charset="UTF-8">
+  <title>เกมทายคำเร็ว!</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; background: #f0f0f0; }
+    #game { margin-top: 50px; }
+    button { padding: 10px 20px; font-size: 16px; }
+  </style>
 </head>
 <body>
-    <div id="main-layout">
-        <div id="explorer-panel">
-            <div class="panel-header">
-                <button id="explorer-toggle-btn" title="Toggle Explorer">«</button>
-                <span>Explorer</span>
-                <div class="header-controls">
-                    <button id="delete-btn" title="Delete Selected">🗑️</button>
-                </div>
-            </div>
-            <div id="explorer-content"></div>
-            <div id="add-item-menu">
-                <ul><li data-type="Part">Part</li><li data-type="Script">Script</li><li data-type="RemoteEvent">RemoteEvent</li></ul>
-            </div>
-        </div>
-        <div id="main-content">
-            <button id="explorer-toggle-btn" class="collapsed-btn" title="Toggle Explorer">»</button>
-            <div id="ai-tutor">
-                <span class="title">💡 AI Tutor:</span><span id="ai-tip">ยินดีต้อนรับสู่สตูดิโอเรียนรู้ Lua!</span>
-            </div>
-            <div id="script-manager"><div id="script-tabs"></div></div>
-            <div id="editor-container">
-                <textarea id="code-editor" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
-                <div id="highlighting-layer-container"><pre><code id="highlighting-layer"></code></pre></div>
-                <div id="autocomplete-popup" class="hidden"></div>
-            </div>
-            <div id="bottom-panel">
-                 <div id="controls">
-                    <button id="undo-btn" class="control-btn" title="Undo">↩️</button>
-                    <button id="redo-btn" class="control-btn" title="Redo">↪️</button>
-                    <button id="run-button">▶️ Run</button>
-                    <button id="clear-output-btn" class="control-btn" title="Clear Output">🗑️</button>
-                </div>
-                <div id="output-chat"></div>
-            </div>
-        </div>
+  <h1>🎮 เกมทายคำเร็ว!</h1>
+  <div id="game">
+    <input id="roomId" placeholder="ชื่อห้อง (เช่น room1)">
+    <button id="createRoom">สร้างห้อง</button>
+    <button id="joinRoom">เข้าห้อง</button>
+    <p id="status"></p>
+    <div id="wordArea" style="display:none;">
+      <h2 id="wordToGuess"></h2>
+      <input id="guessInput" placeholder="พิมพ์คำตอบ...">
+      <button id="submitGuess">ตอบ</button>
+      <p id="result"></p>
     </div>
-    <button id="dismiss-keyboard-btn">⌨️<span style="font-size: 0.6em;">⬇️</span></button>
+  </div>
 
-    <script src="https://unpkg.com/fengari-web@0.1.4/dist/fengari-web.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // --- Element References ---
-            const getEl = id => document.getElementById(id);
-            const codeEditor = getEl('code-editor');
-            const outputChat = getEl('output-chat');
-            const aiTipElement = getEl('ai-tip');
-            const highlightingLayer = getEl('highlighting-layer');
-            const undoBtn = getEl('undo-btn');
-            const redoBtn = getEl('redo-btn');
-            const deleteBtn = getEl('delete-btn');
-            const explorerContent = getEl('explorer-content');
-            const dismissBtn = getEl('dismiss-keyboard-btn');
-            const addItemMenu = getEl('add-item-menu');
-            const explorerPanel = getEl('explorer-panel');
-            
-            // --- Application State ---
-            let mockGame = {
-                Workspace: { _children: {}, ClassName: 'Workspace', _path: 'game.Workspace' },
-                ServerScriptService: { _children: {}, ClassName: 'ServerScriptService', _path: 'game.ServerScriptService' },
-                ReplicatedStorage: { _children: {}, ClassName: 'ReplicatedStorage', _path: 'game.ReplicatedStorage' }
-            };
-            let scripts = [];
-            let activeScriptIndex = -1;
-            let itemCounter = 1;
-            let syntaxError = null;
-            let lastFocusedElement = null;
-            let selectedObjectPath = null;
-            let sceneHistory = [];
-            let sceneHistoryIndex = -1;
-            let isHighlighting = false;
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, doc, setDoc, getDoc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-            // --- Initial Data ---
-            const tutorials = {
-                "01_พื้นฐาน": `--[[ บทเรียนที่ 1: พื้นฐาน --\n\n-- 'local' ใช้สร้างตัวแปรที่ใช้ได้แค่ในสคริปต์นี้\nlocal ข้อความ = "สวัสดีสตูดิโอ!" -- ชื่อตัวแปรภาษาไทยจะถูกขีดเส้นใต้\nlocal คะแนน = 100\n\n-- print() ใช้แสดงผลในหน้าต่าง Output\nprint("ยินดีต้อนรับ!")\nprint("คะแนนของคุณคือ:", คะแนน)\n\n--[[ \nนี่คือคอมเมนต์หลายบรรทัด\nมันจะไม่ถูกรัน\n]]\n\n-- local testRandom = kdjcjc -- คำที่ไม่รู้จักจะถูกขีดเส้นใต้ด้วย\n`,
-                "02_การหาPart": `--[[ บทเรียนที่ 2: การค้นหา Part\n\n-- เพิ่ม Part ชื่อ "MySpecialPart" ใน Workspace ก่อนรัน\n-- ลองเปลี่ยนชื่อ Part ใน Explorer แล้วรันดู!\n\nlocal partToFind = game.Workspace:FindFirstChild("MySpecialPart")\n\nif partToFind then\n\tprint("เจอแล้ว! Part:", partToFind.Name)\nelse\n\tprint("หา Part 'MySpecialPart' ไม่เจอ!")\nend\n]]`,
-                "03_การเปลี่ยนPart": `--[[ บทเรียนที่ 3: การเปลี่ยนคุณสมบัติของ Part\n\n-- เพิ่ม Part ชื่อ "TestPart" ใน Workspace ก่อนรัน\n\nlocal testPart = game.Workspace:FindFirstChild("TestPart")\n\nif testPart then\n\tprint("ชื่อเดิม:", testPart.Name)\n\ttestPart.Name = "ChangedNamePart"\n\t\n\tprint("เปลี่ยนความโปร่งใสเป็น 0.5")\n\ttestPart.Transparency = 0.5\n\t\n\tprint("ยึด Part ให้อยู่กับที่")\n\ttestPart.Anchored = true\n\tprint("เปลี่ยนคุณสมบัติของ", testPart.Name, "เรียบร้อย!")\nend\n]]`,
-                "04_Loopและการสร้าง": `--[[ บทเรียนที่ 4: Loop และการสร้าง Part\n\n-- 'for loop' คือการทำงานซ้ำๆ\nprint("กำลังสร้าง Part...")\n\nfor i = 1, 5 do\n\tlocal newPart = Instance.new("Part")\n\tnewPart.Name = "LoopPart_" .. i\n\tnewPart.Parent = game.Workspace -- .Parent คือการกำหนดว่า Part จะไปอยู่ที่ไหน\n\tprint("สร้าง Part:", newPart.Name)\nend\n\nprint("สร้างเสร็จแล้ว! ดูใน Explorer ได้เลย")\n]]`
-            };
-             const aiTips = [ "ใช้ :FindFirstChild() เพื่อค้นหาของอย่างปลอดภัย", "ตัวแปร local จะทำงานเร็วกว่าตัวแปร global", "ใช้คอมเมนต์ (--) เพื่ออธิบายโค้ดที่ซับซ้อน", "Instance.new(\"Part\") ใช้สำหรับสร้าง Part ใหม่", "สคริปต์จะรู้จัก script.Parent ได้" ];
-            setInterval(() => { aiTipElement.textContent = ` ${aiTips[Math.floor(Math.random() * aiTips.length)]}`; }, 10000);
-            
-            // --- Mobile & Focus Management ---
-            let lastTouchEnd = 0;
-            document.body.addEventListener('touchend', (e) => { const now = Date.now(); if (now - lastTouchEnd <= 300) e.preventDefault(); lastTouchEnd = now; }, false);
-            codeEditor.addEventListener('focus', () => { dismissBtn.classList.add('visible'); lastFocusedElement = codeEditor; updateUndoRedoButtons(); });
-            codeEditor.addEventListener('blur', () => { dismissBtn.classList.remove('visible'); });
-            dismissBtn.addEventListener('click', () => { if(document.activeElement) document.activeElement.blur(); });
+    const firebaseConfig = {
+      apiKey: "AIzaSyBcxVAP08XMiPMoqElaKM7AYY_2z08oWok",
+      authDomain: "xobybestry777.firebaseapp.com",
+      projectId: "xobybestry777",
+      storageBucket: "xobybestry777.firebasestorage.app",
+      messagingSenderId: "380539937989",
+      appId: "1:380539937989:web:48049ed77f45327e033cac",
+      measurementId: "G-YZWTKXL285"
+    };
 
-            // --- Scene Undo/Redo System ---
-            function recordSceneAction(action) {
-                if (sceneHistoryIndex < sceneHistory.length - 1) sceneHistory = sceneHistory.slice(0, sceneHistoryIndex + 1);
-                sceneHistory.push(action); sceneHistoryIndex++; updateUndoRedoButtons();
-            }
-            // CORRECTION: Switched to path-based object retrieval for better robustness.
-            function getObjectByPath(path) { 
-                if (!path) return null;
-                return path.split('.').reduce((o, k) => o && o[k], { game: mockGame }).game;
-            }
-            function getParentByPath(path) {
-                if (!path || !path.includes('.')) return null;
-                const parentPath = path.substring(0, path.lastIndexOf('.'));
-                return getObjectByPath(parentPath);
-            }
-            function applyAction(action, isUndo) {
-                 let parent, oldName, newName, path, obj;
-                 switch(action.type) {
-                    case 'ADD':
-                        parent = getObjectByPath(action.parentPath);
-                        if (parent && parent._children) {
-                            if (isUndo) delete parent._children[action.name]; 
-                            else parent._children[action.name] = action.objectData;
-                        }
-                        break;
-                    case 'DELETE':
-                        parent = getObjectByPath(action.parentPath);
-                        if (parent && parent._children) {
-                            if (isUndo) parent._children[action.name] = action.objectData; 
-                            else delete parent._children[action.name];
-                        }
-                        break;
-                    case 'RENAME':
-                        oldName = isUndo ? action.newName : action.oldName;
-                        newName = isUndo ? action.oldName : action.newName;
-                        parent = getObjectByPath(action.parentPath);
-                        
-                        if (parent && parent._children && parent._children[oldName]) {
-                            obj = parent._children[oldName];
-                            obj.Name = newName;
-                            obj._path = `${action.parentPath}._children.${newName}`;
-                            delete parent._children[oldName];
-                            parent._children[newName] = obj;
-                            
-                            // CORRECTION: Robustly update paths for open scripts and selected item.
-                            const oldPathPrefix = `${action.parentPath}._children.${oldName}`;
-                            const newPathPrefix = `${action.parentPath}._children.${newName}`;
-                            if (selectedObjectPath && selectedObjectPath.startsWith(oldPathPrefix)) {
-                                selectedObjectPath = selectedObjectPath.replace(oldPathPrefix, newPathPrefix);
-                            }
-                            scripts.forEach(s => {
-                                if (s.path === oldPathPrefix) {
-                                    s.name = newName;
-                                    s.path = newPathPrefix;
-                                } else if (s.path.startsWith(oldPathPrefix)) {
-                                    s.path = s.path.replace(oldPathPrefix, newPathPrefix);
-                                }
-                            });
-                        }
-                        break;
-                 }
-                 renderTabs();
-            }
-            function undoScene() { if (sceneHistoryIndex < 0) return; applyAction(sceneHistory[sceneHistoryIndex], true); sceneHistoryIndex--; updateUndoRedoButtons(); renderExplorer(); }
-            function redoScene() { if (sceneHistoryIndex >= sceneHistory.length - 1) return; sceneHistoryIndex++; applyAction(sceneHistory[sceneHistoryIndex], false); updateUndoRedoButtons(); renderExplorer(); }
-            function updateUndoRedoButtons() {
-                const canTextUndo = lastFocusedElement === codeEditor;
-                // For simplicity, we assume browsers handle text undo/redo states.
-                undoBtn.disabled = !canTextUndo && sceneHistoryIndex < 0;
-                redoBtn.disabled = !canTextUndo && sceneHistoryIndex >= sceneHistory.length - 1;
-                deleteBtn.disabled = !selectedObjectPath;
-            }
-            undoBtn.addEventListener('click', () => { lastFocusedElement === codeEditor ? document.execCommand('undo') : undoScene(); });
-            redoBtn.addEventListener('click', () => { lastFocusedElement === codeEditor ? document.execCommand('redo') : redoScene(); });
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-            // --- UI Panel Logic ---
-            const toggleButtons = document.querySelectorAll('#explorer-toggle-btn');
-            toggleButtons.forEach(btn => btn.addEventListener('click', () => explorerPanel.classList.toggle('collapsed')));
-            document.addEventListener('click', (e) => { 
-                if (!addItemMenu.contains(e.target)) addItemMenu.style.display = 'none';
-                if (!e.target.closest('#explorer-panel')) {
-                    selectedObjectPath = null;
-                    renderExplorer();
-                    updateUndoRedoButtons();
-                }
-            });
+    const createBtn = document.getElementById("createRoom");
+    const joinBtn = document.getElementById("joinRoom");
+    const statusEl = document.getElementById("status");
+    const wordArea = document.getElementById("wordArea");
+    const wordEl = document.getElementById("wordToGuess");
+    const guessInput = document.getElementById("guessInput");
+    const resultEl = document.getElementById("result");
+    const submitGuess = document.getElementById("submitGuess");
 
-            // --- Script Management ---
-            function switchScript(index) {
-                if (activeScriptIndex > -1 && scripts[activeScriptIndex]) scripts[activeScriptIndex].code = codeEditor.value;
-                activeScriptIndex = index;
-                if (scripts[index]) { 
-                    codeEditor.value = scripts[index].code; 
-                    codeEditor.disabled = false; 
-                } else { 
-                    codeEditor.value = '-- No script is open --'; 
-                    codeEditor.disabled = true; 
-                }
-                renderTabs(); 
-                debouncedUpdateHighlighting();
-            }
-            function openScriptByPath(path) {
-                let scriptIndex = scripts.findIndex(s => s.path === path);
-                if (scriptIndex === -1) {
-                    const obj = getObjectByPath(path);
-                    if (!obj || obj.ClassName !== 'Script') return;
-                    scripts.push({ path: path, name: obj.Name, code: obj.code || `-- Code for ${obj.Name}` });
-                    scriptIndex = scripts.length - 1;
-                }
-                switchScript(scriptIndex);
-            }
-            function closeScriptByPath(path) {
-                const index = scripts.findIndex(s => s.path === path);
-                if (index > -1) {
-                    scripts.splice(index, 1);
-                    if (activeScriptIndex === index) {
-                        switchScript(scripts.length > 0 ? Math.max(0, index - 1) : -1);
-                    } else if (activeScriptIndex > index) {
-                        switchScript(activeScriptIndex - 1);
-                    } else {
-                        renderTabs();
-                    }
-                }
-            }
-            function renderTabs() {
-                const tabsContainer = getEl('script-tabs'); 
-                tabsContainer.innerHTML = '';
-                scripts.forEach((script, index) => {
-                    const tab = document.createElement('div');
-                    tab.className = `tab${index === activeScriptIndex ? ' active' : ''}`;
-                    tab.onclick = () => switchScript(index);
-                    
-                    const tabName = document.createElement('span');
-                    tabName.textContent = script.name;
-                    tab.appendChild(tabName);
-                    
-                    const closeBtn = document.createElement('span');
-                    closeBtn.className = 'tab-close-btn';
-                    closeBtn.textContent = '×';
-                    closeBtn.onclick = (e) => { e.stopPropagation(); closeScriptByPath(script.path); };
-                    tab.appendChild(closeBtn);
-                    
-                    tabsContainer.appendChild(tab);
-                });
-            }
+    let currentPlayer = "player" + Math.floor(Math.random() * 1000);
+    let roomRef;
 
-            // --- Explorer Rendering ---
-            function renderExplorer() {
-                explorerContent.innerHTML = '';
-                
-                function handleRename(span, name, path) {
-                    const input = document.createElement('input');
-                    input.type = 'text'; input.value = name; input.className = 'explorer-item-input';
-                    span.parentElement.replaceChild(input, span);
-                    setTimeout(() => { try { input.focus(); input.select(); } catch(e){} }, 0); 
-                    
-                    const finishEditing = () => {
-                        const newName = input.value.trim().replace(/[.\s]/g, '_') || name;
-                        const parent = getParentByPath(path);
-                        if (newName !== name && parent && parent._children && !parent._children[newName]) {
-                            recordSceneAction({ type: 'RENAME', parentPath: parent._path, oldName: name, newName: newName });
-                            applyAction(sceneHistory[sceneHistory.length-1], false);
-                        }
-                        renderExplorer();
-                    };
-                    
-                    input.addEventListener('blur', finishEditing);
-                    input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); if (e.key === 'Escape') renderExplorer(); });
-                }
-                
-                function renderNode(name, object, depth, path) {
-                    const item = document.createElement('div');
-                    item.className = 'explorer-item';
-                    if (path === selectedObjectPath) item.classList.add('selected');
-                    item.dataset.depth = depth; item.dataset.type = object.ClassName;
-                    
-                    const span = document.createElement('span'); span.textContent = name; item.appendChild(span);
-                    
-                    const isService = depth === 1;
-                    if (!isService && name !== 'game') {
-                        item.classList.add('renameable');
-                        item.addEventListener('click', (e) => { e.stopPropagation(); selectedObjectPath = path; renderExplorer(); lastFocusedElement = explorerContent; updateUndoRedoButtons(); });
-                        item.addEventListener('dblclick', (e) => {
-                            e.stopPropagation();
-                            if (object.ClassName === 'Script') openScriptByPath(path);
-                            else handleRename(span, name, path);
-                        });
-                    }
-                    
-                    if (object._children) { // Only allow adding children to services and Workspace for now
-                        const plusBtn = document.createElement('button');
-                        plusBtn.className = 'add-child-btn'; plusBtn.textContent = '+';
-                        plusBtn.onclick = (e) => {
-                            e.stopPropagation();
-                            const rect = plusBtn.getBoundingClientRect();
-                            addItemMenu.style.left = rect.left + 'px'; addItemMenu.style.top = rect.bottom + 'px';
-                            addItemMenu.dataset.parentPath = path; addItemMenu.style.display = 'block';
-                        };
-                        item.appendChild(plusBtn);
-                    }
-                    
-                    explorerContent.appendChild(item);
-                    
-                    if (object._children) { 
-                        Object.keys(object._children).sort().forEach(childName => { 
-                            renderNode(childName, object._children[childName], depth + 1, `${path}._children.${childName}`); 
-                        }); 
-                    }
-                }
-                renderNode('game', { _children: mockGame, ClassName: 'DataModel' }, 0, 'game');
-            }
-            
-            // --- Explorer Item Management ---
-            addItemMenu.addEventListener('click', (e) => {
-                if (e.target.tagName === 'LI') {
-                    const parentPath = addItemMenu.dataset.parentPath;
-                    const type = e.target.dataset.type;
-                    const parent = getObjectByPath(parentPath);
-                    if (parent && parent._children) {
-                        const itemName = `${type}${itemCounter++}`;
-                        const newObj = { Name: itemName, ClassName: type, _children: {}, _path: `${parentPath}._children.${itemName}` };
-                        if (type === 'Script') newObj.code = `-- Code for ${itemName}\nprint("Hello from ${itemName}!")`;
-                        recordSceneAction({ type: 'ADD', parentPath, name: itemName, objectData: newObj });
-                        parent._children[itemName] = newObj; 
-                        renderExplorer();
-                    }
-                }
-                addItemMenu.style.display = 'none';
-            });
-            
-            deleteBtn.addEventListener('click', () => {
-                if (!selectedObjectPath || selectedObjectPath.split('.').length <= 2) return; // Can't delete services
-                const name = selectedObjectPath.substring(selectedObjectPath.lastIndexOf('.') + 1);
-                const parent = getParentByPath(selectedObjectPath);
-                if (parent && parent._children && parent._children[name]) {
-                    const objectData = JSON.parse(JSON.stringify(parent._children[name]));
-                    recordSceneAction({ type: 'DELETE', parentPath: parent._path, name, objectData });
-                    if (objectData.ClassName === 'Script') closeScriptByPath(selectedObjectPath);
-                    delete parent._children[name];
-                    selectedObjectPath = null;
-                    renderExplorer();
-                }
-            });
-            
-            // --- Syntax Highlighting ---
-            const debounce = (func, delay) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => func.apply(this, a), delay); }; };
-            
-            const knownGlobals = new Set(['game', 'print', 'workspace', 'wait', 'script', 'math', 'Vector3', 'CFrame', 'Color3', 'Instance', 'pcall', 'xpcall', 'tostring', 'tonumber', 'type']);
-            const keywords = new Set(['local', 'function', 'if', 'then', 'else', 'elseif', 'end', 'for', 'while', 'do', 'return', 'and', 'or', 'not', 'break', 'in', 'repeat', 'until']);
-            
-            // IMPROVEMENT: More robust highlighting that supports multiline comments/strings and is debounced for performance.
-            function updateHighlighting() {
-                if (isHighlighting) return;
-                isHighlighting = true;
-                
-                const text = codeEditor.value;
-                const knownVariables = new Set();
-                text.replace(/(?:local|function)\s+([\w_]+)/g, (_, name) => knownVariables.add(name));
-                text.replace(/(\w+)\s*=\s*function/g, (_, name) => knownVariables.add(name));
-                text.replace(/for\s+([\w_,\s]+)\s+in/g, (match, names) => {
-                    names.split(',').forEach(name => knownVariables.add(name.trim()));
-                });
+    const words = ["แมว", "ดวงจันทร์", "โทรศัพท์", "โต๊ะ", "ต้นไม้"];
 
-                const escapeHtml = (str) => str.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                
-                const tokenRegex = /(--\[\[[\s\S]*?\]\])|(--[^\r\n]*)|("(?:\\[\s\S]|[^"\\])*")|('(?:\\[\s\S]|[^'\\])*')|(\b(?:[0-9]*\.?[0-9]+)\b)|(\b\w+\b)|([\s\S])/g;
-                let html = '';
-                
-                text.replace(tokenRegex, (match, mlComment, slComment, dString, sString, number, word, other) => {
-                    if (mlComment || slComment) html += `<span class="hl-comment">${escapeHtml(match)}</span>`;
-                    else if (dString || sString) html += `<span class="hl-string">${escapeHtml(match)}</span>`;
-                    else if (number) html += `<span class="hl-number">${match}</span>`;
-                    else if (word) {
-                        if (keywords.has(word)) html += `<span class="hl-keyword">${word}</span>`;
-                        else if (knownGlobals.has(word)) html += `<span class="hl-global">${word}</span>`;
-                        else if (knownVariables.has(word)) html += `<span>${word}</span>`;
-                        else if (/[ก-๙]/.test(word)) html += `<span class="hl-thai-error">${word}</span>`;
-                        else html += `<span class="hl-unknown-var">${word}</span>`;
-                    } else {
-                        html += escapeHtml(other);
-                    }
-                    return match; // Required for replace function
-                });
+    createBtn.onclick = async () => {
+      const roomId = document.getElementById("roomId").value;
+      const randomWord = words[Math.floor(Math.random() * words.length)];
+      roomRef = doc(db, "rooms", roomId);
+      await setDoc(roomRef, {
+        players: [currentPlayer],
+        currentWord: randomWord,
+        guessed: ""
+      });
+      statusEl.textContent = "ห้องถูกสร้างแล้ว รอเพื่อนเข้าร่วม...";
+      startListening();
+    };
 
-                if (syntaxError) {
-                    const lines = html.split('\n');
-                    if(lines[syntaxError.line -1]) {
-                        lines[syntaxError.line - 1] = `<span class="syntax-error-line">${lines[syntaxError.line - 1]}</span>`;
-                    }
-                    html = lines.join('\n');
-                }
-                
-                requestAnimationFrame(() => { highlightingLayer.innerHTML = html; isHighlighting = false; });
-            }
-            
-            function checkSyntax() {
-                try {
-                    const L = fengari.lauxlib.luaL_newstate();
-                    const status = fengari.lauxlib.luaL_loadstring(L, fengari.to_luastring(codeEditor.value));
-                    if (status !== fengari.lua.LUA_OK) {
-                        const errorMsg = fengari.to_jsstring(fengari.lua.lua_tostring(L, -1));
-                        const lineMatch = errorMsg.match(/\[string "..."\]:(\d+):/);
-                        syntaxError = { line: lineMatch ? parseInt(lineMatch[1]) : -1, message: errorMsg };
-                    } else { syntaxError = null; }
-                    fengari.lua.lua_close(L);
-                } catch (e) { syntaxError = null; }
-                updateHighlighting();
-            }
-            
-            const debouncedCheckSyntax = debounce(checkSyntax, 300);
-            const debouncedUpdateHighlighting = debounce(updateHighlighting, 150);
-            codeEditor.addEventListener('input', () => { debouncedCheckSyntax(); debouncedUpdateHighlighting(); });
-            codeEditor.addEventListener('scroll', () => { getEl('highlighting-layer-container').scrollTop = codeEditor.scrollTop; getEl('highlighting-layer-container').scrollLeft = codeEditor.scrollLeft; });
+    joinBtn.onclick = async () => {
+      const roomId = document.getElementById("roomId").value;
+      roomRef = doc(db, "rooms", roomId);
+      const docSnap = await getDoc(roomRef);
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        data.players.push(currentPlayer);
+        await updateDoc(roomRef, { players: data.players });
+        statusEl.textContent = "เข้าร่วมห้องสำเร็จ!";
+        startListening();
+      } else {
+        statusEl.textContent = "ไม่พบห้องนี้!";
+      }
+    };
 
-            // --- Lua Execution Engine ---
-            function logToOutput(message, type = 'info') {
-                const line = document.createElement('div');
-                line.className = `output-line ${type}`;
-                line.textContent = message;
-                outputChat.appendChild(line);
-                outputChat.scrollTop = outputChat.scrollHeight;
-            }
-            
-            getEl('run-button').addEventListener('click', () => {
-                outputChat.innerHTML = ''; logToOutput("> Starting execution...", "info");
-                
-                try {
-                    let executionGame = JSON.parse(JSON.stringify(mockGame)); // Deep copy for sandbox
-                    
-                    const L = fengari.lauxlib.luaL_newstate(); fengari.lualib.luaL_openlibs(L);
-                    
-                    // -- Custom print function --
-                    fengari.lua.lua_pushjs(L, (...args) => { 
-                        const msg = args.map(a => typeof a === 'object' && a !== null ? JSON.stringify(a, null, 2) : fengari.to_jsstring(a)).join('\t'); 
-                        logToOutput(msg, 'print'); 
-                    }); 
-                    fengari.lua.lua_setglobal(L, fengari.to_luastring("print"));
-                    
-                    // CORRECTION/IMPROVEMENT: A much more powerful sandbox that simulates Roblox instances.
-                    // This allows properties like .Name and .Parent to work correctly.
-                    const sandboxSetup = `
-                        local js = require "js"
-                        local raw_execution_game = js.global:getObject("executionGame")
-                        
-                        -- Object tracking and proxy cache
-                        local objects_by_path = {}
-                        local get_object_proxy
-                        
-                        local function find_js_obj_by_path(path)
-                            local parts = {}
-                            for part in string.gmatch(path, "[^%.]+") do table.insert(parts, part) end
-                            local current = raw_execution_game
-                            for i = 2, #parts do
-                                if current == nil then return nil end
-                                current = current[parts[i]]
-                            end
-                            return current
-                        end
+    function startListening() {
+      onSnapshot(roomRef, (snapshot) => {
+        const data = snapshot.data();
+        if (data.players.length >= 2) {
+          statusEl.textContent = "เริ่มเกม!";
+          wordArea.style.display = "block";
+          wordEl.textContent = "ทายคำ: " + data.currentWord[0] + " _ _";
+        }
+        if (data.guessed === data.currentWord) {
+          resultEl.textContent = "🎉 มีคนทายถูกแล้ว!";
+        }
+      });
+    }
 
-                        local instance_metatable = {
-                            __index = function(t, k)
-                                local internal = t._internal
-                                if k == "Name" or k == "ClassName" or k == "Transparency" or k == "Anchored" then
-                                    return internal[k]
-                                end
-                                if internal._children and internal._children[k] then
-                                    return get_object_proxy(internal._children[k])
-                                end
-                                if k == "FindFirstChild" then
-                                    return function(_, childName)
-                                        if internal._children and internal._children[childName] then
-                                            return get_object_proxy(internal._children[childName])
-                                        end
-                                        return nil
-                                    end
-                                end
-                                return nil
-                            end,
-                            __newindex = function(t, k, v)
-                                local internal = t._internal
-                                if k == "Name" or k == "Transparency" or k == "Anchored" then
-                                    internal[k] = v
-                                elseif k == "Parent" then
-                                    local old_parent_js = find_js_obj_by_path(string.match(internal._path, "(.*)._children"))
-                                    if old_parent_js and old_parent_js._children then
-                                        old_parent_js._children[internal.Name] = nil
-                                    end
-                                    
-                                    local new_parent_js = v._internal
-                                    if new_parent_js and new_parent_js._children then
-                                         new_parent_js._children[internal.Name] = internal
-                                         internal._path = new_parent_js._path .. "._children." .. internal.Name
-                                    end
-                                    internal.Parent = v -- for script.Parent reference
-                                end
-                            end
-                        }
-                        
-                        get_object_proxy = function(js_obj)
-                            if not js_obj or not js_obj._path then return js_obj end
-                            if objects_by_path[js_obj._path] then return objects_by_path[js_obj._path] end
-                            
-                            local proxy = { _internal = js_obj }
-                            setmetatable(proxy, instance_metatable)
-                            objects_by_path[js_obj._path] = proxy
-                            return proxy
-                        end
-
-                        function Instance.new(className)
-                            local name = className .. " (new)"
-                            local new_js_obj = { Name = name, ClassName = className, _children = {} }
-                            return get_object_proxy(new_js_obj)
-                        end
-                        
-                        game = get_object_proxy(raw_execution_game)
-                        workspace = game.Workspace
-                    `;
-                    
-                    fengari.lua.lua_pushjs(L, { getObject: (name) => { if(name === 'executionGame') return executionGame; } });
-                    fengari.lua.lua_setglobal(L, fengari.to_luastring("js_global"));
-                    fengari.lauxlib.luaL_dostring(L, fengari.to_luastring(sandboxSetup));
-
-                    // -- Execute Scripts --
-                    const serverScripts = executionGame.ServerScriptService._children;
-                    for (const scriptName in serverScripts) {
-                        if (serverScripts[scriptName].ClassName === 'Script') {
-                            const scriptObject = serverScripts[scriptName];
-                            
-                            // Set the 'script' global variable for the currently running script
-                            fengari.lauxlib.luaL_dostring(L, fengari.to_luastring(`
-                                local script_js_obj = find_js_obj_by_path("${scriptObject._path}")
-                                script = get_object_proxy(script_js_obj)
-                            `));
-
-                            logToOutput(`--- Running ${scriptName} ---`, 'info');
-                            const status = fengari.lauxlib.luaL_dostring(L, fengari.to_luastring(scriptObject.code));
-                            if (status !== fengari.lua.LUA_OK) {
-                                const errorMsg = fengari.to_jsstring(fengari.lua.lua_tostring(L, -1));
-                                logToOutput(`[ERROR] in ${scriptName}: ${errorMsg.split(": ").slice(1).join(": ")}`, 'error'); 
-                                break;
-                            }
-                        }
-                    }
-                    fengari.lua.lua_close(L);
-                    logToOutput("> Execution finished.", "success");
-                    mockGame = executionGame; 
-                    renderExplorer();
-                } catch (e) { 
-                    logToOutput("[FATAL JS ERROR]: " + e.message, 'error'); 
-                }
-            });
-            
-            getEl('clear-output-btn').addEventListener('click', () => outputChat.innerHTML = '');
-
-            // --- Initialization ---
-            function initialize() {
-                Object.keys(tutorials).forEach(name => {
-                    const path = `game.ServerScriptService._children.${name}`;
-                    mockGame.ServerScriptService._children[name] = { Name: name, ClassName: 'Script', code: tutorials[name], _path: path };
-                });
-                renderExplorer();
-                openScriptByPath('game.ServerScriptService._children.01_พื้นฐาน');
-                updateUndoRedoButtons();
-                logToOutput("Studio is ready!", "info");
-            }
-            
-            initialize();
-        }); 
-    </script>
+    submitGuess.onclick = async () => {
+      const guess = guessInput.value.trim();
+      const docSnap = await getDoc(roomRef);
+      const data = docSnap.data();
+      if (guess === data.currentWord) {
+        await updateDoc(roomRef, { guessed: guess });
+      } else {
+        resultEl.textContent = "ผิด! ลองใหม่อีกครั้ง";
+      }
+    };
+  </script>
 </body>
 </html>
