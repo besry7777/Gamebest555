@@ -9,10 +9,8 @@
 
         /* --- การตั้งค่าพื้นฐาน --- */
         html, body {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
+            margin: 0; padding: 0;
+            width: 100%; height: 100%;
             font-family: 'IBM Plex Sans Thai', sans-serif;
             background-color: #000;
             overflow: hidden;
@@ -21,13 +19,10 @@
 
         /* --- หน้าโหลด (Preloader) --- */
         #preloader {
-            position: fixed;
-            top: 0; left: 0;
+            position: fixed; top: 0; left: 0;
             width: 100%; height: 100%;
             background-color: #000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            display: flex; justify-content: center; align-items: center;
             z-index: 2000;
             transition: opacity 1s ease;
         }
@@ -39,230 +34,151 @@
             animation: pulse 2s infinite;
         }
 
+        /* --- ปุ่มเริ่มเรื่องราว (แทนปุ่มเปิดเสียง) --- */
+        #start-button {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1500;
+            color: white;
+            background-color: rgba(0,0,0,0.7);
+            padding: 25px 50px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 1.5rem;
+            border: 2px solid white;
+            transition: opacity 0.5s;
+            opacity: 0;
+            visibility: hidden;
+            animation: pulse 3s infinite 1s;
+        }
+        #start-button.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
         /* --- ฉากและองค์ประกอบหลัก --- */
         .scene {
-            position: absolute;
-            top: 0; left: 0;
+            position: absolute; top: 0; left: 0;
             width: 100%; height: 100%;
             background: linear-gradient(to bottom, #020111 0%, #191621 100%);
             opacity: 0;
             visibility: hidden;
             transition: opacity 2s ease-in-out;
         }
-        .scene.active {
-            opacity: 1;
-            visibility: visible;
-            z-index: 10;
-        }
+        .scene.active { opacity: 1; visibility: visible; z-index: 10; }
         
         /* --- ตัวละคร --- */
         .moon { /* กาย */
-            position: absolute;
-            width: 120px; height: 120px;
-            background-color: #f0e68c;
-            border-radius: 50%;
-            box-shadow: 0 0 30px #f0e68caa;
-            top: 25%; left: 50%;
-            transform: translateX(-50%);
-            transition: all 2s ease-in-out;
+            position: absolute; width: 120px; height: 120px;
+            background-color: #f0e68c; border-radius: 50%;
+            box-shadow: 0 0 30px #f0e68caa; top: 25%; left: 50%;
+            transform: translateX(-50%); transition: all 2s ease-in-out;
         }
         .star { /* แนน */
-            position: absolute;
-            font-size: 30px;
-            color: #fff;
-            text-shadow: 0 0 15px #fff;
-            top: 35%; left: 70%;
-            animation: twinkle 3s infinite;
-            transition: all 2s ease-in-out;
+            position: absolute; font-size: 30px; color: #fff;
+            text-shadow: 0 0 15px #fff; top: 35%; left: 70%;
+            animation: twinkle 3s infinite; transition: all 2s ease-in-out;
         }
 
         /* --- ข้อความเล่าเรื่อง --- */
         .story-text {
-            position: absolute;
-            bottom: 15%;
-            left: 50%;
-            transform: translateX(-50%);
-            color: #eee;
-            font-size: 1.5rem;
-            font-weight: 300;
-            text-align: center;
-            width: 80%;
-            opacity: 0;
+            position: absolute; bottom: 15%; left: 50%;
+            transform: translateX(-50%); color: #eee;
+            font-size: 1.5rem; font-weight: 300;
+            text-align: center; width: 80%; opacity: 0;
             animation: fadeInOut 8s forwards;
         }
-        
         .story-text.small { font-size: 1.2rem; bottom: 10%; }
         
         /* สไตล์พิเศษสำหรับแต่ละฉาก */
         #scene2 .star { animation: twinkle-bright 1.5s infinite; }
         #scene3 .star { animation: twinkle-sad 4s infinite; }
-        #scene4 .star { opacity: 0; left: 110%; /* ทำให้ดาวหายไปจากจอ */ }
-
-        #scene5 .moon { top: 50%; transform: translate(-50%, -50%); /* พระจันทร์มาอยู่กลางจอ */ }
+        #scene4 .star { opacity: 0; left: 110%; }
+        #scene5 .moon { top: 50%; transform: translate(-50%, -50%); }
         .memory {
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 4rem;
-            color: rgba(255, 255, 255, 0.5);
-            opacity: 0;
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%); font-size: 4rem;
+            color: rgba(255, 255, 255, 0.5); opacity: 0;
         }
         
-        /* --- Player & Unmute Button --- */
-        #player {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            z-index: -1;
-            pointer-events: none;
-        }
-
-        #unmute-button {
-            position: fixed;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 1000;
-            color: white;
-            background-color: rgba(0,0,0,0.7);
-            padding: 20px 40px;
-            border-radius: 10px;
-            cursor: pointer;
-            font-size: 1.2rem;
-            border: 1px solid white;
-            transition: opacity 0.5s;
-        }
-
+        /* --- Player --- */
+        #player { position: fixed; z-index: -1; pointer-events: none; }
 
         /* --- Keyframe Animations --- */
-        @keyframes pulse { 0%, 100% { transform: scale(1); box-shadow: 0 0 20px #f0e68c; } 50% { transform: scale(1.1); box-shadow: 0 0 35px #f0e68c; } }
-        @keyframes twinkle { 0%, 100% { opacity: 0.8; transform: scale(1); } 50% { opacity: 1; transform: scale(1.1); } }
+        @keyframes pulse { 0%, 100% { transform: translate(-50%,-50%) scale(1); } 50% { transform: translate(-50%,-50%) scale(1.05); } }
+        @keyframes twinkle { 0%, 100% { opacity: 0.8; } 50% { opacity: 1; transform: scale(1.1); } }
         @keyframes twinkle-bright { 0%, 100% { opacity: 1; transform: scale(1.2); text-shadow: 0 0 25px #fff; } 50% { opacity: 0.7; transform: scale(1); text-shadow: 0 0 15px #fff; } }
         @keyframes twinkle-sad { 0%, 100% { opacity: 0.5; } 50% { opacity: 0.2; } }
-
-        @keyframes fadeInOut {
-            0% { opacity: 0; transform: translate(-50%, 10px); }
-            20% { opacity: 1; transform: translate(-50%, 0); }
-            80% { opacity: 1; transform: translate(-50%, 0); }
-            100% { opacity: 0; transform: translate(-50%, -10px); }
-        }
-        
+        @keyframes fadeInOut { 0% { opacity: 0; transform: translate(-50%, 10px); } 20% { opacity: 1; transform: translate(-50%, 0); } 80% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; transform: translate(-50%, -10px); } }
         @keyframes fadeInStay { to { opacity: 1; } }
-
     </style>
 </head>
 <body>
-
     <div id="preloader"><div class="moon-loader"></div></div>
-    
-    <div id="unmute-button">คลิกที่นี่เพื่อเปิดเสียง</div>
+    <div id="start-button">แตะที่นี่เพื่อเริ่มเรื่องราว</div>
     <div id="player"></div>
 
-    <section id="scene1" class="scene">
-        <div class="moon"></div>
-        <div class="star">★</div>
-        <div class="story-text" style="animation-duration: 7s;">ผมคือ 'กาย' พระจันทร์ที่คิดว่าตัวเองสว่างไสว...<br>โดยไม่เคยรู้เลยว่า แสงของผมมาจากดาวข้างๆ ที่ชื่อ 'แนน'</div>
-    </section>
-
-    <section id="scene2" class="scene">
-        <div class="moon"></div>
-        <div class="star">★</div>
-        <div class="story-text">เธอชอบถามว่า "รักไหม?"...<br>แต่ความขี้อายและความเคยชิน ทำให้ผมตอบเพียงความเงียบงัน</div>
-    </section>
-
-    <section id="scene3" class="scene">
-        <div class="moon" style="background-color: #d3cba4;"></div>
-        <div class="star" style="left: 85%;">★</div>
-        <div class="story-text" style="color: #ffb8b8;">"ถ้าจากกันรอบนี้... จะไม่เจอกันแล้วนะ"<br>เสียงของเธอในวันนั้น... ผมกลับไม่ได้ยินมันอย่างชัดเจน</div>
-    </section>
-
-    <section id="scene4" class="scene">
-        <div class="moon"></div>
-        <div class="star">★</div>
-        <div class="story-text">แล้ววันนั้น... เธอก็ไปจริงๆ<br>ทิ้งให้ท้องฟ้าของผมมืดมิดและว่างเปล่า</div>
-    </section>
-    
-    <section id="scene5" class="scene">
-        <div class="moon"></div>
-        <div class="memory" id="mem1" style="animation: fadeInOut 4s 1s forwards;">XO</div>
-        <div class="memory" id="mem2" style="animation: fadeInOut 4s 5s forwards;">♪</div>
-        <div class="story-text small" style="animation: fadeInOut 8s 9s forwards;">เกมที่เคยเล่น เพลงที่เคยมีความหมาย...<br>มันคอยตอกย้ำถึงวันที่ผมละเลยอ้อมกอดที่แสนอบอุ่นของเธอไป</div>
-    </section>
-    
-    <section id="scene6" class="scene">
-        <div class="moon" style="box-shadow: none; background-color: #6a654b;"></div>
-        <div class="story-text" style="animation: fadeInStay 4s forwards;">เพิ่งเข้าใจ... ในวันที่เธอไม่อยู่</div>
-    </section>
-
+    <section id="scene1" class="scene"><div class="moon"></div><div class="star">★</div><div class="story-text" style="animation-duration: 7s;">ผมคือ 'กาย' พระจันทร์ที่คิดว่าตัวเองสว่างไสว...<br>โดยไม่เคยรู้เลยว่า แสงของผมมาจากดาวข้างๆ ที่ชื่อ 'แนน'</div></section>
+    <section id="scene2" class="scene"><div class="moon"></div><div class="star">★</div><div class="story-text">เธอชอบถามว่า "รักไหม?"...<br>แต่ความขี้อายและความเคยชิน ทำให้ผมตอบเพียงความเงียบงัน</div></section>
+    <section id="scene3" class="scene"><div class="moon" style="background-color: #d3cba4;"></div><div class="star" style="left: 85%;">★</div><div class="story-text" style="color: #ffb8b8;">"ถ้าจากกันรอบนี้... จะไม่เจอกันแล้วนะ"<br>เสียงของเธอในวันนั้น... ผมกลับไม่ได้ยินมันอย่างชัดเจน</div></section>
+    <section id="scene4" class="scene"><div class="moon"></div><div class="star">★</div><div class="story-text">แล้ววันนั้น... เธอก็ไปจริงๆ<br>ทิ้งให้ท้องฟ้าของผมมืดมิดและว่างเปล่า</div></section>
+    <section id="scene5" class="scene"><div class="moon"></div><div class="memory" id="mem1" style="animation: fadeInOut 4s 1s forwards;">XO</div><div class="memory" id="mem2" style="animation: fadeInOut 4s 5s forwards;">♪</div><div class="story-text small" style="animation: fadeInOut 8s 9s forwards;">เกมที่เคยเล่น เพลงที่เคยมีความหมาย...<br>มันคอยตอกย้ำถึงวันที่ผมละเลยอ้อมกอดที่แสนอบอุ่นของเธอไป</div></section>
+    <section id="scene6" class="scene"><div class="moon" style="box-shadow: none; background-color: #6a654b;"></div><div class="story-text" style="animation: fadeInStay 4s forwards;">เพิ่งเข้าใจ... ในวันที่เธอไม่อยู่</div></section>
 
     <script>
-        // --- ส่วนควบคุมเพลงจาก YouTube ---
         var player;
         function onYouTubeIframeAPIReady() {
             player = new YT.Player('player', {
-                height: '360',
-                width: '640',
-                videoId: 'f_b_8cM2p1Q', // Video ID เพลง วันที่เธอไม่อยู่ - TINN
-                playerVars: {
-                    'autoplay': 1,
-                    'controls': 0,
-                    'loop': 1,
-                    'playlist': 'f_b_8cM2p1Q',
-                    'mute': 1 // เริ่มแบบปิดเสียง
-                },
-                events: {
-                    'onReady': onPlayerReady
-                }
+                videoId: 'f_b_8cM2p1Q', // TINN - วันที่เธอไม่อยู่
+                playerVars: { 'controls': 0, 'loop': 1, 'playlist': 'f_b_8cM2p1Q' },
+                events: { 'onReady': onPlayerReady }
             });
         }
-
         function onPlayerReady(event) {
-            const unmuteButton = document.getElementById('unmute-button');
-            document.body.addEventListener('click', () => {
-                if (player.isMuted()) {
-                    player.unMute();
-                    unmuteButton.style.opacity = '0';
-                    setTimeout(() => unmuteButton.style.display = 'none', 500);
-                }
-            }, { once: true });
+            // ตอนนี้เพลงพร้อมแล้ว แต่ยังไม่เล่น
         }
-        
-        // --- ส่วนควบคุมแอนิเมชันและฉาก ---
+
         window.addEventListener('load', () => {
             const preloader = document.getElementById('preloader');
+            const startButton = document.getElementById('start-button');
             const scenes = document.querySelectorAll('.scene');
             let currentScene = -1;
 
-            // 1. โหลด YouTube API
             var tag = document.createElement('script');
             tag.src = "https://www.youtube.com/iframe_api";
             var firstScriptTag = document.getElementsByTagName('script')[0];
             firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
-            // 2. ซ่อน Preloader
+            // 1. ซ่อน Preloader และแสดงปุ่มเริ่ม
             setTimeout(() => {
                 preloader.style.opacity = '0';
                 setTimeout(() => {
                     preloader.style.display = 'none';
-                    playNextScene(); // เริ่มฉากแรก
+                    startButton.classList.add('visible');
                 }, 1000);
             }, 3000);
 
-            // 3. ลำดับเวลาของแต่ละฉาก (วินาที)
+            // 2. เมื่อคลิกปุ่มเริ่ม
+            startButton.addEventListener('click', () => {
+                startButton.style.opacity = '0';
+                setTimeout(() => startButton.style.display = 'none', 500);
+                
+                // เล่นเพลง
+                player.playVideo();
+                
+                // เริ่มแอนิเมชันฉาก
+                playNextScene();
+            }, { once: true });
+
             const sceneDurations = [8, 8, 8, 8, 17, 10];
             
             function playNextScene() {
-                // ซ่อนฉากเก่า
                 if (scenes[currentScene]) {
                     scenes[currentScene].classList.remove('active');
                 }
-
-                // ไปฉากถัดไป
                 currentScene = (currentScene + 1) % scenes.length;
-
-                // แสดงฉากใหม่
                 scenes[currentScene].classList.add('active');
-
-                // ตั้งเวลาเพื่อเล่นฉากถัดไป
                 setTimeout(playNextScene, sceneDurations[currentScene] * 1000);
             }
         });
