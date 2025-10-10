@@ -345,18 +345,22 @@
 </head>
 <body>
   <div class="container">
-    <!-- Main Menu Screen -->
-    <div id="main-menu" class="screen active">
+    <div id="loading-screen" class="screen active">
+      <div class="content">
+        <h2>กำลังโหลดข้อมูล...</h2>
+      </div>
+    </div>
+
+    <div id="main-menu" class="screen">
       <div class="content">
         <h1>TicTac</h1>
         <div class="welcome-msg" id="welcome-msg">Loading...</div>
         
-        <button class="btn-primary" onclick="showScreen('bot-game')">เล่นกับบอท</button>
+        <button class="btn-primary" onclick="startBotGame()">เล่นกับบอท</button>
         <button class="btn-success" onclick="showScreen('coop-menu')">เล่นกับเพื่อน</button>
       </div>
     </div>
 
-    <!-- Co-op Menu Screen -->
     <div id="coop-menu" class="screen">
       <div class="content">
         <h2>เล่นกับเพื่อน</h2>
@@ -367,7 +371,6 @@
       </div>
     </div>
 
-    <!-- Room Lobby Screen -->
     <div id="room-lobby" class="screen">
       <div class="content">
         <h2>ห้องของคุณ</h2>
@@ -379,7 +382,6 @@
       </div>
     </div>
 
-    <!-- Game Screen -->
     <div id="game-screen" class="screen">
       <div class="stats">
         <div class="stat-item">
@@ -399,7 +401,6 @@
       <button class="btn-secondary" onclick="leaveGame()">ออก</button>
     </div>
 
-    <!-- Game Over Overlay -->
     <div class="game-over-overlay" id="game-over-overlay">
       <div class="game-over-box">
         <div class="game-over-message" id="game-over-message"></div>
@@ -430,7 +431,8 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    const gameState = {
+    // Make gameState and key functions globally accessible for HTML onclick handlers
+    window.gameState = {
       user: { uid: null, username: 'Player' + Math.floor(Math.random() * 10000) },
       mode: null,
       board: Array(9).fill(''),
@@ -442,38 +444,44 @@
       roomData: null,
       roomListener: null,
       countdownInterval: null,
-      botMode: false
     };
 
     window.addEventListener('load', () => {
-      signInAnonymously(auth).catch(e => console.error(e));
+      signInAnonymously(auth).catch(e => {
+        console.error("Firebase sign-in failed", e);
+        document.querySelector('#loading-screen h2').textContent = 'การเชื่อมต่อล้มเหลว';
+      });
+
       onAuthStateChanged(auth, (user) => {
         if (user) {
-          gameState.user.uid = user.uid;
+          window.gameState.user.uid = user.uid;
           updateWelcomeMessage();
+          // Data is loaded, hide loading screen and show main menu
+          showScreen('main-menu');
         }
       });
       
-      document.addEventListener('touchmove', (e) => {
-        if (e.target.closest('.game-board') || e.target.closest('input') || e.target.closest('button')) {
-          return;
-        }
+      // Prevent scrolling on touch devices for a more app-like feel
+      document.body.addEventListener('touchmove', (e) => {
         e.preventDefault();
       }, { passive: false });
     });
 
     function updateWelcomeMessage() {
-      document.getElementById('welcome-msg').textContent = `ยินดีต้อนรับ ${gameState.user.username}`;
+      document.getElementById('welcome-msg').textContent = `ยินดีต้อนรับ ${window.gameState.user.username}`;
     }
 
     function showScreen(screenId) {
       document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-      document.getElementById(screenId).classList.add('active');
+      const screen = document.getElementById(screenId);
+      if (screen) {
+        screen.classList.add('active');
+      }
     }
-
     window.showScreen = showScreen;
 
-    async function createRoom() {
+    window.createRoom = async function() {
+      const { gameState } = window;
       gameState.roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
       gameState.playerSymbol = '●';
 
@@ -493,7 +501,8 @@
       showRoomLobby();
     }
 
-    async function joinRoom() {
+    window.joinRoom = async function() {
+      const { gameState } = window;
       const code = document.getElementById('room-code').value.trim().toUpperCase();
       if (!code) {
         showToast('ใส่รหัสห้อง');
@@ -524,12 +533,14 @@
     }
 
     function setupRoomListener(roomCode) {
+      const { gameState } = window;
       if (gameState.roomListener) gameState.roomListener();
 
       const roomRef = doc(db, "rooms", roomCode);
       gameState.roomListener = onSnapshot(roomRef, (snap) => {
         if (!snap.exists()) {
-          if (document.querySelector('.screen.active').id === 'room-lobby' || document.querySelector('.screen.active').id === 'game-screen') {
+          const activeScreenId = document.querySelector('.screen.active')?.id;
+          if (activeScreenId === 'room-lobby' || activeScreenId === 'game-screen') {
             showToast('ห้องปิดแล้ว');
             backToMenu();
           }
@@ -558,14 +569,17 @@
     }
 
     function showRoomLobby() {
-      document.getElementById('room-display').textContent = gameState.roomCode;
+      document.getElementById('room-display').textContent = window.gameState.roomCode;
       showScreen('room-lobby');
     }
 
     function updateLobbyUI() {
+      const { gameState } = window;
       const playerListEl = document.getElementById('player-list');
       const statusEl = document.getElementById('lobby-status');
       const readyBtn = document.getElementById('ready-btn');
+
+      if (!gameState.roomData) return;
 
       playerListEl.innerHTML = '';
       Object.values(gameState.roomData.players).forEach(p => {
@@ -584,12 +598,15 @@
         clearInterval(gameState.countdownInterval);
         gameState.countdownInterval = null;
         statusEl.textContent = hasTwo ? 'รอพร้อม...' : 'รอผู้เล่นอีกคน...';
+      } else if (!hasTwo) {
+        statusEl.textContent = 'รอผู้เล่นอีกคน...';
       }
 
-      readyBtn.style.display = hasTwo ? 'block' : 'none';
+      readyBtn.style.display = 'block';
     }
 
     function startCountdown() {
+      const { gameState } = window;
       let count = 3;
       const statusEl = document.getElementById('lobby-status');
       statusEl.textContent = `เริ่มใน ${count}...`;
@@ -601,23 +618,30 @@
         } else {
           clearInterval(gameState.countdownInterval);
           gameState.countdownInterval = null;
-          updateDoc(doc(db, "rooms", gameState.roomCode), {
-            status: 'playing',
-            board: Array(9).fill(''),
-            currentPlayer: '●'
-          });
+          // Only player 1 should trigger the game start to avoid race conditions
+          const playerUids = Object.keys(gameState.roomData.players);
+          if (playerUids.length > 0 && gameState.user.uid === playerUids[0]) {
+             updateDoc(doc(db, "rooms", gameState.roomCode), {
+              status: 'playing',
+              board: Array(9).fill(''),
+              currentPlayer: '●'
+            });
+          }
         }
       }, 1000);
     }
 
     window.setReady = async function() {
-      const currentReady = gameState.roomData.players[gameState.user.uid]?.ready || false;
+      const { gameState } = window;
+      if (!gameState.roomData || !gameState.roomData.players[gameState.user.uid]) return;
+      const currentReady = gameState.roomData.players[gameState.user.uid].ready;
       await updateDoc(doc(db, "rooms", gameState.roomCode), {
         [`players.${gameState.user.uid}.ready`]: !currentReady
       });
     };
 
     function startCoopGame() {
+      const { gameState } = window;
       gameState.mode = 'coop';
       gameState.gameActive = true;
       gameState.gameOver = false;
@@ -628,10 +652,11 @@
       updateTurnDisplay();
       showScreen('game-screen');
     }
-
-    window.showScreen('bot-game', async function() {
+    
+    // **FIXED**: Consolidated bot game logic into one function
+    window.startBotGame = function() {
+      const { gameState } = window;
       gameState.mode = 'bot';
-      gameState.botMode = true;
       gameState.playerSymbol = '●';
       gameState.currentPlayer = '●';
       gameState.board = Array(9).fill('');
@@ -643,7 +668,7 @@
       updateBoardUI();
       updateTurnDisplay();
       showScreen('game-screen');
-    });
+    };
 
     function createBoardCells() {
       const board = document.getElementById('game-board');
@@ -655,13 +680,19 @@
         board.appendChild(cell);
       }
     }
+    window.createBoardCells = createBoardCells; // Expose for potential reuse
 
     async function playMove(index) {
+      const { gameState } = window;
       if (!gameState.gameActive || gameState.board[index] !== '') return;
 
       if (gameState.mode === 'coop' && gameState.currentPlayer !== gameState.playerSymbol) {
         showToast('ไม่ใช่ตาของคุณ');
         return;
+      }
+      
+      if (gameState.mode === 'bot' && gameState.currentPlayer !== '●') {
+        return; // Prevent player from moving on bot's turn
       }
 
       gameState.board[index] = gameState.currentPlayer;
@@ -679,10 +710,6 @@
           endGame(winner);
           return;
         }
-        if (gameState.board.every(c => c !== '')) {
-          endGame('draw');
-          return;
-        }
         gameState.currentPlayer = '○';
         updateTurnDisplay();
         setTimeout(botMove, 600);
@@ -690,8 +717,9 @@
     }
 
     function botMove() {
+      const { gameState } = window;
       const empty = gameState.board.map((c, i) => c === '' ? i : null).filter(i => i !== null);
-      if (empty.length === 0) return;
+      if (empty.length === 0 || !gameState.gameActive) return;
 
       const idx = empty[Math.floor(Math.random() * empty.length)];
       gameState.board[idx] = '○';
@@ -702,31 +730,35 @@
         endGame(winner);
         return;
       }
-
-      if (gameState.board.every(c => c !== '')) {
-        endGame('draw');
-        return;
-      }
-
+      
       gameState.currentPlayer = '●';
       updateTurnDisplay();
     }
 
     function updateBoardUI() {
+      const { board } = window.gameState;
       document.querySelectorAll('.game-cell').forEach((cell, i) => {
-        cell.textContent = gameState.board[i];
-        cell.classList.toggle('locked', gameState.board[i] !== '');
+        cell.textContent = board[i];
+        cell.classList.toggle('locked', board[i] !== '');
       });
     }
+    window.updateBoardUI = updateBoardUI; // Expose for reuse
 
     function updateTurnDisplay() {
+      const { gameState } = window;
       const display = document.getElementById('turn-display');
+      if (!gameState.gameActive) {
+          display.textContent = '';
+          return;
+      }
       if (gameState.mode === 'bot') {
-        display.textContent = gameState.currentPlayer === '●' ? 'ตาของคุณ' : 'ตาบอท...';
+        display.textContent = gameState.currentPlayer === '●' ? 'ตาของคุณ (●)' : 'ตาบอท... (○)';
       } else {
-        display.textContent = gameState.currentPlayer === gameState.playerSymbol ? 'ตาของคุณ' : 'รอคู่แข่ง...';
+        const turnText = gameState.currentPlayer === gameState.playerSymbol ? 'ตาของคุณ' : 'รอคู่แข่ง...';
+        display.textContent = `${turnText} (${gameState.currentPlayer})`;
       }
     }
+    window.updateTurnDisplay = updateTurnDisplay; // Expose for reuse
 
     function checkWinner(board) {
       const lines = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
@@ -739,6 +771,8 @@
     }
 
     function endGame(result) {
+      const { gameState } = window;
+      if (gameState.gameOver) return; // Prevent multiple calls
       gameState.gameActive = false;
       gameState.gameOver = true;
       const overlay = document.getElementById('game-over-overlay');
@@ -747,51 +781,73 @@
       if (result === 'draw') {
         message.textContent = 'เสมอ';
       } else if ((gameState.mode === 'bot' && result === '●') || (gameState.mode === 'coop' && result === gameState.playerSymbol)) {
-        message.textContent = 'ชนะ!';
+        message.textContent = 'คุณชนะ!';
       } else {
-        message.textContent = 'แพ้';
+        message.textContent = 'คุณแพ้';
       }
 
       overlay.classList.add('active');
     }
 
     window.resetGameBoard = async function() {
+      const { gameState } = window;
+      document.getElementById('game-over-overlay').classList.remove('active');
+      gameState.board = Array(9).fill('');
+      gameState.currentPlayer = '●';
+      gameState.gameActive = true;
+      gameState.gameOver = false;
+      
       if (gameState.mode === 'coop') {
-        await updateDoc(doc(db, "rooms", gameState.roomCode), {
-          board: Array(9).fill(''),
-          currentPlayer: '●',
-          status: 'playing'
-        });
+        // Only player 1 should reset the board state
+        if (gameState.roomData && gameState.user.uid === Object.keys(gameState.roomData.players)[0]) {
+            await updateDoc(doc(db, "rooms", gameState.roomCode), {
+                board: Array(9).fill(''),
+                currentPlayer: '●',
+            });
+        }
       } else {
-        gameState.board = Array(9).fill('');
-        gameState.currentPlayer = '●';
-        gameState.gameActive = true;
-        gameState.gameOver = false;
-        document.getElementById('game-over-overlay').classList.remove('active');
         updateBoardUI();
         updateTurnDisplay();
       }
     };
+    
+    async function cleanupRoom() {
+        const { gameState } = window;
+        if (gameState.roomListener) {
+            gameState.roomListener(); // Unsubscribe from Firestore listener
+            gameState.roomListener = null;
+        }
+        if (gameState.countdownInterval) {
+            clearInterval(gameState.countdownInterval);
+            gameState.countdownInterval = null;
+        }
+        
+        // If the player is the "host" (first player), delete the room on leaving
+        if (gameState.roomCode && gameState.roomData) {
+            const playerUIDs = Object.keys(gameState.roomData.players);
+            if (playerUIDs.length > 0 && gameState.user.uid === playerUIDs[0]) {
+                await deleteDoc(doc(db, "rooms", gameState.roomCode));
+            }
+        }
+
+        gameState.roomCode = null;
+        gameState.roomData = null;
+    }
 
     window.leaveGame = async function() {
-      gameState.gameActive = false;
-      if (gameState.mode === 'coop' && gameState.roomCode) {
-        await deleteDoc(doc(db, "rooms", gameState.roomCode));
-        if (gameState.roomListener) gameState.roomListener();
-      }
+      await cleanupRoom();
       backToMenu();
     };
 
     window.leaveRoom = async function() {
-      if (gameState.roomCode) {
-        await deleteDoc(doc(db, "rooms", gameState.roomCode));
-      }
-      if (gameState.roomListener) gameState.roomListener();
-      showScreen('main-menu');
+      await cleanupRoom();
+      showScreen('coop-menu');
     };
 
     window.backToMenu = function() {
+      const { gameState } = window;
       gameState.gameActive = false;
+      gameState.gameOver = false;
       gameState.board = Array(9).fill('');
       document.getElementById('game-over-overlay').classList.remove('active');
       showScreen('main-menu');
@@ -801,53 +857,8 @@
       const toast = document.getElementById('toast');
       toast.textContent = msg;
       toast.style.display = 'block';
-      setTimeout(() => toast.style.display = 'none', 2000);
+      setTimeout(() => toast.style.display = 'none', 2500);
     }
-
-    // Bot game button
-    document.addEventListener('DOMContentLoaded', () => {
-      window.showScreen = showScreen;
-    });
-
-    window.showScreenBotGame = function() {
-      gameState.mode = 'bot';
-      gameState.botMode = true;
-      gameState.playerSymbol = '●';
-      gameState.currentPlayer = '●';
-      gameState.board = Array(9).fill('');
-      gameState.gameActive = true;
-      gameState.gameOver = false;
-      document.getElementById('player-name').textContent = gameState.user.username;
-      document.getElementById('game-mode').textContent = 'Bot';
-      createBoardCells();
-      updateBoardUI();
-      updateTurnDisplay();
-      showScreen('game-screen');
-    };
-  </script>
-
-  <script>
-    // Bot game button onclick
-    document.addEventListener('DOMContentLoaded', () => {
-      const botBtn = document.querySelector('button[onclick*="bot-game"]');
-      if (botBtn) {
-        botBtn.onclick = () => {
-          window.gameState.mode = 'bot';
-          window.gameState.botMode = true;
-          window.gameState.playerSymbol = '●';
-          window.gameState.currentPlayer = '●';
-          window.gameState.board = Array(9).fill('');
-          window.gameState.gameActive = true;
-          window.gameState.gameOver = false;
-          document.getElementById('player-name').textContent = window.gameState.user.username;
-          document.getElementById('game-mode').textContent = 'Bot';
-          window.createBoardCells();
-          window.updateBoardUI();
-          window.updateTurnDisplay();
-          window.showScreen('game-screen');
-        };
-      }
-    });
   </script>
 </body>
 </html>
