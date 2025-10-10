@@ -6,145 +6,87 @@
     <title>วันที่เธอไม่อยู่</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400&display=swap');
-
-        /* --- การตั้งค่าพื้นฐาน --- */
         html, body {
-            margin: 0; padding: 0;
-            width: 100%; height: 100%;
+            margin: 0; padding: 0; width: 100%; height: 100%;
             font-family: 'IBM Plex Sans Thai', sans-serif;
-            background-color: #000;
-            overflow: hidden;
-            position: relative;
+            background-color: #000; overflow: hidden; position: relative;
         }
-
-        /* --- หน้าโหลด (Preloader) --- */
         #preloader {
-            position: fixed; top: 0; left: 0;
-            width: 100%; height: 100%;
-            background-color: #000;
-            display: flex; justify-content: center; align-items: center;
-            z-index: 2000;
-            transition: opacity 1s ease;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #000; display: flex; justify-content: center; align-items: center;
+            z-index: 2000; transition: opacity 1s ease;
         }
         #preloader .moon-loader {
-            width: 50px; height: 50px;
-            background-color: #f0e68c;
-            border-radius: 50%;
-            box-shadow: 0 0 20px #f0e68c;
+            width: 50px; height: 50px; background-color: #f0e68c;
+            border-radius: 50%; box-shadow: 0 0 20px #f0e68c;
             animation: pulse 2s infinite;
         }
-
-        /* --- ปุ่มเริ่มเรื่องราว --- */
         #start-button {
-            position: fixed;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 1500;
-            color: white;
-            background-color: rgba(0,0,0,0.7);
-            padding: 25px 50px;
-            border-radius: 15px;
-            cursor: pointer;
-            font-size: 1.5rem;
-            border: 2px solid white;
-            transition: opacity 0.5s;
-            opacity: 0;
-            visibility: hidden;
-            animation: pulse-button 3s infinite 1s;
+            position: fixed; top: 50%; left: 50%;
+            transform: translate(-50%, -50%); z-index: 1500;
+            color: white; background-color: rgba(0,0,0,0.8);
+            padding: 25px 40px; border-radius: 15px; cursor: pointer;
+            font-size: 1.3rem; text-align: center; border: 2px solid white;
+            transition: opacity 0.5s; opacity: 0; visibility: hidden;
+            animation: pulse-button 2.5s infinite;
         }
-        #start-button.visible {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        /* --- ฉากและองค์ประกอบหลัก --- */
+        #start-button.visible { opacity: 1; visibility: visible; }
         .scene {
-            position: absolute; top: 0; left: 0;
-            width: 100%; height: 100%;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: linear-gradient(to bottom, #020111 0%, #191621 100%);
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 2s ease-in-out; /* ฉากจะใช้เวลาปรากฏ 2 วินาที */
+            opacity: 0; visibility: hidden; transition: opacity 2s ease-in-out;
         }
         .scene.active { opacity: 1; visibility: visible; z-index: 10; }
-        
-        /* --- ตัวละคร --- */
         .moon {
             position: absolute; width: 120px; height: 120px;
             background-color: #f0e68c; border-radius: 50%;
             box-shadow: 0 0 30px #f0e68caa; top: 25%; left: 50%;
-            transform: translateX(-50%); transition: all 2s ease-in-out;
+            transform: translateX(-50%); transition: all 2.5s ease-in-out;
         }
         .star {
             position: absolute; font-size: 30px; color: #fff;
             text-shadow: 0 0 15px #fff; top: 35%; left: 70%;
-            animation: twinkle 3s infinite; transition: all 2s ease-in-out;
+            animation: twinkle 3s infinite; transition: all 2.5s ease-in-out;
         }
-
-        /* --- ข้อความเล่าเรื่อง (ปรับปรุงใหม่) --- */
         .story-text {
-            position: absolute;
-            bottom: 15%;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 80%;
-            max-width: 700px; /* จำกัดความกว้างสูงสุด */
-            padding: 20px 30px; /* เพิ่มพื้นที่ว่างภายในกล่อง */
-            
-            /* --- ส่วนที่เพิ่มเข้ามาสำหรับ GUI Background --- */
-            background-color: rgba(0, 0, 0, 0.6); /* พื้นหลังสีดำโปร่งแสง */
-            border-radius: 15px; /* ทำให้ขอบมน */
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5); /* เพิ่มเงาให้กล่อง */
-            /* --- จบส่วนที่เพิ่ม --- */
-
-            color: #eee;
-            font-size: 1.5rem;
-            font-weight: 300;
-            text-align: center;
-            opacity: 0;
-
-            /* --- ปรับปรุงใหม่: เพิ่ม Delay ให้กับ Animation --- */
-            /* แอนิเมชันจะเริ่มหลังจากฉากปรากฏขึ้นมาแล้ว 2 วินาที */
-            animation: fadeInOut 8s 2s forwards; 
+            position: absolute; bottom: 15%; left: 50%;
+            transform: translateX(-50%); width: 80%; max-width: 700px;
+            padding: 20px 30px; background-color: rgba(0, 0, 0, 0.65);
+            border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            color: #eee; font-size: 1.4rem; font-weight: 300;
+            text-align: center; opacity: 0;
+            animation: fadeInOut 9s 2s forwards;
         }
         .story-text.small { font-size: 1.2rem; bottom: 10%; }
-        
-        /* สไตล์พิเศษสำหรับแต่ละฉาก */
-        #scene2 .star { animation: twinkle-bright 1.5s infinite; }
-        #scene3 .star { animation: twinkle-sad 4s infinite; left: 85%; }
-        #scene4 .star { opacity: 0; left: 110%; }
-        #scene5 .moon { top: 50%; transform: translate(-50%, -50%); }
-        .memory {
+        .memory-icon {
             position: absolute; top: 50%; left: 50%;
-            transform: translate(-50%, -50%); font-size: 4rem;
-            color: rgba(255, 255, 255, 0.7); 
-            opacity: 0;
+            transform: translate(-50%, -50%); font-size: 3.5rem;
+            color: rgba(255, 255, 255, 0.7); opacity: 0;
             text-shadow: 0 0 10px white;
         }
-        
         #player { position: fixed; z-index: -1; pointer-events: none; }
-
-        /* --- Keyframe Animations --- */
         @keyframes pulse { 0%, 100% { transform: scale(1); box-shadow: 0 0 20px #f0e68c; } 50% { transform: scale(1.1); box-shadow: 0 0 35px #f0e68c; } }
-        @keyframes pulse-button { 0%, 100% { transform: translate(-50%,-50%) scale(1); } 50% { transform: translate(-50%,-50%) scale(1.05); } }
+        @keyframes pulse-button { 0%, 100% { transform: translate(-50%,-50%) scale(1); box-shadow: 0 0 20px rgba(255,255,255,0.3); } 50% { transform: translate(-50%,-50%) scale(1.05); box-shadow: 0 0 30px rgba(255,255,255,0.5); } }
         @keyframes twinkle { 0%, 100% { opacity: 0.8; } 50% { opacity: 1; transform: scale(1.1); } }
-        @keyframes twinkle-bright { 0%, 100% { opacity: 1; transform: scale(1.2); text-shadow: 0 0 25px #fff; } 50% { opacity: 0.7; transform: scale(1); text-shadow: 0 0 15px #fff; } }
-        @keyframes twinkle-sad { 0%, 100% { opacity: 0.5; } 50% { opacity: 0.2; } }
         @keyframes fadeInOut { 0% { opacity: 0; transform: translate(-50%, 10px); } 15% { opacity: 1; transform: translate(-50%, 0); } 85% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; transform: translate(-50%, -10px); } }
-        @keyframes fadeInStay { to { opacity: 1; } }
+        @keyframes fadeInStay { 0% { opacity: 0; } 100% { opacity: 1; } }
     </style>
 </head>
 <body>
     <div id="preloader"><div class="moon-loader"></div></div>
-    <div id="start-button">แตะที่นี่เพื่อเริ่มเรื่องราว</div>
+    <div id="start-button">แตะเพื่อเริ่มเรื่องราว<br>และฟังเพลง</div>
     <div id="player"></div>
 
-    <section id="scene1" class="scene"><div class="moon"></div><div class="star">★</div><div class="story-text" style="animation-duration: 7s;">ผมคือ 'กาย' พระจันทร์ที่คิดว่าตัวเองสว่างไสว...<br>โดยไม่เคยรู้เลยว่า แสงของผมมาจากดาวข้างๆ ที่ชื่อ 'แนน'</div></section>
-    <section id="scene2" class="scene"><div class="moon"></div><div class="star">★</div><div class="story-text">เธอชอบถามว่า "รักไหม?"...<br>แต่ความขี้อายและความเคยชิน ทำให้ผมตอบเพียงความเงียบงัน</div></section>
-    <section id="scene3" class="scene"><div class="moon" style="background-color: #d3cba4;"></div><div class="star">★</div><div class="story-text" style="color: #ffb8b8;">"ถ้าจากกันรอบนี้... จะไม่เจอกันแล้วนะ"<br>เสียงของเธอในวันนั้น... ผมกลับไม่ได้ยินมันอย่างชัดเจน</div></section>
-    <section id="scene4" class="scene"><div class="moon"></div><div class="star">★</div><div class="story-text">แล้ววันนั้น... เธอก็ไปจริงๆ<br>ทิ้งให้ท้องฟ้าของผมมืดมิดและว่างเปล่า</div></section>
-    <section id="scene5" class="scene"><div class="moon"></div><div class="memory" style="animation: fadeInOut 4s 1s forwards;">XO</div><div class="memory" style="animation: fadeInOut 4s 5s forwards;">♪</div><div class="story-text small" style="animation: fadeInOut 8s 9s forwards;">เกมที่เคยเล่น เพลงที่เคยมีความหมาย...<br>มันคอยตอกย้ำถึงวันที่ผมละเลยอ้อมกอดที่แสนอบอุ่นของเธอไป</div></section>
-    <section id="scene6" class="scene"><div class="moon" style="box-shadow: none; background-color: #6a654b;"></div><div class="story-text" style="animation: fadeInStay 4s forwards;">เพิ่งเข้าใจ... ในวันที่เธอไม่อยู่</div></section>
+    <section id="scene1" class="scene"><div class="moon"></div><div class="star">★</div><div class="story-text">ผมคือ 'กาย' พระจันทร์ที่เคยชินกับการมีดาวที่ชื่อ 'แนน' อยู่ข้างๆ...<br>คิดไปเองว่าแสงสว่างของเธอ จะอยู่กับผมตลอดไป</div></section>
+    <section id="scene2" class="scene"><div class="moon"></div><div class="star" style="left: 65%;">★</div><div class="story-text">เวลาโทรคุย... คำหวานของผมมันง่ายดาย<br>แต่พอเจอหน้ากัน... ความขี้อายกลับสร้างกำแพงที่มองไม่เห็น</div></section>
+    <section id="scene3" class="scene"><div class="moon"></div><div class="star">★</div><div class="story-text">เธอชอบถามว่า "รักไหม?"...<br>ผมกลับคิดว่า การนั่งอยู่ข้างๆ ก็คือคำตอบทั้งหมดแล้ว</div></section>
+    <section id="scene4" class="scene"><div class="moon" style="left: 45%;"></div><div class="star">★</div><div class="story-text">คำชวนไปเที่ยว... ไปถ่ายรูป... ถูกผมมองข้ามไป<br>คิดแค่ว่า "ครั้งหน้าก็ได้" โดยไม่รู้เลยว่า... เวลาของเราเหลือน้อยลงทุกที</div></section>
+    <section id="scene5" class="scene"><div class="moon" style="background-color: #d3cba4;"></div><div class="star" style="left: 85%; animation: none; opacity: 0.4;">★</div><div class="story-text" style="color: #ffb8b8;">"ถ้าจากกันรอบนี้... จะไม่เจอกันแล้วนะ"<br>เสียงของเธอในวันนั้น... คือสัญญาณเตือนครั้งสุดท้าย</div></section>
+    <section id="scene6" class="scene"><div class="moon"></div><div class="star" style="opacity: 0; left: 110%;">★</div><div class="story-text">แล้ววันนั้น... เธอก็ไปจริงๆ<br>ทิ้งให้ท้องฟ้าของผมมืดมิดและว่างเปล่า</div></section>
+    <section id="scene7" class="scene"><div class="moon"></div><div class="story-text">ความอบอุ่นตอนที่กอดกัน... เสียงหัวเราะง่ายๆ ของเธอ<br>เพิ่งรู้ว่าสิ่งเหล่านี้มีค่า... ในวันที่มันกลายเป็นแค่ความทรงจำ</div></section>
+    <section id="scene8" class="scene"><div class="moon" style="top: 50%; transform: translate(-50%, -50%);"></div><div class="memory-icon" style="animation: fadeInOut 4s 1s forwards;">XO</div><div class="memory-icon" style="animation: fadeInOut 4s 5s forwards;">♪</div><div class="story-text small" style="animation: fadeInOut 8s 9s forwards;">เกมที่เคยเล่น เพลงที่เคยมีความหมาย...<br>ตอนนี้มันคอยตอกย้ำถึงวันที่ผมละเลยเธอไป</div></section>
+    <section id="scene9" class="scene"><div class="moon" style="box-shadow: none; background-color: #6a654b;"></div><div class="story-text" style="animation: fadeInStay 4s 2s forwards;">ผมกลายเป็นพระจันทร์ที่เต็มไปด้วยคำว่า "รัก" ที่ไม่เคยได้พูดออกไป...</div></section>
+    <section id="scene10" class="scene"><div class="moon" style="box-shadow: none; background-color: #444;"></div><div class="story-text" style="animation: fadeInStay 4s 2s forwards;">โคจรรอบความว่างเปล่า... ที่เคยมีดาวที่สว่างไสวที่สุดของผมอยู่</div></section>
 
     <script>
         var player;
@@ -183,7 +125,8 @@
                 playNextScene();
             }, { once: true });
 
-            const sceneDurations = [8000, 8000, 8000, 8000, 17000, 10000];
+            // อัปเดตเวลาของแต่ละฉากให้มี 10 ฉาก
+            const sceneDurations = [10000, 10000, 10000, 10000, 10000, 10000, 10000, 12000, 10000, 12000];
             
             function playNextScene() {
                 if (scenes[currentScene]) {
