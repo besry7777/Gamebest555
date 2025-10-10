@@ -2,72 +2,98 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Super XO: Gobblet Edition</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>TicTac Game</title>
+  <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"></script>
   <style>
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+      touch-action: manipulation;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: 'Arial', sans-serif;
     }
 
     body {
-      font-family: 'Arial', sans-serif;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      min-height: 100vh;
       display: flex;
       justify-content: center;
       align-items: center;
-      padding: 20px;
     }
 
     .container {
       background: white;
-      padding: 30px;
-      border-radius: 15px;
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-      max-width: 900px;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
       width: 100%;
+      height: 100vh;
+      max-width: 500px;
+      max-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      padding: 0;
     }
 
     .screen {
       display: none;
-      text-align: center;
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      -webkit-overflow-scrolling: touch;
     }
 
     .screen.active {
-      display: block;
+      display: flex;
+      flex-direction: column;
     }
 
     h1 {
       color: #333;
-      margin-bottom: 10px;
-      font-size: 2.5em;
+      font-size: 2.2em;
+      text-align: center;
+      margin-bottom: 20px;
     }
 
     h2 {
       color: #333;
+      font-size: 1.6em;
+      text-align: center;
       margin-bottom: 20px;
-      font-size: 1.8em;
     }
 
-    .welcome-msg {
-      color: #666;
-      font-size: 1.1em;
-      margin-bottom: 30px;
+    .content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 15px;
     }
 
     button {
-      padding: 12px 30px;
+      padding: 15px 30px;
       font-size: 1em;
       border: none;
-      border-radius: 5px;
+      border-radius: 10px;
       cursor: pointer;
       transition: all 0.3s;
       font-weight: bold;
-      margin: 10px;
       width: 100%;
       max-width: 300px;
+      touch-action: manipulation;
     }
 
     .btn-primary {
@@ -75,9 +101,9 @@
       color: white;
     }
 
-    .btn-primary:hover {
+    .btn-primary:active {
       background: #5568d3;
-      transform: translateY(-2px);
+      transform: scale(0.98);
     }
 
     .btn-secondary {
@@ -85,8 +111,9 @@
       color: white;
     }
 
-    .btn-secondary:hover {
+    .btn-secondary:active {
       background: #777;
+      transform: scale(0.98);
     }
 
     .btn-success {
@@ -94,8 +121,9 @@
       color: white;
     }
 
-    .btn-success:hover {
+    .btn-success:active {
       background: #45a049;
+      transform: scale(0.98);
     }
 
     .btn-danger {
@@ -103,8 +131,9 @@
       color: white;
     }
 
-    .btn-danger:hover {
+    .btn-danger:active {
       background: #da190b;
+      transform: scale(0.98);
     }
 
     input[type="text"] {
@@ -113,18 +142,20 @@
       padding: 12px;
       margin: 10px 0;
       border: 2px solid #ddd;
-      border-radius: 5px;
+      border-radius: 10px;
       font-size: 1em;
       text-transform: uppercase;
+      touch-action: manipulation;
     }
 
     .game-board {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 15px;
-      max-width: 400px;
-      margin: 30px auto;
+      gap: 12px;
       width: 100%;
+      max-width: 300px;
+      aspect-ratio: 1;
+      margin: 20px auto;
     }
 
     .game-cell {
@@ -132,114 +163,115 @@
       aspect-ratio: 1;
       background: #f0f0f0;
       border: 3px solid #ddd;
-      border-radius: 10px;
+      border-radius: 12px;
       cursor: pointer;
       font-size: 3em;
-      transition: all 0.3s;
+      font-weight: bold;
+      transition: all 0.2s;
       display: flex;
       justify-content: center;
       align-items: center;
-      color: white;
-      font-weight: bold;
+      color: #333;
+      touch-action: manipulation;
+      user-select: none;
     }
 
-    .game-cell:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    .game-cell:active:not(.locked) {
+      background: #e0e0e0;
+      transform: scale(0.95);
     }
 
-    .game-cell.x {
-      background: #ef4444;
-    }
-
-    .game-cell.o {
-      background: #3b82f6;
-    }
-
-    .game-cell.empty {
-      background: #f0f0f0;
-      color: #999;
+    .game-cell.locked {
+      opacity: 0.8;
     }
 
     .turn-display {
       font-size: 1.3em;
-      margin-bottom: 20px;
+      text-align: center;
       font-weight: bold;
-      height: 30px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 40px;
     }
 
     .stats {
       display: flex;
       justify-content: space-around;
-      margin: 20px 0;
-      gap: 15px;
+      gap: 10px;
       flex-wrap: wrap;
+      margin: 15px 0;
     }
 
     .stat-item {
       flex: 1;
-      min-width: 150px;
+      min-width: 90px;
       background: #f0f0f0;
-      padding: 15px;
+      padding: 10px;
       border-radius: 10px;
-      border-left: 4px solid #667eea;
+      text-align: center;
+      font-size: 0.85em;
     }
 
     .stat-label {
       color: #666;
-      font-size: 0.9em;
+      font-size: 0.8em;
+      margin-bottom: 5px;
     }
 
     .stat-value {
-      font-size: 1.8em;
+      font-size: 1.3em;
       font-weight: bold;
       color: #333;
     }
 
     .player-list {
       background: #f0f0f0;
-      padding: 20px;
+      padding: 15px;
       border-radius: 10px;
-      margin: 20px 0;
-      font-size: 1.1em;
+      margin: 15px 0;
+      font-size: 1em;
+      width: 100%;
+      max-width: 300px;
     }
 
     .player-item {
-      padding: 10px;
+      padding: 8px;
       margin: 5px 0;
       background: white;
       border-radius: 5px;
+      font-size: 0.95em;
     }
 
     .error-msg {
       color: #f44336;
-      font-size: 0.9em;
+      font-size: 0.85em;
       height: 20px;
-      margin-top: 10px;
+      margin: 5px 0;
     }
 
     .toast {
       position: fixed;
-      top: 20px;
+      bottom: 20px;
+      left: 20px;
       right: 20px;
+      max-width: 300px;
+      margin: 0 auto;
       background: #333;
       color: white;
-      padding: 15px 20px;
-      border-radius: 5px;
+      padding: 12px 16px;
+      border-radius: 8px;
       display: none;
       z-index: 1000;
-      animation: slideIn 0.3s ease-in-out;
-    }
-
-    @keyframes slideIn {
-      from { transform: translateX(400px); }
-      to { transform: translateX(0); }
+      text-align: center;
+      font-size: 0.9em;
     }
 
     .game-over-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.7);
+      background: rgba(0, 0, 0, 0.8);
       display: none;
       flex-direction: column;
       justify-content: center;
@@ -254,30 +286,59 @@
 
     .game-over-box {
       background: white;
-      padding: 40px;
+      padding: 30px 20px;
       border-radius: 15px;
       box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+      max-width: 300px;
+      width: 90%;
     }
 
     .game-over-message {
-      font-size: 2.5em;
+      font-size: 2em;
       font-weight: bold;
       margin-bottom: 20px;
       color: #333;
     }
 
-    @media (max-width: 600px) {
-      h1 {
-        font-size: 2em;
+    .game-over-box button {
+      margin: 8px 0;
+    }
+
+    .lobby-countdown {
+      font-size: 1.5em;
+      font-weight: bold;
+      color: #667eea;
+      margin: 20px 0;
+    }
+
+    .welcome-msg {
+      color: #666;
+      font-size: 1em;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        max-width: 100%;
+        border-radius: 0;
       }
 
-      button {
-        padding: 10px 20px;
-        font-size: 0.9em;
+      h1 {
+        font-size: 1.8em;
+      }
+
+      h2 {
+        font-size: 1.4em;
       }
 
       .game-cell {
         font-size: 2.5em;
+      }
+
+      button {
+        padding: 12px 20px;
+        font-size: 0.95em;
       }
     }
   </style>
@@ -286,308 +347,395 @@
   <div class="container">
     <!-- Main Menu Screen -->
     <div id="main-menu" class="screen active">
-      <h1>Super XO</h1>
-      <p style="color: #666; margin-bottom: 30px;">Gobblet Edition</p>
-      <div class="welcome-msg" id="welcome-msg"></div>
-      
-      <button class="btn-primary" onclick="showScreen('bot-menu')">เล่นกับบอท</button>
-      <button class="btn-success" onclick="showScreen('coop-menu')">เล่นกับเพื่อน (Co-op)</button>
-      <button class="btn-secondary" onclick="showScreen('settings')">ตั้งค่า</button>
-    </div>
-
-    <!-- Bot Menu Screen -->
-    <div id="bot-menu" class="screen">
-      <h2>เล่นกับบอท</h2>
-      <button class="btn-primary" onclick="startBotGame('X')">คุณเป็น X (ก่อน)</button>
-      <button class="btn-primary" onclick="startBotGame('O')">คุณเป็น O (หลัง)</button>
-      <button class="btn-secondary" onclick="showScreen('main-menu')">กลับเมนู</button>
+      <div class="content">
+        <h1>TicTac</h1>
+        <div class="welcome-msg" id="welcome-msg">Loading...</div>
+        
+        <button class="btn-primary" onclick="showScreen('bot-game')">เล่นกับบอท</button>
+        <button class="btn-success" onclick="showScreen('coop-menu')">เล่นกับเพื่อน</button>
+      </div>
     </div>
 
     <!-- Co-op Menu Screen -->
     <div id="coop-menu" class="screen">
-      <h2>เล่นกับเพื่อน</h2>
-      <button class="btn-primary" onclick="createRoom()">สร้างห้อง</button>
-      <input type="text" id="room-code" placeholder="ใส่รหัสห้อง">
-      <button class="btn-success" onclick="joinRoom()">เข้าร่วมห้อง</button>
-      <button class="btn-secondary" onclick="showScreen('main-menu')">กลับเมนู</button>
-    </div>
-
-    <!-- Settings Screen -->
-    <div id="settings" class="screen">
-      <h2>ตั้งค่า</h2>
-      <label>ชื่อผู้ใช้:</label>
-      <input type="text" id="username-input" maxlength="12" placeholder="3-12 ตัวอักษร">
-      <div class="error-msg" id="settings-error"></div>
-      <button class="btn-primary" onclick="saveUsername()">บันทึก</button>
-      <button class="btn-secondary" onclick="showScreen('main-menu')">กลับเมนู</button>
+      <div class="content">
+        <h2>เล่นกับเพื่อน</h2>
+        <button class="btn-primary" onclick="createRoom()">สร้างห้อง</button>
+        <input type="text" id="room-code" placeholder="ใส่รหัสห้อง" maxlength="6">
+        <button class="btn-success" onclick="joinRoom()">เข้าร่วม</button>
+        <button class="btn-secondary" onclick="showScreen('main-menu')">กลับ</button>
+      </div>
     </div>
 
     <!-- Room Lobby Screen -->
     <div id="room-lobby" class="screen">
-      <h2>ห้องของคุณ</h2>
-      <div style="font-size: 1.5em; font-weight: bold; color: #667eea; margin: 20px 0;">รหัสห้อง: <span id="room-display">-</span></div>
-      <div class="player-list" id="player-list"></div>
-      <div id="lobby-status" style="font-size: 1.2em; margin: 20px 0;"></div>
-      <button class="btn-success" onclick="setReady()" id="ready-btn">เตรียมพร้อม</button>
-      <button class="btn-danger" onclick="leaveRoom()">ออกจากห้อง</button>
+      <div class="content">
+        <h2>ห้องของคุณ</h2>
+        <div style="font-size: 1.5em; font-weight: bold; color: #667eea; margin: 15px 0;">รหัส: <span id="room-display">-</span></div>
+        <div class="player-list" id="player-list"></div>
+        <div class="lobby-countdown" id="lobby-status"></div>
+        <button class="btn-success" onclick="setReady()" id="ready-btn">พร้อม</button>
+        <button class="btn-danger" onclick="leaveRoom()">ออก</button>
+      </div>
     </div>
 
     <!-- Game Screen -->
     <div id="game-screen" class="screen">
-      <h2 id="game-title">Super XO</h2>
       <div class="stats">
         <div class="stat-item">
           <div class="stat-label">ผู้เล่น</div>
           <div class="stat-value" id="player-name">-</div>
         </div>
         <div class="stat-item">
-          <div class="stat-label">สัญลักษณ์</div>
-          <div class="stat-value" id="player-symbol">-</div>
+          <div class="stat-label">โหมด</div>
+          <div class="stat-value" id="game-mode">-</div>
         </div>
       </div>
 
       <div class="turn-display" id="turn-display"></div>
       
-      <div class="game-board" id="game-board">
-        <div class="game-cell empty" onclick="playMove(0)">-</div>
-        <div class="game-cell empty" onclick="playMove(1)">-</div>
-        <div class="game-cell empty" onclick="playMove(2)">-</div>
-        <div class="game-cell empty" onclick="playMove(3)">-</div>
-        <div class="game-cell empty" onclick="playMove(4)">-</div>
-        <div class="game-cell empty" onclick="playMove(5)">-</div>
-        <div class="game-cell empty" onclick="playMove(6)">-</div>
-        <div class="game-cell empty" onclick="playMove(7)">-</div>
-        <div class="game-cell empty" onclick="playMove(8)">-</div>
-      </div>
+      <div class="game-board" id="game-board"></div>
 
-      <button class="btn-secondary" onclick="leaveGame()">ออกจากเกม</button>
+      <button class="btn-secondary" onclick="leaveGame()">ออก</button>
     </div>
 
     <!-- Game Over Overlay -->
     <div class="game-over-overlay" id="game-over-overlay">
       <div class="game-over-box">
         <div class="game-over-message" id="game-over-message"></div>
-        <button class="btn-primary" onclick="resetGame()">เล่นใหม่</button>
-        <button class="btn-secondary" onclick="backToMenu()">กลับเมนู</button>
+        <button class="btn-primary" onclick="resetGameBoard()">เล่นใหม่</button>
+        <button class="btn-secondary" onclick="backToMenu()">เมนู</button>
       </div>
     </div>
   </div>
 
   <div class="toast" id="toast"></div>
 
-  <script>
-    // Game State
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, deleteDoc, writeBatch, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBcxVAP08XMiPMoqElaKM7AYY_2z08oWok",
+      authDomain: "xobybestry777.firebaseapp.com",
+      projectId: "xobybestry777",
+      storageBucket: "xobybestry777.firebasestorage.app",
+      messagingSenderId: "380539937989",
+      appId: "1:380539937989:web:48049ed77f45327e033cac",
+      measurementId: "G-YZWTKXL285"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
     const gameState = {
-      mode: null, // 'bot' or 'coop'
+      user: { uid: null, username: 'Player' + Math.floor(Math.random() * 10000) },
+      mode: null,
       board: Array(9).fill(''),
-      currentPlayer: 'X',
+      currentPlayer: '●',
       playerSymbol: '',
       gameActive: false,
-      username: 'Player' + Math.floor(Math.random() * 10000),
-      roomCode: null,
       gameOver: false,
+      roomCode: null,
+      roomData: null,
+      roomListener: null,
+      countdownInterval: null,
       botMode: false
     };
 
-    // Initialize
     window.addEventListener('load', () => {
-      updateWelcomeMessage();
+      signInAnonymously(auth).catch(e => console.error(e));
+      onAuthStateChanged(auth, (user) => {
+        if (user) {
+          gameState.user.uid = user.uid;
+          updateWelcomeMessage();
+        }
+      });
+      
+      document.addEventListener('touchmove', (e) => {
+        if (e.target.closest('.game-board') || e.target.closest('input') || e.target.closest('button')) {
+          return;
+        }
+        e.preventDefault();
+      }, { passive: false });
     });
 
-    // Screen Management
+    function updateWelcomeMessage() {
+      document.getElementById('welcome-msg').textContent = `ยินดีต้อนรับ ${gameState.user.username}`;
+    }
+
     function showScreen(screenId) {
       document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
       document.getElementById(screenId).classList.add('active');
     }
 
-    function updateWelcomeMessage() {
-      document.getElementById('welcome-msg').textContent = `ยินดีต้อนรับ, ${gameState.username}`;
+    window.showScreen = showScreen;
+
+    async function createRoom() {
+      gameState.roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+      gameState.playerSymbol = '●';
+
+      const roomData = {
+        code: gameState.roomCode,
+        players: {
+          [gameState.user.uid]: { name: gameState.user.username, symbol: '●', ready: false }
+        },
+        board: Array(9).fill(''),
+        currentPlayer: '●',
+        status: 'lobby',
+        createdAt: serverTimestamp()
+      };
+
+      await setDoc(doc(db, "rooms", gameState.roomCode), roomData);
+      setupRoomListener(gameState.roomCode);
+      showRoomLobby();
     }
 
-    // Settings
-    function saveUsername() {
-      const input = document.getElementById('username-input').value.trim();
-      const error = document.getElementById('settings-error');
-      error.textContent = '';
-
-      if (input.length < 3 || input.length > 12) {
-        error.textContent = 'ชื่อต้องมี 3-12 ตัวอักษร';
-        return;
-      }
-
-      gameState.username = input;
-      updateWelcomeMessage();
-      showToast('บันทึกชื่อสำเร็จ!');
-      showScreen('main-menu');
-    }
-
-    // Bot Game
-    function startBotGame(symbol) {
-      gameState.mode = 'bot';
-      gameState.playerSymbol = symbol;
-      gameState.currentPlayer = 'X';
-      gameState.board = Array(9).fill('');
-      gameState.gameActive = true;
-      gameState.gameOver = false;
-
-      document.getElementById('player-name').textContent = gameState.username;
-      document.getElementById('player-symbol').textContent = symbol;
-      document.getElementById('game-title').textContent = 'เล่นกับบอท';
-
-      showScreen('game-screen');
-      updateTurnDisplay();
-      updateBoard();
-    }
-
-    // Co-op Game
-    function createRoom() {
-      gameState.roomCode = Math.random().toString(36).substring(2, 6).toUpperCase();
-      gameState.playerSymbol = Math.random() < 0.5 ? 'X' : 'O';
-      
-      document.getElementById('room-display').textContent = gameState.roomCode;
-      document.getElementById('player-list').innerHTML = `<div class="player-item">${gameState.username} (${gameState.playerSymbol}) - ยังไม่พร้อม</div>`;
-      document.getElementById('lobby-status').textContent = 'รอผู้เล่นอีกคน...';
-      
-      showScreen('room-lobby');
-    }
-
-    function joinRoom() {
+    async function joinRoom() {
       const code = document.getElementById('room-code').value.trim().toUpperCase();
       if (!code) {
-        showToast('กรุณาใส่รหัสห้อง', 'error');
+        showToast('ใส่รหัสห้อง');
         return;
       }
 
-      // Simulate joining (in real app, would connect to server)
+      const roomDoc = await getDoc(doc(db, "rooms", code));
+      if (!roomDoc.exists()) {
+        showToast('ไม่พบห้อง');
+        return;
+      }
+
+      const roomData = roomDoc.data();
+      if (Object.keys(roomData.players).length >= 2) {
+        showToast('ห้องเต็มแล้ว');
+        return;
+      }
+
       gameState.roomCode = code;
-      gameState.playerSymbol = gameState.roomCode === gameState.roomCode ? 'O' : 'X';
-      
-      document.getElementById('room-display').textContent = code;
-      document.getElementById('player-list').innerHTML = `
-        <div class="player-item">Player1 (X) - พร้อม</div>
-        <div class="player-item">${gameState.username} (${gameState.playerSymbol}) - ยังไม่พร้อม</div>
-      `;
-      document.getElementById('lobby-status').textContent = 'รอให้ผู้เล่นตัวที่ 1 พร้อม';
-      
+      gameState.playerSymbol = '○';
+
+      await updateDoc(doc(db, "rooms", code), {
+        [`players.${gameState.user.uid}`]: { name: gameState.user.username, symbol: '○', ready: false }
+      });
+
+      setupRoomListener(code);
+      showRoomLobby();
+    }
+
+    function setupRoomListener(roomCode) {
+      if (gameState.roomListener) gameState.roomListener();
+
+      const roomRef = doc(db, "rooms", roomCode);
+      gameState.roomListener = onSnapshot(roomRef, (snap) => {
+        if (!snap.exists()) {
+          if (document.querySelector('.screen.active').id === 'room-lobby' || document.querySelector('.screen.active').id === 'game-screen') {
+            showToast('ห้องปิดแล้ว');
+            backToMenu();
+          }
+          return;
+        }
+
+        gameState.roomData = snap.data();
+        updateLobbyUI();
+
+        if (gameState.roomData.status === 'playing' && !gameState.gameActive) {
+          startCoopGame();
+        }
+
+        if (gameState.roomData.status === 'playing') {
+          gameState.board = gameState.roomData.board;
+          gameState.currentPlayer = gameState.roomData.currentPlayer;
+          updateBoardUI();
+          updateTurnDisplay();
+
+          const winner = checkWinner(gameState.board);
+          if (winner && gameState.gameActive) {
+            endGame(winner);
+          }
+        }
+      });
+    }
+
+    function showRoomLobby() {
+      document.getElementById('room-display').textContent = gameState.roomCode;
       showScreen('room-lobby');
     }
 
-    function setReady() {
-      // Simulate ready state
-      showToast('คุณพร้อมแล้ว!');
-      
-      setTimeout(() => {
-        gameState.mode = 'coop';
-        gameState.currentPlayer = 'X';
-        gameState.board = Array(9).fill('');
-        gameState.gameActive = true;
-        gameState.gameOver = false;
+    function updateLobbyUI() {
+      const playerListEl = document.getElementById('player-list');
+      const statusEl = document.getElementById('lobby-status');
+      const readyBtn = document.getElementById('ready-btn');
 
-        document.getElementById('player-name').textContent = gameState.username;
-        document.getElementById('player-symbol').textContent = gameState.playerSymbol;
-        document.getElementById('game-title').textContent = 'เล่นกับเพื่อน';
+      playerListEl.innerHTML = '';
+      Object.values(gameState.roomData.players).forEach(p => {
+        const div = document.createElement('div');
+        div.className = 'player-item';
+        div.textContent = `${p.name} (${p.symbol}) ${p.ready ? '✓' : '✗'}`;
+        playerListEl.appendChild(div);
+      });
 
-        showScreen('game-screen');
-        updateTurnDisplay();
-        updateBoard();
+      const allReady = Object.values(gameState.roomData.players).every(p => p.ready);
+      const hasTwo = Object.keys(gameState.roomData.players).length === 2;
+
+      if (hasTwo && allReady && !gameState.countdownInterval) {
+        startCountdown();
+      } else if (!allReady && gameState.countdownInterval) {
+        clearInterval(gameState.countdownInterval);
+        gameState.countdownInterval = null;
+        statusEl.textContent = hasTwo ? 'รอพร้อม...' : 'รอผู้เล่นอีกคน...';
+      }
+
+      readyBtn.style.display = hasTwo ? 'block' : 'none';
+    }
+
+    function startCountdown() {
+      let count = 3;
+      const statusEl = document.getElementById('lobby-status');
+      statusEl.textContent = `เริ่มใน ${count}...`;
+
+      gameState.countdownInterval = setInterval(() => {
+        count--;
+        if (count > 0) {
+          statusEl.textContent = `เริ่มใน ${count}...`;
+        } else {
+          clearInterval(gameState.countdownInterval);
+          gameState.countdownInterval = null;
+          updateDoc(doc(db, "rooms", gameState.roomCode), {
+            status: 'playing',
+            board: Array(9).fill(''),
+            currentPlayer: '●'
+          });
+        }
       }, 1000);
     }
 
-    // Game Logic
-    function playMove(index) {
-      if (!gameState.gameActive || gameState.board[index] !== '' || gameState.currentPlayer !== gameState.playerSymbol) {
-        showToast('ไม่สามารถวางไว้ที่นี่ได้', 'error');
-        return;
-      }
+    window.setReady = async function() {
+      const currentReady = gameState.roomData.players[gameState.user.uid]?.ready || false;
+      await updateDoc(doc(db, "rooms", gameState.roomCode), {
+        [`players.${gameState.user.uid}.ready`]: !currentReady
+      });
+    };
 
-      gameState.board[index] = gameState.playerSymbol;
-      updateBoard();
-
-      const winner = checkWinner();
-      if (winner) {
-        endGame(winner);
-        return;
-      }
-
-      if (gameState.board.every(cell => cell !== '')) {
-        endGame('draw');
-        return;
-      }
-
-      gameState.currentPlayer = gameState.currentPlayer === 'X' ? 'O' : 'X';
+    function startCoopGame() {
+      gameState.mode = 'coop';
+      gameState.gameActive = true;
+      gameState.gameOver = false;
+      document.getElementById('player-name').textContent = gameState.user.username;
+      document.getElementById('game-mode').textContent = 'Co-op';
+      createBoardCells();
+      updateBoardUI();
       updateTurnDisplay();
+      showScreen('game-screen');
+    }
 
-      if (gameState.mode === 'bot' && gameState.currentPlayer !== gameState.playerSymbol) {
-        setTimeout(botMove, 800);
+    window.showScreen('bot-game', async function() {
+      gameState.mode = 'bot';
+      gameState.botMode = true;
+      gameState.playerSymbol = '●';
+      gameState.currentPlayer = '●';
+      gameState.board = Array(9).fill('');
+      gameState.gameActive = true;
+      gameState.gameOver = false;
+      document.getElementById('player-name').textContent = gameState.user.username;
+      document.getElementById('game-mode').textContent = 'Bot';
+      createBoardCells();
+      updateBoardUI();
+      updateTurnDisplay();
+      showScreen('game-screen');
+    });
+
+    function createBoardCells() {
+      const board = document.getElementById('game-board');
+      board.innerHTML = '';
+      for (let i = 0; i < 9; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'game-cell';
+        cell.onclick = () => playMove(i);
+        board.appendChild(cell);
+      }
+    }
+
+    async function playMove(index) {
+      if (!gameState.gameActive || gameState.board[index] !== '') return;
+
+      if (gameState.mode === 'coop' && gameState.currentPlayer !== gameState.playerSymbol) {
+        showToast('ไม่ใช่ตาของคุณ');
+        return;
+      }
+
+      gameState.board[index] = gameState.currentPlayer;
+
+      if (gameState.mode === 'coop') {
+        const nextPlayer = gameState.currentPlayer === '●' ? '○' : '●';
+        await updateDoc(doc(db, "rooms", gameState.roomCode), {
+          board: gameState.board,
+          currentPlayer: nextPlayer
+        });
+      } else {
+        updateBoardUI();
+        const winner = checkWinner(gameState.board);
+        if (winner) {
+          endGame(winner);
+          return;
+        }
+        if (gameState.board.every(c => c !== '')) {
+          endGame('draw');
+          return;
+        }
+        gameState.currentPlayer = '○';
+        updateTurnDisplay();
+        setTimeout(botMove, 600);
       }
     }
 
     function botMove() {
-      const emptyIndices = gameState.board
-        .map((cell, i) => cell === '' ? i : null)
-        .filter(i => i !== null);
+      const empty = gameState.board.map((c, i) => c === '' ? i : null).filter(i => i !== null);
+      if (empty.length === 0) return;
 
-      if (emptyIndices.length === 0) return;
+      const idx = empty[Math.floor(Math.random() * empty.length)];
+      gameState.board[idx] = '○';
+      updateBoardUI();
 
-      const randomIndex = emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
-      gameState.board[randomIndex] = gameState.currentPlayer;
-      updateBoard();
-
-      const winner = checkWinner();
+      const winner = checkWinner(gameState.board);
       if (winner) {
         endGame(winner);
         return;
       }
 
-      gameState.currentPlayer = gameState.playerSymbol;
+      if (gameState.board.every(c => c !== '')) {
+        endGame('draw');
+        return;
+      }
+
+      gameState.currentPlayer = '●';
       updateTurnDisplay();
     }
 
-    function checkWinner() {
-      const lines = [
-        [0, 1, 2],
-        [3, 4, 5],
-        [6, 7, 8],
-        [0, 3, 6],
-        [1, 4, 7],
-        [2, 5, 8],
-        [0, 4, 8],
-        [2, 4, 6]
-      ];
-
-      for (const line of lines) {
-        const [a, b, c] = line;
-        if (gameState.board[a] !== '' && 
-            gameState.board[a] === gameState.board[b] && 
-            gameState.board[a] === gameState.board[c]) {
-          return gameState.board[a];
-        }
-      }
-
-      return null;
-    }
-
-    function updateBoard() {
-      const cells = document.querySelectorAll('.game-cell');
-      cells.forEach((cell, i) => {
-        const value = gameState.board[i];
-        cell.textContent = value || '-';
-        cell.className = 'game-cell ' + (value === '' ? 'empty' : value.toLowerCase());
+    function updateBoardUI() {
+      document.querySelectorAll('.game-cell').forEach((cell, i) => {
+        cell.textContent = gameState.board[i];
+        cell.classList.toggle('locked', gameState.board[i] !== '');
       });
     }
 
     function updateTurnDisplay() {
       const display = document.getElementById('turn-display');
-      if (gameState.currentPlayer === gameState.playerSymbol) {
-        display.textContent = 'ตาของคุณ!';
-        display.style.color = '#4caf50';
-      } else if (gameState.mode === 'bot') {
-        display.textContent = 'ตาของบอท...';
-        display.style.color = '#f44336';
+      if (gameState.mode === 'bot') {
+        display.textContent = gameState.currentPlayer === '●' ? 'ตาของคุณ' : 'ตาบอท...';
       } else {
-        display.textContent = `รอตาของฝ่ายตรงข้าม (${gameState.currentPlayer})`;
-        display.style.color = '#667eea';
+        display.textContent = gameState.currentPlayer === gameState.playerSymbol ? 'ตาของคุณ' : 'รอคู่แข่ง...';
       }
+    }
+
+    function checkWinner(board) {
+      const lines = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+      for (const [a, b, c] of lines) {
+        if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+          return board[a];
+        }
+      }
+      return board.every(c => c !== '') ? 'draw' : null;
     }
 
     function endGame(result) {
@@ -597,54 +745,109 @@
       const message = document.getElementById('game-over-message');
 
       if (result === 'draw') {
-        message.textContent = '🤝 เสมอ!';
-      } else if (result === gameState.playerSymbol) {
-        message.textContent = '🎉 คุณชนะ!';
+        message.textContent = 'เสมอ';
+      } else if ((gameState.mode === 'bot' && result === '●') || (gameState.mode === 'coop' && result === gameState.playerSymbol)) {
+        message.textContent = 'ชนะ!';
       } else {
-        message.textContent = '😢 คุณแพ้';
+        message.textContent = 'แพ้';
       }
 
       overlay.classList.add('active');
     }
 
-    function resetGame() {
+    window.resetGameBoard = async function() {
+      if (gameState.mode === 'coop') {
+        await updateDoc(doc(db, "rooms", gameState.roomCode), {
+          board: Array(9).fill(''),
+          currentPlayer: '●',
+          status: 'playing'
+        });
+      } else {
+        gameState.board = Array(9).fill('');
+        gameState.currentPlayer = '●';
+        gameState.gameActive = true;
+        gameState.gameOver = false;
+        document.getElementById('game-over-overlay').classList.remove('active');
+        updateBoardUI();
+        updateTurnDisplay();
+      }
+    };
+
+    window.leaveGame = async function() {
+      gameState.gameActive = false;
+      if (gameState.mode === 'coop' && gameState.roomCode) {
+        await deleteDoc(doc(db, "rooms", gameState.roomCode));
+        if (gameState.roomListener) gameState.roomListener();
+      }
+      backToMenu();
+    };
+
+    window.leaveRoom = async function() {
+      if (gameState.roomCode) {
+        await deleteDoc(doc(db, "rooms", gameState.roomCode));
+      }
+      if (gameState.roomListener) gameState.roomListener();
+      showScreen('main-menu');
+    };
+
+    window.backToMenu = function() {
+      gameState.gameActive = false;
       gameState.board = Array(9).fill('');
-      gameState.currentPlayer = 'X';
+      document.getElementById('game-over-overlay').classList.remove('active');
+      showScreen('main-menu');
+    };
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.style.display = 'block';
+      setTimeout(() => toast.style.display = 'none', 2000);
+    }
+
+    // Bot game button
+    document.addEventListener('DOMContentLoaded', () => {
+      window.showScreen = showScreen;
+    });
+
+    window.showScreenBotGame = function() {
+      gameState.mode = 'bot';
+      gameState.botMode = true;
+      gameState.playerSymbol = '●';
+      gameState.currentPlayer = '●';
+      gameState.board = Array(9).fill('');
       gameState.gameActive = true;
       gameState.gameOver = false;
-
-      document.getElementById('game-over-overlay').classList.remove('active');
-      updateBoard();
+      document.getElementById('player-name').textContent = gameState.user.username;
+      document.getElementById('game-mode').textContent = 'Bot';
+      createBoardCells();
+      updateBoardUI();
       updateTurnDisplay();
-    }
+      showScreen('game-screen');
+    };
+  </script>
 
-    function leaveGame() {
-      gameState.gameActive = false;
-      backToMenu();
-    }
-
-    function leaveRoom() {
-      gameState.roomCode = null;
-      showScreen('main-menu');
-    }
-
-    function backToMenu() {
-      gameState.gameActive = false;
-      gameState.board = Array(9).fill('');
-      showScreen('main-menu');
-    }
-
-    // Toast Notification
-    function showToast(message, type = 'success') {
-      const toast = document.getElementById('toast');
-      toast.textContent = message;
-      toast.style.background = type === 'error' ? '#f44336' : '#4caf50';
-      toast.style.display = 'block';
-
-      setTimeout(() => {
-        toast.style.display = 'none';
-      }, 3000);
-    }
+  <script>
+    // Bot game button onclick
+    document.addEventListener('DOMContentLoaded', () => {
+      const botBtn = document.querySelector('button[onclick*="bot-game"]');
+      if (botBtn) {
+        botBtn.onclick = () => {
+          window.gameState.mode = 'bot';
+          window.gameState.botMode = true;
+          window.gameState.playerSymbol = '●';
+          window.gameState.currentPlayer = '●';
+          window.gameState.board = Array(9).fill('');
+          window.gameState.gameActive = true;
+          window.gameState.gameOver = false;
+          document.getElementById('player-name').textContent = window.gameState.user.username;
+          document.getElementById('game-mode').textContent = 'Bot';
+          window.createBoardCells();
+          window.updateBoardUI();
+          window.updateTurnDisplay();
+          window.showScreen('game-screen');
+        };
+      }
+    });
   </script>
 </body>
 </html>
