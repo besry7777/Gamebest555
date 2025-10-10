@@ -50,7 +50,7 @@
             transition: opacity 0.5s;
             opacity: 0;
             visibility: hidden;
-            animation: pulse 3s infinite 1s;
+            animation: pulse-button 3s infinite 1s;
         }
         #start-button.visible {
             opacity: 1;
@@ -93,7 +93,7 @@
         
         /* สไตล์พิเศษสำหรับแต่ละฉาก */
         #scene2 .star { animation: twinkle-bright 1.5s infinite; }
-        #scene3 .star { animation: twinkle-sad 4s infinite; }
+        #scene3 .star { animation: twinkle-sad 4s infinite; left: 85%; }
         #scene4 .star { opacity: 0; left: 110%; }
         #scene5 .moon { top: 50%; transform: translate(-50%, -50%); }
         .memory {
@@ -106,7 +106,8 @@
         #player { position: fixed; z-index: -1; pointer-events: none; }
 
         /* --- Keyframe Animations --- */
-        @keyframes pulse { 0%, 100% { transform: translate(-50%,-50%) scale(1); } 50% { transform: translate(-50%,-50%) scale(1.05); } }
+        @keyframes pulse { 0%, 100% { transform: scale(1); box-shadow: 0 0 20px #f0e68c; } 50% { transform: scale(1.1); box-shadow: 0 0 35px #f0e68c; } }
+        @keyframes pulse-button { 0%, 100% { transform: translate(-50%,-50%) scale(1); } 50% { transform: translate(-50%,-50%) scale(1.05); } }
         @keyframes twinkle { 0%, 100% { opacity: 0.8; } 50% { opacity: 1; transform: scale(1.1); } }
         @keyframes twinkle-bright { 0%, 100% { opacity: 1; transform: scale(1.2); text-shadow: 0 0 25px #fff; } 50% { opacity: 0.7; transform: scale(1); text-shadow: 0 0 15px #fff; } }
         @keyframes twinkle-sad { 0%, 100% { opacity: 0.5; } 50% { opacity: 0.2; } }
@@ -121,7 +122,7 @@
 
     <section id="scene1" class="scene"><div class="moon"></div><div class="star">★</div><div class="story-text" style="animation-duration: 7s;">ผมคือ 'กาย' พระจันทร์ที่คิดว่าตัวเองสว่างไสว...<br>โดยไม่เคยรู้เลยว่า แสงของผมมาจากดาวข้างๆ ที่ชื่อ 'แนน'</div></section>
     <section id="scene2" class="scene"><div class="moon"></div><div class="star">★</div><div class="story-text">เธอชอบถามว่า "รักไหม?"...<br>แต่ความขี้อายและความเคยชิน ทำให้ผมตอบเพียงความเงียบงัน</div></section>
-    <section id="scene3" class="scene"><div class="moon" style="background-color: #d3cba4;"></div><div class="star" style="left: 85%;">★</div><div class="story-text" style="color: #ffb8b8;">"ถ้าจากกันรอบนี้... จะไม่เจอกันแล้วนะ"<br>เสียงของเธอในวันนั้น... ผมกลับไม่ได้ยินมันอย่างชัดเจน</div></section>
+    <section id="scene3" class="scene"><div class="moon" style="background-color: #d3cba4;"></div><div class="star">★</div><div class="story-text" style="color: #ffb8b8;">"ถ้าจากกันรอบนี้... จะไม่เจอกันแล้วนะ"<br>เสียงของเธอในวันนั้น... ผมกลับไม่ได้ยินมันอย่างชัดเจน</div></section>
     <section id="scene4" class="scene"><div class="moon"></div><div class="star">★</div><div class="story-text">แล้ววันนั้น... เธอก็ไปจริงๆ<br>ทิ้งให้ท้องฟ้าของผมมืดมิดและว่างเปล่า</div></section>
     <section id="scene5" class="scene"><div class="moon"></div><div class="memory" id="mem1" style="animation: fadeInOut 4s 1s forwards;">XO</div><div class="memory" id="mem2" style="animation: fadeInOut 4s 5s forwards;">♪</div><div class="story-text small" style="animation: fadeInOut 8s 9s forwards;">เกมที่เคยเล่น เพลงที่เคยมีความหมาย...<br>มันคอยตอกย้ำถึงวันที่ผมละเลยอ้อมกอดที่แสนอบอุ่นของเธอไป</div></section>
     <section id="scene6" class="scene"><div class="moon" style="box-shadow: none; background-color: #6a654b;"></div><div class="story-text" style="animation: fadeInStay 4s forwards;">เพิ่งเข้าใจ... ในวันที่เธอไม่อยู่</div></section>
@@ -171,7 +172,7 @@
                 playNextScene();
             }, { once: true });
 
-            const sceneDurations = [8, 8, 8, 8, 17, 10];
+            const sceneDurations = [8000, 8000, 8000, 8000, 17000, 10000];
             
             function playNextScene() {
                 if (scenes[currentScene]) {
@@ -179,7 +180,7 @@
                 }
                 currentScene = (currentScene + 1) % scenes.length;
                 scenes[currentScene].classList.add('active');
-                setTimeout(playNextScene, sceneDurations[currentScene] * 1000);
+                setTimeout(playNextScene, sceneDurations[currentScene]);
             }
         });
     </script>
