@@ -1,864 +1,232 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>TicTac Game</title>
-  <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"></script>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      -webkit-user-select: none;
-      user-select: none;
-      -webkit-tap-highlight-color: transparent;
-      -webkit-touch-callout: none;
-      touch-action: manipulation;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>พื้นที่ของความรู้สึก</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Pridi:wght@300;400&display=swap');
 
-    html, body {
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      font-family: 'Arial', sans-serif;
-    }
+        body {
+            margin: 0;
+            font-family: 'Pridi', serif;
+            background-color: #1a1a1a;
+            color: #fff;
+            overflow-x: hidden;
+        }
 
-    body {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
+        .hero {
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: url('https://i.ibb.co/XFhJqRz/drew-hays-w-Fj-Dc-Oa-Fp-E-unsplash.jpg') no-repeat center center/cover;
+            position: relative;
+        }
 
-    .container {
-      background: white;
-      border-radius: 20px;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-      width: 100%;
-      height: 100vh;
-      max-width: 500px;
-      max-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      padding: 0;
-    }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+        }
 
-    .screen {
-      display: none;
-      flex: 1;
-      overflow-y: auto;
-      padding: 20px;
-      -webkit-overflow-scrolling: touch;
-    }
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            animation: fadeIn 3s ease-in-out;
+        }
 
-    .screen.active {
-      display: flex;
-      flex-direction: column;
-    }
+        .pulsing-heart {
+            font-size: 80px;
+            color: #ff4757;
+            animation: pulse 2s infinite;
+        }
 
-    h1 {
-      color: #333;
-      font-size: 2.2em;
-      text-align: center;
-      margin-bottom: 20px;
-    }
+        h1 {
+            font-size: 2rem;
+            margin-top: 20px;
+            font-weight: 300;
+        }
 
-    h2 {
-      color: #333;
-      font-size: 1.6em;
-      text-align: center;
-      margin-bottom: 20px;
-    }
+        .scroll-down {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 2rem;
+            animation: bounce 2s infinite;
+        }
 
-    .content {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      gap: 15px;
-    }
+        .content-section {
+            padding: 80px 40px;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 1s, transform 1s;
+        }
 
-    button {
-      padding: 15px 30px;
-      font-size: 1em;
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
-      transition: all 0.3s;
-      font-weight: bold;
-      width: 100%;
-      max-width: 300px;
-      touch-action: manipulation;
-    }
+        .content-section.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
 
-    .btn-primary {
-      background: #667eea;
-      color: white;
-    }
+        .content-section h2 {
+            font-size: 2.5rem;
+            margin-bottom: 40px;
+            font-weight: 400;
+        }
+        
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 40px;
+        }
 
-    .btn-primary:active {
-      background: #5568d3;
-      transform: scale(0.98);
-    }
+        .gallery-item {
+            overflow: hidden;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            transition: transform 0.3s ease;
+        }
 
-    .btn-secondary {
-      background: #999;
-      color: white;
-    }
+        .gallery-item:hover {
+            transform: scale(1.05);
+        }
 
-    .btn-secondary:active {
-      background: #777;
-      transform: scale(0.98);
-    }
+        .gallery-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        
+        .music-section {
+            background-color: #2c2c2c;
+            padding: 60px 20px;
+        }
+        
+        .music-player {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #333;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
+        
+        .music-player p {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+        }
 
-    .btn-success {
-      background: #4caf50;
-      color: white;
-    }
+        audio {
+            width: 100%;
+            border-radius: 10px;
+        }
+        
+        footer {
+            padding: 40px;
+            text-align: center;
+            background-color: #000;
+        }
 
-    .btn-success:active {
-      background: #45a049;
-      transform: scale(0.98);
-    }
+        .final-heart {
+             font-size: 40px;
+             color: #ff4757;
+        }
 
-    .btn-danger {
-      background: #f44336;
-      color: white;
-    }
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
 
-    .btn-danger:active {
-      background: #da190b;
-      transform: scale(0.98);
-    }
-
-    input[type="text"] {
-      width: 100%;
-      max-width: 300px;
-      padding: 12px;
-      margin: 10px 0;
-      border: 2px solid #ddd;
-      border-radius: 10px;
-      font-size: 1em;
-      text-transform: uppercase;
-      touch-action: manipulation;
-    }
-
-    .game-board {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-      width: 100%;
-      max-width: 300px;
-      aspect-ratio: 1;
-      margin: 20px auto;
-    }
-
-    .game-cell {
-      width: 100%;
-      aspect-ratio: 1;
-      background: #f0f0f0;
-      border: 3px solid #ddd;
-      border-radius: 12px;
-      cursor: pointer;
-      font-size: 3em;
-      font-weight: bold;
-      transition: all 0.2s;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      color: #333;
-      touch-action: manipulation;
-      user-select: none;
-    }
-
-    .game-cell:active:not(.locked) {
-      background: #e0e0e0;
-      transform: scale(0.95);
-    }
-
-    .game-cell.locked {
-      opacity: 0.8;
-    }
-
-    .turn-display {
-      font-size: 1.3em;
-      text-align: center;
-      font-weight: bold;
-      height: 40px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 40px;
-    }
-
-    .stats {
-      display: flex;
-      justify-content: space-around;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin: 15px 0;
-    }
-
-    .stat-item {
-      flex: 1;
-      min-width: 90px;
-      background: #f0f0f0;
-      padding: 10px;
-      border-radius: 10px;
-      text-align: center;
-      font-size: 0.85em;
-    }
-
-    .stat-label {
-      color: #666;
-      font-size: 0.8em;
-      margin-bottom: 5px;
-    }
-
-    .stat-value {
-      font-size: 1.3em;
-      font-weight: bold;
-      color: #333;
-    }
-
-    .player-list {
-      background: #f0f0f0;
-      padding: 15px;
-      border-radius: 10px;
-      margin: 15px 0;
-      font-size: 1em;
-      width: 100%;
-      max-width: 300px;
-    }
-
-    .player-item {
-      padding: 8px;
-      margin: 5px 0;
-      background: white;
-      border-radius: 5px;
-      font-size: 0.95em;
-    }
-
-    .error-msg {
-      color: #f44336;
-      font-size: 0.85em;
-      height: 20px;
-      margin: 5px 0;
-    }
-
-    .toast {
-      position: fixed;
-      bottom: 20px;
-      left: 20px;
-      right: 20px;
-      max-width: 300px;
-      margin: 0 auto;
-      background: #333;
-      color: white;
-      padding: 12px 16px;
-      border-radius: 8px;
-      display: none;
-      z-index: 1000;
-      text-align: center;
-      font-size: 0.9em;
-    }
-
-    .game-over-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.8);
-      display: none;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      text-align: center;
-      z-index: 999;
-    }
-
-    .game-over-overlay.active {
-      display: flex;
-    }
-
-    .game-over-box {
-      background: white;
-      padding: 30px 20px;
-      border-radius: 15px;
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-      max-width: 300px;
-      width: 90%;
-    }
-
-    .game-over-message {
-      font-size: 2em;
-      font-weight: bold;
-      margin-bottom: 20px;
-      color: #333;
-    }
-
-    .game-over-box button {
-      margin: 8px 0;
-    }
-
-    .lobby-countdown {
-      font-size: 1.5em;
-      font-weight: bold;
-      color: #667eea;
-      margin: 20px 0;
-    }
-
-    .welcome-msg {
-      color: #666;
-      font-size: 1em;
-      text-align: center;
-      margin-bottom: 20px;
-    }
-
-    @media (max-width: 480px) {
-      .container {
-        max-width: 100%;
-        border-radius: 0;
-      }
-
-      h1 {
-        font-size: 1.8em;
-      }
-
-      h2 {
-        font-size: 1.4em;
-      }
-
-      .game-cell {
-        font-size: 2.5em;
-      }
-
-      button {
-        padding: 12px 20px;
-        font-size: 0.95em;
-      }
-    }
-  </style>
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translate(-50%, 0); }
+            40% { transform: translate(-50%, -20px); }
+            60% { transform: translate(-50%, -10px); }
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <div id="loading-screen" class="screen active">
-      <div class="content">
-        <h2>กำลังโหลดข้อมูล...</h2>
-      </div>
-    </div>
 
-    <div id="main-menu" class="screen">
-      <div class="content">
-        <h1>TicTac</h1>
-        <div class="welcome-msg" id="welcome-msg">Loading...</div>
-        
-        <button class="btn-primary" onclick="startBotGame()">เล่นกับบอท</button>
-        <button class="btn-success" onclick="showScreen('coop-menu')">เล่นกับเพื่อน</button>
-      </div>
-    </div>
-
-    <div id="coop-menu" class="screen">
-      <div class="content">
-        <h2>เล่นกับเพื่อน</h2>
-        <button class="btn-primary" onclick="createRoom()">สร้างห้อง</button>
-        <input type="text" id="room-code" placeholder="ใส่รหัสห้อง" maxlength="6">
-        <button class="btn-success" onclick="joinRoom()">เข้าร่วม</button>
-        <button class="btn-secondary" onclick="showScreen('main-menu')">กลับ</button>
-      </div>
-    </div>
-
-    <div id="room-lobby" class="screen">
-      <div class="content">
-        <h2>ห้องของคุณ</h2>
-        <div style="font-size: 1.5em; font-weight: bold; color: #667eea; margin: 15px 0;">รหัส: <span id="room-display">-</span></div>
-        <div class="player-list" id="player-list"></div>
-        <div class="lobby-countdown" id="lobby-status"></div>
-        <button class="btn-success" onclick="setReady()" id="ready-btn">พร้อม</button>
-        <button class="btn-danger" onclick="leaveRoom()">ออก</button>
-      </div>
-    </div>
-
-    <div id="game-screen" class="screen">
-      <div class="stats">
-        <div class="stat-item">
-          <div class="stat-label">ผู้เล่น</div>
-          <div class="stat-value" id="player-name">-</div>
+    <section class="hero">
+        <div class="hero-content">
+            <div class="pulsing-heart">❤</div>
+            <h1>บางความรู้สึก...ไม่ต้องใช้คำพูด</h1>
         </div>
-        <div class="stat-item">
-          <div class="stat-label">โหมด</div>
-          <div class="stat-value" id="game-mode">-</div>
+        <div class="scroll-down">▽</div>
+    </section>
+
+    <section id="gallery" class="content-section">
+        <h2>เรื่องราวผ่านภาพ</h2>
+        <div class="gallery">
+            <div class="gallery-item">
+                <img src="https://i.ibb.co/6Pqj4tX/jonathan-borba-z-N-Gg-Fl-KR-Po-unsplash.jpg" alt="ภาพคู่รักจับมือกัน">
+            </div>
+            <div class="gallery-item">
+                <img src="https://i.ibb.co/Ssv8SNN/austin-wade-d2-s8-SIBw-E-unsplash.jpg" alt="ภาพคู่รักมองตากัน">
+            </div>
+            <div class="gallery-item">
+                <img src="https://i.ibb.co/zZfP1F7/everton-vila-Asah-Nl-Sqp-Cw-unsplash.jpg" alt="ภาพพระอาทิตย์ตกดินแสนโรแมนติก">
+            </div>
+            <div class="gallery-item">
+                <img src="https://i.ibb.co/j3cR3x9/freestocks-t-N4-Vb-Vp-Cg-Y-unsplash.jpg" alt="ภาพการโอบกอด">
+            </div>
+             <div class="gallery-item">
+                <img src="https://i.ibb.co/R9m4HjZ/anthony-tran-e-Z1-M6-B2-Z2-I-unsplash.jpg" alt="คู่รักเต้นรำใต้แสงไฟ">
+            </div>
+            <div class="gallery-item">
+                <img src="https://i.ibb.co/Y84jW4x/joanna-kosinska-7-ACu-Hoe-Mw-A-unsplash.jpg" alt="ดอกไม้แทนความรู้สึก">
+            </div>
         </div>
-      </div>
+    </section>
 
-      <div class="turn-display" id="turn-display"></div>
-      
-      <div class="game-board" id="game-board"></div>
-
-      <button class="btn-secondary" onclick="leaveGame()">ออก</button>
-    </div>
-
-    <div class="game-over-overlay" id="game-over-overlay">
-      <div class="game-over-box">
-        <div class="game-over-message" id="game-over-message"></div>
-        <button class="btn-primary" onclick="resetGameBoard()">เล่นใหม่</button>
-        <button class="btn-secondary" onclick="backToMenu()">เมนู</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="toast" id="toast"></div>
-
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, deleteDoc, writeBatch, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyBcxVAP08XMiPMoqElaKM7AYY_2z08oWok",
-      authDomain: "xobybestry777.firebaseapp.com",
-      projectId: "xobybestry777",
-      storageBucket: "xobybestry777.firebasestorage.app",
-      messagingSenderId: "380539937989",
-      appId: "1:380539937989:web:48049ed77f45327e033cac",
-      measurementId: "G-YZWTKXL285"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-
-    // Make gameState and key functions globally accessible for HTML onclick handlers
-    window.gameState = {
-      user: { uid: null, username: 'Player' + Math.floor(Math.random() * 10000) },
-      mode: null,
-      board: Array(9).fill(''),
-      currentPlayer: '●',
-      playerSymbol: '',
-      gameActive: false,
-      gameOver: false,
-      roomCode: null,
-      roomData: null,
-      roomListener: null,
-      countdownInterval: null,
-    };
-
-    window.addEventListener('load', () => {
-      signInAnonymously(auth).catch(e => {
-        console.error("Firebase sign-in failed", e);
-        document.querySelector('#loading-screen h2').textContent = 'การเชื่อมต่อล้มเหลว';
-      });
-
-      onAuthStateChanged(auth, (user) => {
-        if (user) {
-          window.gameState.user.uid = user.uid;
-          updateWelcomeMessage();
-          // Data is loaded, hide loading screen and show main menu
-          showScreen('main-menu');
-        }
-      });
-      
-      // Prevent scrolling on touch devices for a more app-like feel
-      document.body.addEventListener('touchmove', (e) => {
-        e.preventDefault();
-      }, { passive: false });
-    });
-
-    function updateWelcomeMessage() {
-      document.getElementById('welcome-msg').textContent = `ยินดีต้อนรับ ${window.gameState.user.username}`;
-    }
-
-    function showScreen(screenId) {
-      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-      const screen = document.getElementById(screenId);
-      if (screen) {
-        screen.classList.add('active');
-      }
-    }
-    window.showScreen = showScreen;
-
-    window.createRoom = async function() {
-      const { gameState } = window;
-      gameState.roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-      gameState.playerSymbol = '●';
-
-      const roomData = {
-        code: gameState.roomCode,
-        players: {
-          [gameState.user.uid]: { name: gameState.user.username, symbol: '●', ready: false }
-        },
-        board: Array(9).fill(''),
-        currentPlayer: '●',
-        status: 'lobby',
-        createdAt: serverTimestamp()
-      };
-
-      await setDoc(doc(db, "rooms", gameState.roomCode), roomData);
-      setupRoomListener(gameState.roomCode);
-      showRoomLobby();
-    }
-
-    window.joinRoom = async function() {
-      const { gameState } = window;
-      const code = document.getElementById('room-code').value.trim().toUpperCase();
-      if (!code) {
-        showToast('ใส่รหัสห้อง');
-        return;
-      }
-
-      const roomDoc = await getDoc(doc(db, "rooms", code));
-      if (!roomDoc.exists()) {
-        showToast('ไม่พบห้อง');
-        return;
-      }
-
-      const roomData = roomDoc.data();
-      if (Object.keys(roomData.players).length >= 2) {
-        showToast('ห้องเต็มแล้ว');
-        return;
-      }
-
-      gameState.roomCode = code;
-      gameState.playerSymbol = '○';
-
-      await updateDoc(doc(db, "rooms", code), {
-        [`players.${gameState.user.uid}`]: { name: gameState.user.username, symbol: '○', ready: false }
-      });
-
-      setupRoomListener(code);
-      showRoomLobby();
-    }
-
-    function setupRoomListener(roomCode) {
-      const { gameState } = window;
-      if (gameState.roomListener) gameState.roomListener();
-
-      const roomRef = doc(db, "rooms", roomCode);
-      gameState.roomListener = onSnapshot(roomRef, (snap) => {
-        if (!snap.exists()) {
-          const activeScreenId = document.querySelector('.screen.active')?.id;
-          if (activeScreenId === 'room-lobby' || activeScreenId === 'game-screen') {
-            showToast('ห้องปิดแล้ว');
-            backToMenu();
-          }
-          return;
-        }
-
-        gameState.roomData = snap.data();
-        updateLobbyUI();
-
-        if (gameState.roomData.status === 'playing' && !gameState.gameActive) {
-          startCoopGame();
-        }
-
-        if (gameState.roomData.status === 'playing') {
-          gameState.board = gameState.roomData.board;
-          gameState.currentPlayer = gameState.roomData.currentPlayer;
-          updateBoardUI();
-          updateTurnDisplay();
-
-          const winner = checkWinner(gameState.board);
-          if (winner && gameState.gameActive) {
-            endGame(winner);
-          }
-        }
-      });
-    }
-
-    function showRoomLobby() {
-      document.getElementById('room-display').textContent = window.gameState.roomCode;
-      showScreen('room-lobby');
-    }
-
-    function updateLobbyUI() {
-      const { gameState } = window;
-      const playerListEl = document.getElementById('player-list');
-      const statusEl = document.getElementById('lobby-status');
-      const readyBtn = document.getElementById('ready-btn');
-
-      if (!gameState.roomData) return;
-
-      playerListEl.innerHTML = '';
-      Object.values(gameState.roomData.players).forEach(p => {
-        const div = document.createElement('div');
-        div.className = 'player-item';
-        div.textContent = `${p.name} (${p.symbol}) ${p.ready ? '✓' : '✗'}`;
-        playerListEl.appendChild(div);
-      });
-
-      const allReady = Object.values(gameState.roomData.players).every(p => p.ready);
-      const hasTwo = Object.keys(gameState.roomData.players).length === 2;
-
-      if (hasTwo && allReady && !gameState.countdownInterval) {
-        startCountdown();
-      } else if (!allReady && gameState.countdownInterval) {
-        clearInterval(gameState.countdownInterval);
-        gameState.countdownInterval = null;
-        statusEl.textContent = hasTwo ? 'รอพร้อม...' : 'รอผู้เล่นอีกคน...';
-      } else if (!hasTwo) {
-        statusEl.textContent = 'รอผู้เล่นอีกคน...';
-      }
-
-      readyBtn.style.display = 'block';
-    }
-
-    function startCountdown() {
-      const { gameState } = window;
-      let count = 3;
-      const statusEl = document.getElementById('lobby-status');
-      statusEl.textContent = `เริ่มใน ${count}...`;
-
-      gameState.countdownInterval = setInterval(() => {
-        count--;
-        if (count > 0) {
-          statusEl.textContent = `เริ่มใน ${count}...`;
-        } else {
-          clearInterval(gameState.countdownInterval);
-          gameState.countdownInterval = null;
-          // Only player 1 should trigger the game start to avoid race conditions
-          const playerUids = Object.keys(gameState.roomData.players);
-          if (playerUids.length > 0 && gameState.user.uid === playerUids[0]) {
-             updateDoc(doc(db, "rooms", gameState.roomCode), {
-              status: 'playing',
-              board: Array(9).fill(''),
-              currentPlayer: '●'
-            });
-          }
-        }
-      }, 1000);
-    }
-
-    window.setReady = async function() {
-      const { gameState } = window;
-      if (!gameState.roomData || !gameState.roomData.players[gameState.user.uid]) return;
-      const currentReady = gameState.roomData.players[gameState.user.uid].ready;
-      await updateDoc(doc(db, "rooms", gameState.roomCode), {
-        [`players.${gameState.user.uid}.ready`]: !currentReady
-      });
-    };
-
-    function startCoopGame() {
-      const { gameState } = window;
-      gameState.mode = 'coop';
-      gameState.gameActive = true;
-      gameState.gameOver = false;
-      document.getElementById('player-name').textContent = gameState.user.username;
-      document.getElementById('game-mode').textContent = 'Co-op';
-      createBoardCells();
-      updateBoardUI();
-      updateTurnDisplay();
-      showScreen('game-screen');
-    }
+    <section class="content-section music-section">
+        <h2>ท่วงทำนองของความรัก</h2>
+        <div class="music-player">
+            <p>หลับตาลง แล้วปล่อยให้เสียงเพลงนำทางความรู้สึกของคุณ...</p>
+            <audio controls>
+                <source src="https://cdn.pixabay.com/download/audio/2022/11/17/audio_85d535a975.mp3" type="audio/mpeg">
+                เบราว์เซอร์ของคุณไม่รองรับการเล่นเสียง
+            </audio>
+        </div>
+    </section>
     
-    // **FIXED**: Consolidated bot game logic into one function
-    window.startBotGame = function() {
-      const { gameState } = window;
-      gameState.mode = 'bot';
-      gameState.playerSymbol = '●';
-      gameState.currentPlayer = '●';
-      gameState.board = Array(9).fill('');
-      gameState.gameActive = true;
-      gameState.gameOver = false;
-      document.getElementById('player-name').textContent = gameState.user.username;
-      document.getElementById('game-mode').textContent = 'Bot';
-      createBoardCells();
-      updateBoardUI();
-      updateTurnDisplay();
-      showScreen('game-screen');
-    };
+    <footer>
+        <div class="final-heart">❤</div>
+    </footer>
 
-    function createBoardCells() {
-      const board = document.getElementById('game-board');
-      board.innerHTML = '';
-      for (let i = 0; i < 9; i++) {
-        const cell = document.createElement('div');
-        cell.className = 'game-cell';
-        cell.onclick = () => playMove(i);
-        board.appendChild(cell);
-      }
-    }
-    window.createBoardCells = createBoardCells; // Expose for potential reuse
+    <script>
+        // Script สำหรับทำให้เนื้อหาค่อยๆ ปรากฏขึ้นมาเมื่อเลื่อนหน้าจอ
+        const sections = document.querySelectorAll('.content-section');
 
-    async function playMove(index) {
-      const { gameState } = window;
-      if (!gameState.gameActive || gameState.board[index] !== '') return;
-
-      if (gameState.mode === 'coop' && gameState.currentPlayer !== gameState.playerSymbol) {
-        showToast('ไม่ใช่ตาของคุณ');
-        return;
-      }
-      
-      if (gameState.mode === 'bot' && gameState.currentPlayer !== '●') {
-        return; // Prevent player from moving on bot's turn
-      }
-
-      gameState.board[index] = gameState.currentPlayer;
-
-      if (gameState.mode === 'coop') {
-        const nextPlayer = gameState.currentPlayer === '●' ? '○' : '●';
-        await updateDoc(doc(db, "rooms", gameState.roomCode), {
-          board: gameState.board,
-          currentPlayer: nextPlayer
+        const observer = new IntersectionObserver(entries => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, {
+            threshold: 0.1 
         });
-      } else {
-        updateBoardUI();
-        const winner = checkWinner(gameState.board);
-        if (winner) {
-          endGame(winner);
-          return;
-        }
-        gameState.currentPlayer = '○';
-        updateTurnDisplay();
-        setTimeout(botMove, 600);
-      }
-    }
 
-    function botMove() {
-      const { gameState } = window;
-      const empty = gameState.board.map((c, i) => c === '' ? i : null).filter(i => i !== null);
-      if (empty.length === 0 || !gameState.gameActive) return;
+        sections.forEach(section => {
+            observer.observe(section);
+        });
+    </script>
 
-      const idx = empty[Math.floor(Math.random() * empty.length)];
-      gameState.board[idx] = '○';
-      updateBoardUI();
-
-      const winner = checkWinner(gameState.board);
-      if (winner) {
-        endGame(winner);
-        return;
-      }
-      
-      gameState.currentPlayer = '●';
-      updateTurnDisplay();
-    }
-
-    function updateBoardUI() {
-      const { board } = window.gameState;
-      document.querySelectorAll('.game-cell').forEach((cell, i) => {
-        cell.textContent = board[i];
-        cell.classList.toggle('locked', board[i] !== '');
-      });
-    }
-    window.updateBoardUI = updateBoardUI; // Expose for reuse
-
-    function updateTurnDisplay() {
-      const { gameState } = window;
-      const display = document.getElementById('turn-display');
-      if (!gameState.gameActive) {
-          display.textContent = '';
-          return;
-      }
-      if (gameState.mode === 'bot') {
-        display.textContent = gameState.currentPlayer === '●' ? 'ตาของคุณ (●)' : 'ตาบอท... (○)';
-      } else {
-        const turnText = gameState.currentPlayer === gameState.playerSymbol ? 'ตาของคุณ' : 'รอคู่แข่ง...';
-        display.textContent = `${turnText} (${gameState.currentPlayer})`;
-      }
-    }
-    window.updateTurnDisplay = updateTurnDisplay; // Expose for reuse
-
-    function checkWinner(board) {
-      const lines = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
-      for (const [a, b, c] of lines) {
-        if (board[a] && board[a] === board[b] && board[a] === board[c]) {
-          return board[a];
-        }
-      }
-      return board.every(c => c !== '') ? 'draw' : null;
-    }
-
-    function endGame(result) {
-      const { gameState } = window;
-      if (gameState.gameOver) return; // Prevent multiple calls
-      gameState.gameActive = false;
-      gameState.gameOver = true;
-      const overlay = document.getElementById('game-over-overlay');
-      const message = document.getElementById('game-over-message');
-
-      if (result === 'draw') {
-        message.textContent = 'เสมอ';
-      } else if ((gameState.mode === 'bot' && result === '●') || (gameState.mode === 'coop' && result === gameState.playerSymbol)) {
-        message.textContent = 'คุณชนะ!';
-      } else {
-        message.textContent = 'คุณแพ้';
-      }
-
-      overlay.classList.add('active');
-    }
-
-    window.resetGameBoard = async function() {
-      const { gameState } = window;
-      document.getElementById('game-over-overlay').classList.remove('active');
-      gameState.board = Array(9).fill('');
-      gameState.currentPlayer = '●';
-      gameState.gameActive = true;
-      gameState.gameOver = false;
-      
-      if (gameState.mode === 'coop') {
-        // Only player 1 should reset the board state
-        if (gameState.roomData && gameState.user.uid === Object.keys(gameState.roomData.players)[0]) {
-            await updateDoc(doc(db, "rooms", gameState.roomCode), {
-                board: Array(9).fill(''),
-                currentPlayer: '●',
-            });
-        }
-      } else {
-        updateBoardUI();
-        updateTurnDisplay();
-      }
-    };
-    
-    async function cleanupRoom() {
-        const { gameState } = window;
-        if (gameState.roomListener) {
-            gameState.roomListener(); // Unsubscribe from Firestore listener
-            gameState.roomListener = null;
-        }
-        if (gameState.countdownInterval) {
-            clearInterval(gameState.countdownInterval);
-            gameState.countdownInterval = null;
-        }
-        
-        // If the player is the "host" (first player), delete the room on leaving
-        if (gameState.roomCode && gameState.roomData) {
-            const playerUIDs = Object.keys(gameState.roomData.players);
-            if (playerUIDs.length > 0 && gameState.user.uid === playerUIDs[0]) {
-                await deleteDoc(doc(db, "rooms", gameState.roomCode));
-            }
-        }
-
-        gameState.roomCode = null;
-        gameState.roomData = null;
-    }
-
-    window.leaveGame = async function() {
-      await cleanupRoom();
-      backToMenu();
-    };
-
-    window.leaveRoom = async function() {
-      await cleanupRoom();
-      showScreen('coop-menu');
-    };
-
-    window.backToMenu = function() {
-      const { gameState } = window;
-      gameState.gameActive = false;
-      gameState.gameOver = false;
-      gameState.board = Array(9).fill('');
-      document.getElementById('game-over-overlay').classList.remove('active');
-      showScreen('main-menu');
-    };
-
-    function showToast(msg) {
-      const toast = document.getElementById('toast');
-      toast.textContent = msg;
-      toast.style.display = 'block';
-      setTimeout(() => toast.style.display = 'none', 2500);
-    }
-  </script>
 </body>
 </html>
