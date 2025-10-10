@@ -34,7 +34,7 @@
             animation: pulse 2s infinite;
         }
 
-        /* --- ปุ่มเริ่มเรื่องราว (แทนปุ่มเปิดเสียง) --- */
+        /* --- ปุ่มเริ่มเรื่องราว --- */
         #start-button {
             position: fixed;
             top: 50%; left: 50%;
@@ -64,30 +64,48 @@
             background: linear-gradient(to bottom, #020111 0%, #191621 100%);
             opacity: 0;
             visibility: hidden;
-            transition: opacity 2s ease-in-out;
+            transition: opacity 2s ease-in-out; /* ฉากจะใช้เวลาปรากฏ 2 วินาที */
         }
         .scene.active { opacity: 1; visibility: visible; z-index: 10; }
         
         /* --- ตัวละคร --- */
-        .moon { /* กาย */
+        .moon {
             position: absolute; width: 120px; height: 120px;
             background-color: #f0e68c; border-radius: 50%;
             box-shadow: 0 0 30px #f0e68caa; top: 25%; left: 50%;
             transform: translateX(-50%); transition: all 2s ease-in-out;
         }
-        .star { /* แนน */
+        .star {
             position: absolute; font-size: 30px; color: #fff;
             text-shadow: 0 0 15px #fff; top: 35%; left: 70%;
             animation: twinkle 3s infinite; transition: all 2s ease-in-out;
         }
 
-        /* --- ข้อความเล่าเรื่อง --- */
+        /* --- ข้อความเล่าเรื่อง (ปรับปรุงใหม่) --- */
         .story-text {
-            position: absolute; bottom: 15%; left: 50%;
-            transform: translateX(-50%); color: #eee;
-            font-size: 1.5rem; font-weight: 300;
-            text-align: center; width: 80%; opacity: 0;
-            animation: fadeInOut 8s forwards;
+            position: absolute;
+            bottom: 15%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            max-width: 700px; /* จำกัดความกว้างสูงสุด */
+            padding: 20px 30px; /* เพิ่มพื้นที่ว่างภายในกล่อง */
+            
+            /* --- ส่วนที่เพิ่มเข้ามาสำหรับ GUI Background --- */
+            background-color: rgba(0, 0, 0, 0.6); /* พื้นหลังสีดำโปร่งแสง */
+            border-radius: 15px; /* ทำให้ขอบมน */
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5); /* เพิ่มเงาให้กล่อง */
+            /* --- จบส่วนที่เพิ่ม --- */
+
+            color: #eee;
+            font-size: 1.5rem;
+            font-weight: 300;
+            text-align: center;
+            opacity: 0;
+
+            /* --- ปรับปรุงใหม่: เพิ่ม Delay ให้กับ Animation --- */
+            /* แอนิเมชันจะเริ่มหลังจากฉากปรากฏขึ้นมาแล้ว 2 วินาที */
+            animation: fadeInOut 8s 2s forwards; 
         }
         .story-text.small { font-size: 1.2rem; bottom: 10%; }
         
@@ -99,10 +117,11 @@
         .memory {
             position: absolute; top: 50%; left: 50%;
             transform: translate(-50%, -50%); font-size: 4rem;
-            color: rgba(255, 255, 255, 0.5); opacity: 0;
+            color: rgba(255, 255, 255, 0.7); 
+            opacity: 0;
+            text-shadow: 0 0 10px white;
         }
         
-        /* --- Player --- */
         #player { position: fixed; z-index: -1; pointer-events: none; }
 
         /* --- Keyframe Animations --- */
@@ -111,7 +130,7 @@
         @keyframes twinkle { 0%, 100% { opacity: 0.8; } 50% { opacity: 1; transform: scale(1.1); } }
         @keyframes twinkle-bright { 0%, 100% { opacity: 1; transform: scale(1.2); text-shadow: 0 0 25px #fff; } 50% { opacity: 0.7; transform: scale(1); text-shadow: 0 0 15px #fff; } }
         @keyframes twinkle-sad { 0%, 100% { opacity: 0.5; } 50% { opacity: 0.2; } }
-        @keyframes fadeInOut { 0% { opacity: 0; transform: translate(-50%, 10px); } 20% { opacity: 1; transform: translate(-50%, 0); } 80% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; transform: translate(-50%, -10px); } }
+        @keyframes fadeInOut { 0% { opacity: 0; transform: translate(-50%, 10px); } 15% { opacity: 1; transform: translate(-50%, 0); } 85% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; transform: translate(-50%, -10px); } }
         @keyframes fadeInStay { to { opacity: 1; } }
     </style>
 </head>
@@ -124,7 +143,7 @@
     <section id="scene2" class="scene"><div class="moon"></div><div class="star">★</div><div class="story-text">เธอชอบถามว่า "รักไหม?"...<br>แต่ความขี้อายและความเคยชิน ทำให้ผมตอบเพียงความเงียบงัน</div></section>
     <section id="scene3" class="scene"><div class="moon" style="background-color: #d3cba4;"></div><div class="star">★</div><div class="story-text" style="color: #ffb8b8;">"ถ้าจากกันรอบนี้... จะไม่เจอกันแล้วนะ"<br>เสียงของเธอในวันนั้น... ผมกลับไม่ได้ยินมันอย่างชัดเจน</div></section>
     <section id="scene4" class="scene"><div class="moon"></div><div class="star">★</div><div class="story-text">แล้ววันนั้น... เธอก็ไปจริงๆ<br>ทิ้งให้ท้องฟ้าของผมมืดมิดและว่างเปล่า</div></section>
-    <section id="scene5" class="scene"><div class="moon"></div><div class="memory" id="mem1" style="animation: fadeInOut 4s 1s forwards;">XO</div><div class="memory" id="mem2" style="animation: fadeInOut 4s 5s forwards;">♪</div><div class="story-text small" style="animation: fadeInOut 8s 9s forwards;">เกมที่เคยเล่น เพลงที่เคยมีความหมาย...<br>มันคอยตอกย้ำถึงวันที่ผมละเลยอ้อมกอดที่แสนอบอุ่นของเธอไป</div></section>
+    <section id="scene5" class="scene"><div class="moon"></div><div class="memory" style="animation: fadeInOut 4s 1s forwards;">XO</div><div class="memory" style="animation: fadeInOut 4s 5s forwards;">♪</div><div class="story-text small" style="animation: fadeInOut 8s 9s forwards;">เกมที่เคยเล่น เพลงที่เคยมีความหมาย...<br>มันคอยตอกย้ำถึงวันที่ผมละเลยอ้อมกอดที่แสนอบอุ่นของเธอไป</div></section>
     <section id="scene6" class="scene"><div class="moon" style="box-shadow: none; background-color: #6a654b;"></div><div class="story-text" style="animation: fadeInStay 4s forwards;">เพิ่งเข้าใจ... ในวันที่เธอไม่อยู่</div></section>
 
     <script>
@@ -136,9 +155,7 @@
                 events: { 'onReady': onPlayerReady }
             });
         }
-        function onPlayerReady(event) {
-            // ตอนนี้เพลงพร้อมแล้ว แต่ยังไม่เล่น
-        }
+        function onPlayerReady(event) {}
 
         window.addEventListener('load', () => {
             const preloader = document.getElementById('preloader');
@@ -151,7 +168,6 @@
             var firstScriptTag = document.getElementsByTagName('script')[0];
             firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
-            // 1. ซ่อน Preloader และแสดงปุ่มเริ่ม
             setTimeout(() => {
                 preloader.style.opacity = '0';
                 setTimeout(() => {
@@ -160,15 +176,10 @@
                 }, 1000);
             }, 3000);
 
-            // 2. เมื่อคลิกปุ่มเริ่ม
             startButton.addEventListener('click', () => {
                 startButton.style.opacity = '0';
                 setTimeout(() => startButton.style.display = 'none', 500);
-                
-                // เล่นเพลง
                 player.playVideo();
-                
-                // เริ่มแอนิเมชันฉาก
                 playNextScene();
             }, { once: true });
 
