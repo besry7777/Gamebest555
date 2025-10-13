@@ -1,142 +1,752 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>วันที่เธอไม่อยู่</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400&display=swap');
-        html, body {
-            margin: 0; padding: 0; width: 100%; height: 100%;
-            font-family: 'IBM Plex Sans Thai', sans-serif;
-            background-color: #000; overflow: hidden; position: relative;
-        }
-        #preloader {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: #000; display: flex; justify-content: center; align-items: center;
-            z-index: 2000; transition: opacity 1s ease;
-        }
-        #preloader .moon-loader {
-            width: 50px; height: 50px; background-color: #f0e68c;
-            border-radius: 50%; box-shadow: 0 0 20px #f0e68c;
-            animation: pulse 2s infinite;
-        }
-        #start-button {
-            position: fixed; top: 50%; left: 50%;
-            transform: translate(-50%, -50%); z-index: 1500;
-            color: white; background-color: rgba(0,0,0,0.8);
-            padding: 25px 40px; border-radius: 15px; cursor: pointer;
-            font-size: 1.3rem; text-align: center; border: 2px solid white;
-            transition: opacity 0.5s; opacity: 0; visibility: hidden;
-            animation: pulse-button 2.5s infinite;
-        }
-        #start-button.visible { opacity: 1; visibility: visible; }
-        .scene {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(to bottom, #020111 0%, #191621 100%);
-            opacity: 0; visibility: hidden; transition: opacity 2s ease-in-out;
-        }
-        .scene.active { opacity: 1; visibility: visible; z-index: 10; }
-        .moon {
-            position: absolute; width: 120px; height: 120px;
-            background-color: #f0e68c; border-radius: 50%;
-            box-shadow: 0 0 30px #f0e68caa; top: 25%; left: 50%;
-            transform: translateX(-50%); transition: all 2.5s ease-in-out;
-        }
-        .star {
-            position: absolute; font-size: 30px; color: #fff;
-            text-shadow: 0 0 15px #fff; top: 35%; left: 70%;
-            animation: twinkle 3s infinite; transition: all 2.5s ease-in-out;
-        }
-        .story-text {
-            position: absolute; bottom: 15%; left: 50%;
-            transform: translateX(-50%); width: 80%; max-width: 700px;
-            padding: 20px 30px; background-color: rgba(0, 0, 0, 0.65);
-            border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            color: #eee; font-size: 1.4rem; font-weight: 300;
-            text-align: center; opacity: 0;
-            animation: fadeInOut 9s 2s forwards;
-        }
-        .story-text.small { font-size: 1.2rem; bottom: 10%; }
-        .memory-icon {
-            position: absolute; top: 50%; left: 50%;
-            transform: translate(-50%, -50%); font-size: 3.5rem;
-            color: rgba(255, 255, 255, 0.7); opacity: 0;
-            text-shadow: 0 0 10px white;
-        }
-        #player { position: fixed; z-index: -1; pointer-events: none; }
-        @keyframes pulse { 0%, 100% { transform: scale(1); box-shadow: 0 0 20px #f0e68c; } 50% { transform: scale(1.1); box-shadow: 0 0 35px #f0e68c; } }
-        @keyframes pulse-button { 0%, 100% { transform: translate(-50%,-50%) scale(1); box-shadow: 0 0 20px rgba(255,255,255,0.3); } 50% { transform: translate(-50%,-50%) scale(1.05); box-shadow: 0 0 30px rgba(255,255,255,0.5); } }
-        @keyframes twinkle { 0%, 100% { opacity: 0.8; } 50% { opacity: 1; transform: scale(1.1); } }
-        @keyframes fadeInOut { 0% { opacity: 0; transform: translate(-50%, 10px); } 15% { opacity: 1; transform: translate(-50%, 0); } 85% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; transform: translate(-50%, -10px); } }
-        @keyframes fadeInStay { 0% { opacity: 0; } 100% { opacity: 1; } }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Checkers Game</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+      .loader-overlay {
+          position: fixed; inset: 0; background-color: rgba(255, 255, 255, 0.9);
+          display: none; justify-content: center; align-items: center; z-index: 9999;
+          opacity: 0; transition: opacity 0.3s ease-in-out;
+      }
+      .loader-overlay.active { display: flex; opacity: 1; }
+      .loader {
+          border: 8px solid #f3f3f3; border-top: 8px solid #4f46e5; border-radius: 50%;
+          width: 60px; height: 60px; animation: spin 1s linear infinite;
+      }
+      @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+      body { font-family: 'Kanit', sans-serif; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+      .screen { display: none; }
+      .screen.active { display: flex; }
+      .input-field { @apply w-full px-4 py-3 mb-4 text-center bg-gray-100 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500 transition-colors; }
+      .button { @apply w-full max-w-sm px-4 py-3 my-2 text-lg font-semibold text-white transition-transform duration-150 ease-in-out rounded-lg shadow-md transform active:scale-95 flex justify-center items-center gap-2; }
+      .button:disabled { @apply bg-gray-400 opacity-70 cursor-not-allowed transform-none; }
+      
+      /* NEW: Updated Button Colors */
+      .button-primary { @apply bg-gradient-to-br from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700; }
+      .button-secondary { @apply bg-gradient-to-br from-slate-500 to-slate-600 hover:from-slate-600 hover:to-slate-700; }
+      .button-success { @apply bg-gradient-to-br from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700; }
+      .button-danger { @apply bg-gradient-to-br from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700; }
+      
+      /* MODIFIED: Board size changed to 8x8 */
+      #game-board {
+          display: grid;
+          grid-template-columns: repeat(8, 1fr);
+          width: 95vw;
+          height: 95vw;
+          max-width: 500px;
+          max-height: 500px;
+          aspect-ratio: 1 / 1;
+          position: relative;
+          border: 4px solid #8c5a3b;
+          background-color: #f0d9b5;
+      }
+      .cell {
+          position: relative; display: flex;
+          justify-content: center; align-items: center;
+      }
+      .cell.dark { background-color: #b58863; cursor: pointer; }
+      .cell.light { background-color: #f0d9b5; }
+
+      .piece {
+          width: 80%; height: 80%;
+          border-radius: 50%;
+          display: flex; justify-content: center; align-items: center;
+          transition: transform 0.2s ease, box-shadow 0.2s ease;
+          position: relative;
+      }
+      .piece.player-x { background-color: #ffffff; border: 2px solid #ccc; }
+      .piece.player-o { background-color: #c43425; border: 2px solid #8e261c; }
+      .piece.king::after {
+          content: '👑';
+          font-size: 60%;
+          position: absolute;
+          text-shadow: 0 0 3px black;
+      }
+      .cell.selected .piece {
+          transform: scale(1.1);
+          box-shadow: 0 0 15px 5px #facc15;
+      }
+      .valid-move::before {
+          content: '';
+          position: absolute;
+          width: 35%; height: 35%;
+          background-color: rgba(40, 167, 69, 0.6);
+          border-radius: 50%;
+          animation: pulse 1.5s infinite;
+      }
+      @keyframes pulse { 0%, 100% { transform: scale(0.9); opacity: 0.7; } 50% { transform: scale(1.1); opacity: 1; } }
+      #game-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        padding: 0 10px;
+      }
+      .player-info {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px;
+        border-radius: 8px;
+        transition: background-color 0.3s;
+      }
+      .player-info.active {
+        background-color: #e0e7ff; /* indigo-100 */
+      }
+      .info-piece { width: 24px; height: 24px; }
+  </style>
 </head>
-<body>
-    <div id="preloader"><div class="moon-loader"></div></div>
-    <div id="start-button">แตะเพื่อเริ่มเรื่องราว<br>และฟังเพลง</div>
-    <div id="player"></div>
+<body class="bg-gray-50 text-gray-800">
 
-    <section id="scene1" class="scene"><div class="moon"></div><div class="star">★</div><div class="story-text">ผมคือ 'กาย' พระจันทร์ที่เคยชินกับการมีดาวที่ชื่อ 'แนน' อยู่ข้างๆ...<br>คิดไปเองว่าแสงสว่างของเธอ จะอยู่กับผมตลอดไป</div></section>
-    <section id="scene2" class="scene"><div class="moon"></div><div class="star" style="left: 65%;">★</div><div class="story-text">เวลาโทรคุย... คำหวานของผมมันง่ายดาย<br>แต่พอเจอหน้ากัน... ความขี้อายกลับสร้างกำแพงที่มองไม่เห็น</div></section>
-    <section id="scene3" class="scene"><div class="moon"></div><div class="star">★</div><div class="story-text">เธอชอบถามว่า "รักไหม?"...<br>ผมกลับคิดว่า การนั่งอยู่ข้างๆ ก็คือคำตอบทั้งหมดแล้ว</div></section>
-    <section id="scene4" class="scene"><div class="moon" style="left: 45%;"></div><div class="star">★</div><div class="story-text">คำชวนไปเที่ยว... ไปถ่ายรูป... ถูกผมมองข้ามไป<br>คิดแค่ว่า "ครั้งหน้าก็ได้" โดยไม่รู้เลยว่า... เวลาของเราเหลือน้อยลงทุกที</div></section>
-    <section id="scene5" class="scene"><div class="moon" style="background-color: #d3cba4;"></div><div class="star" style="left: 85%; animation: none; opacity: 0.4;">★</div><div class="story-text" style="color: #ffb8b8;">"ถ้าจากกันรอบนี้... จะไม่เจอกันแล้วนะ"<br>เสียงของเธอในวันนั้น... คือสัญญาณเตือนครั้งสุดท้าย</div></section>
-    <section id="scene6" class="scene"><div class="moon"></div><div class="star" style="opacity: 0; left: 110%;">★</div><div class="story-text">แล้ววันนั้น... เธอก็ไปจริงๆ<br>ทิ้งให้ท้องฟ้าของผมมืดมิดและว่างเปล่า</div></section>
-    <section id="scene7" class="scene"><div class="moon"></div><div class="story-text">ความอบอุ่นตอนที่กอดกัน... เสียงหัวเราะง่ายๆ ของเธอ<br>เพิ่งรู้ว่าสิ่งเหล่านี้มีค่า... ในวันที่มันกลายเป็นแค่ความทรงจำ</div></section>
-    <section id="scene8" class="scene"><div class="moon" style="top: 50%; transform: translate(-50%, -50%);"></div><div class="memory-icon" style="animation: fadeInOut 4s 1s forwards;">XO</div><div class="memory-icon" style="animation: fadeInOut 4s 5s forwards;">♪</div><div class="story-text small" style="animation: fadeInOut 8s 9s forwards;">เกมที่เคยเล่น เพลงที่เคยมีความหมาย...<br>ตอนนี้มันคอยตอกย้ำถึงวันที่ผมละเลยเธอไป</div></section>
-    <section id="scene9" class="scene"><div class="moon" style="box-shadow: none; background-color: #6a654b;"></div><div class="story-text" style="animation: fadeInStay 4s 2s forwards;">ผมกลายเป็นพระจันทร์ที่เต็มไปด้วยคำว่า "รัก" ที่ไม่เคยได้พูดออกไป...</div></section>
-    <section id="scene10" class="scene"><div class="moon" style="box-shadow: none; background-color: #444;"></div><div class="story-text" style="animation: fadeInStay 4s 2s forwards;">โคจรรอบความว่างเปล่า... ที่เคยมีดาวที่สว่างไสวที่สุดของผมอยู่</div></section>
+  <div id="loading-overlay" class="loader-overlay">
+      <div class="loader"></div>
+  </div>
+ 
+  <main id="app-container" class="w-full h-screen overflow-hidden">
+      <div id="main-menu" class="screen w-full h-full flex-col justify-center items-center p-5 text-center">
+          <h1 class="text-5xl font-bold mb-2">Checkers</h1>
+          <h2 class="text-xl font-semibold mb-4 text-gray-600">หมากฮอส</h2>
+           <div class="flex flex-col items-center mb-6">
+              <h2 id="welcome-message" class="text-2xl"></h2>
+           </div>
+          <button id="play-bot-btn" class="button button-primary">เล่นกับบอท</button>
+          <button id="play-coop-btn" class="button button-success">เล่นกับเพื่อน (Online)</button>
+      </div>
 
-    <script>
-        var player;
-        function onYouTubeIframeAPIReady() {
-            player = new YT.Player('player', {
-                videoId: 'f_b_8cM2p1Q', // TINN - วันที่เธอไม่อยู่
-                playerVars: { 'controls': 0, 'loop': 1, 'playlist': 'f_b_8cM2p1Q' },
-                events: { 'onReady': onPlayerReady }
-            });
-        }
-        function onPlayerReady(event) {}
+      <div id="coop-menu" class="screen w-full h-full flex-col justify-center items-center p-5">
+          <h2 class="text-3xl font-bold mb-8">เล่นกับเพื่อน</h2>
+          <button id="create-room-btn" class="button button-primary">สร้างห้อง</button>
+          <input type="text" id="room-code-input" class="input-field max-w-sm" placeholder="ใส่รหัสห้อง" style="text-transform: uppercase;">
+          <button id="join-room-btn" class="button button-success">เข้าร่วมห้อง</button>
+          <button id="back-to-main-from-coop-btn" class="button button-secondary">กลับ</button>
+      </div>
 
-        window.addEventListener('load', () => {
-            const preloader = document.getElementById('preloader');
-            const startButton = document.getElementById('start-button');
-            const scenes = document.querySelectorAll('.scene');
-            let currentScene = -1;
+      <div id="room-lobby" class="screen w-full h-full flex-col justify-center items-center p-5 text-center">
+          <h2 class="text-2xl mb-2">รหัสห้อง:</h2>
+           <div class="flex items-center justify-center gap-2 mb-6">
+              <span id="room-code-display" class="text-4xl font-bold text-rose-500 tracking-widest"></span>
+          </div>
+          <div id="player-list" class="text-xl mb-6 space-y-2 w-full max-w-sm"></div>
+          <p id="lobby-status" class="mb-6 h-12 text-2xl flex justify-center items-center"></p>
+          <button id="ready-btn" class="button button-success">เตรียมพร้อม</button>
+          <button id="leave-room-btn" class="button button-danger">ออกจากห้อง</button>
+      </div>
+     
+      <div id="game-screen" class="screen w-full h-full flex-col justify-center items-center p-2 sm:p-5">
+          
+          <div class="flex flex-col items-center w-full max-w-[500px]">
+            <div id="game-info" class="mb-4">
+                <div id="player-o-info" class="player-info">
+                    <div class="piece player-o info-piece"></div>
+                    <span id="player-o-name" class="font-semibold"></span>
+                    <span>(<span id="player-o-count">10</span>)</span>
+                </div>
+                <div id="turn-display" class="text-xl font-bold"></div>
+                 <div id="player-x-info" class="player-info">
+                    <span id="player-x-name" class="font-semibold"></span>
+                    <span>(<span id="player-x-count">10</span>)</span>
+                    <div class="piece player-x info-piece"></div>
+                </div>
+            </div>
 
-            var tag = document.createElement('script');
-            tag.src = "https://www.youtube.com/iframe_api";
-            var firstScriptTag = document.getElementsByTagName('script')[0];
-            firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+            <div id="game-board-container">
+                <div id="game-board"></div>
+            </div>
+          </div>
+         
+          <div id="game-screen-over-overlay" class="absolute inset-0 bg-white/80 backdrop-blur-sm flex-col justify-center items-center text-center p-5 hidden">
+               <h2 id="game-over-message" class="text-4xl font-bold mb-2"></h2>
+               <div id="rematch-status" class="h-6 my-4 text-lg"></div>
+               <button id="rematch-btn" class="button button-primary">เล่นอีกครั้ง</button>
+               <button id="back-to-menu-from-game-btn" class="button button-secondary">กลับเมนูหลัก</button>
+          </div>
 
-            setTimeout(() => {
-                preloader.style.opacity = '0';
-                setTimeout(() => {
-                    preloader.style.display = 'none';
-                    startButton.classList.add('visible');
-                }, 1000);
-            }, 3000);
+          <button id="leave-game-btn" class="button button-danger mt-6 max-w-[500px]">ยอมแพ้/ออกจากเกม</button>
+      </div>
+  </main>
+ 
+  <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+      import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+      import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, runTransaction, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-            startButton.addEventListener('click', () => {
-                startButton.style.opacity = '0';
-                setTimeout(() => startButton.style.display = 'none', 500);
-                player.playVideo();
-                playNextScene();
-            }, { once: true });
+      const firebaseConfig = {
+          apiKey: "AIzaSyBcxVAP08XMiPMoqElaKM7AYY_2z08oWok",
+          authDomain: "xobybestry777.firebaseapp.com",
+          projectId: "xobybestry777",
+          storageBucket: "xobybestry777.firebasestorage.app",
+          messagingSenderId: "380539937989",
+          appId: "1:380539937989:web:48049ed77f45327e033cac",
+          measurementId: "G-YZWTKXL285"
+      };
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const db = getFirestore(app);
 
-            // อัปเดตเวลาของแต่ละฉากให้มี 10 ฉาก
-            const sceneDurations = [10000, 10000, 10000, 10000, 10000, 10000, 10000, 12000, 10000, 12000];
-            
-            function playNextScene() {
-                if (scenes[currentScene]) {
-                    scenes[currentScene].classList.remove('active');
-                }
-                currentScene = (currentScene + 1) % scenes.length;
-                scenes[currentScene].classList.add('active');
-                setTimeout(playNextScene, sceneDurations[currentScene]);
+      // MODIFIED: Board size changed to 8
+      const CONST = {
+          ROOM_CODE_LENGTH: 4,
+          BOARD_SIZE: 8,
+      };
+      
+      let AppState = {
+          currentUser: { uid: null, username: null },
+          currentRoom: { id: null, data: null },
+          playerSymbol: '',
+          listeners: { room: null },
+          game: { 
+              board: [], currentPlayer: "X", isActive: false, mode: 'bot',
+              selectedPieceIndex: null, validMoves: {}, mustContinueJump: false,
+          },
+      };
+      
+      const DOM = {
+          screens: { mainMenu: document.getElementById('main-menu'), coopMenu: document.getElementById('coop-menu'), roomLobby: document.getElementById('room-lobby'), game: document.getElementById('game-screen') },
+          gameBoard: document.getElementById('game-board'),
+          rematchBtn: document.getElementById('rematch-btn'),
+          rematchStatus: document.getElementById('rematch-status'),
+          gameOverOverlay: document.getElementById('game-screen-over-overlay'),
+          gameOverMessage: document.getElementById('game-over-message'),
+          loadingOverlay: document.getElementById('loading-overlay'),
+      };
+
+       const init = () => {
+          DOM.loadingOverlay.classList.add('active');
+          addEventListeners();
+          onAuthStateChanged(auth, async (user) => {
+              if (!user) { await signInAnonymously(auth); return; }
+              AppState.currentUser.uid = user.uid;
+              const userRef = doc(db, "users", user.uid);
+              const userSnap = await getDoc(userRef);
+              AppState.currentUser.username = userSnap.exists() ? userSnap.data().username : `Player${Math.floor(1000 + Math.random() * 9000)}`;
+              if (!userSnap.exists()) await setDoc(userRef, { username: AppState.currentUser.username });
+              
+              document.getElementById('welcome-message').innerText = `ยินดีต้อนรับ, ${AppState.currentUser.username}`;
+              DOM.loadingOverlay.classList.remove('active');
+              showScreen('mainMenu');
+          });
+      };
+      
+      // --- Game State & Board ---
+
+      function createInitialBoard() {
+        const board = Array(CONST.BOARD_SIZE * CONST.BOARD_SIZE).fill(null);
+        // MODIFIED: Place 10 pieces on an 8x8 board
+        for (let i = 0; i < board.length; i++) {
+            const row = Math.floor(i / CONST.BOARD_SIZE), col = i % CONST.BOARD_SIZE;
+            if ((row + col) % 2 !== 0) { // Dark squares
+                if (row < 3) board[i] = { player: 'O', isKing: false }; // Rows 0, 1, 2 (12 spots, but we'll use 10)
+                if (row > 4) board[i] = { player: 'X', isKing: false }; // Rows 5, 6, 7
             }
-        });
-    </script>
+        }
+        // Manually remove 2 pieces from each side to make it 10
+        board[1] = null; board[5] = null; // Remove from player O
+        board[57] = null; board[61] = null; // Remove from player X
+        return board;
+      }
+      
+      function resetGameUIAndState() {
+          AppState.game.isActive = true;
+          AppState.game.selectedPieceIndex = null;
+          AppState.game.mustContinueJump = false;
+          DOM.gameOverOverlay.classList.add('hidden');
+          DOM.rematchBtn.disabled = false;
+          DOM.rematchStatus.textContent = '';
+          document.getElementById('leave-game-btn').style.display = 'flex';
+      }
+
+      function startGame() {
+          AppState.game.board = createInitialBoard();
+          resetGameUIAndState();
+          
+          if (AppState.game.mode === 'bot') {
+              AppState.game.currentPlayer = 'X';
+              document.getElementById('player-x-name').textContent = AppState.currentUser.username;
+              document.getElementById('player-o-name').textContent = "บอท";
+          } else {
+              AppState.game.currentPlayer = "X";
+              const playerX = Object.values(AppState.currentRoom.data.players).find(p => p.symbol === 'X');
+              const playerO = Object.values(AppState.currentRoom.data.players).find(p => p.symbol === 'O');
+              document.getElementById('player-x-name').textContent = playerX.username;
+              document.getElementById('player-o-name').textContent = playerO.username;
+          }
+
+          showScreen('game');
+          findAllValidMoves();
+          renderBoard();
+      }
+
+      // --- Rendering ---
+      
+      function renderBoard() {
+          const boardEl = DOM.gameBoard;
+          boardEl.innerHTML = '';
+          let xCount = 0, oCount = 0;
+          
+          AppState.game.board.forEach((piece, index) => {
+              const cell = document.createElement('div');
+              const row = Math.floor(index / CONST.BOARD_SIZE), col = index % CONST.BOARD_SIZE;
+              cell.className = `cell ${(row + col) % 2 === 0 ? 'light' : 'dark'}`;
+              cell.dataset.index = index;
+
+              if (piece) {
+                  piece.player === 'X' ? xCount++ : oCount++;
+                  const pieceEl = document.createElement('div');
+                  pieceEl.className = `piece player-${piece.player.toLowerCase()} ${piece.isKing ? 'king' : ''}`;
+                  cell.appendChild(pieceEl);
+              }
+
+              if (AppState.game.selectedPieceIndex === index) cell.classList.add('selected');
+
+              const movesForSelected = AppState.game.validMoves[AppState.game.selectedPieceIndex] || [];
+              if (movesForSelected.some(move => move.to === index)) {
+                  cell.classList.add('valid-move');
+              }
+              boardEl.appendChild(cell);
+          });
+          
+          document.getElementById('player-x-count').textContent = xCount;
+          document.getElementById('player-o-count').textContent = oCount;
+          updateTurnDisplay();
+      }
+      
+      function updateTurnDisplay() {
+        const turnDisplay = document.getElementById('turn-display');
+        const playerXInfo = document.getElementById('player-x-info');
+        const playerOInfo = document.getElementById('player-o-info');
+
+        playerXInfo.classList.toggle('active', AppState.game.currentPlayer === 'X' && AppState.game.isActive);
+        playerOInfo.classList.toggle('active', AppState.game.currentPlayer === 'O' && AppState.game.isActive);
+        
+        if (!AppState.game.isActive) {
+            turnDisplay.textContent = "จบเกม"; return;
+        }
+
+        if (AppState.game.mode === 'coop' && AppState.playerSymbol !== AppState.game.currentPlayer) {
+            turnDisplay.textContent = "รอตาฝ่ายตรงข้าม";
+        } else {
+            turnDisplay.textContent = "ตาของคุณ";
+        }
+      }
+
+      // --- Move Validation (Logic adapted for 8x8) ---
+
+      function getMovesForPiece(index, board, player) {
+          const piece = board[index];
+          if (!piece || piece.player !== player) return { moves: [], captures: [] };
+          return piece.isKing ? getKingMoves(index, board, player) : getManMoves(index, board, player);
+      }
+
+      function getManMoves(index, board, player) {
+          const moves = [], captures = [];
+          const row = Math.floor(index / 8), col = index % 8;
+          const forwardDir = player === 'X' ? -1 : 1;
+
+          for (const dCol of [-1, 1]) {
+              const nRow = row + forwardDir, nCol = col + dCol;
+              if (nRow >= 0 && nRow < 8 && nCol >= 0 && nCol < 8 && !board[nRow * 8 + nCol]) {
+                  moves.push({ to: nRow * 8 + nCol, captures: [] });
+              }
+          }
+          recursivelyFindCaptures(index, board, [], captures, false, player);
+          return { moves, captures };
+      }
+      
+      function getKingMoves(index, board, player) {
+          const moves = [], captures = [];
+          for (const dRow of [-1, 1]) {
+              for (const dCol of [-1, 1]) {
+                  for (let i = 1; i < 8; i++) {
+                      const nRow = Math.floor(index / 8) + dRow * i, nCol = (index % 8) + dCol * i;
+                      if (nRow < 0 || nRow >= 8 || nCol < 0 || nCol >= 8) break;
+                      const newIndex = nRow * 8 + nCol;
+                      if (board[newIndex]) break;
+                      moves.push({ to: newIndex, captures: [] });
+                  }
+              }
+          }
+          recursivelyFindKingCaptures(index, board, [], captures, player);
+          return { moves, captures };
+      }
+
+      function recursivelyFindCaptures(startIndex, currentBoard, capturedSoFar, finalPaths, isContinuingJump, player) {
+          let canContinue = false;
+          const opponent = player === 'X' ? 'O' : 'X';
+          const forwardDir = player === 'X' ? -1 : 1;
+
+          for (const dRow of [-1, 1]) {
+              if (isContinuingJump && dRow !== forwardDir) continue;
+              for (const dCol of [-1, 1]) {
+                  const row = Math.floor(startIndex / 8), col = startIndex % 8;
+                  const viaRow = row + dRow, viaCol = col + dCol;
+                  const toRow = row + 2 * dRow, toCol = col + 2 * dCol;
+                  if (toRow >= 0 && toRow < 8 && toCol >= 0 && toCol < 8) {
+                      const viaIndex = viaRow * 8 + viaCol, toIndex = toRow * 8 + toCol;
+                      if (currentBoard[viaIndex]?.player === opponent && !currentBoard[toIndex] && !capturedSoFar.includes(viaIndex)) {
+                          canContinue = true;
+                          const nextBoard = [...currentBoard];
+                          nextBoard[toIndex] = nextBoard[startIndex]; nextBoard[startIndex] = null; nextBoard[viaIndex] = null;
+                          recursivelyFindCaptures(toIndex, nextBoard, [...capturedSoFar, viaIndex], finalPaths, true, player);
+                      }
+                  }
+              }
+          }
+          if (!canContinue && capturedSoFar.length > 0) {
+              finalPaths.push({ to: startIndex, captures: capturedSoFar });
+          }
+      }
+
+      function recursivelyFindKingCaptures(startIndex, currentBoard, capturedSoFar, finalPaths, player) {
+          let canContinue = false;
+          const opponent = player === 'X' ? 'O' : 'X';
+          for (const dRow of [-1, 1]) {
+              for (const dCol of [-1, 1]) {
+                  let opponentPieceIndex = -1;
+                  for (let i = 1; i < 8; i++) {
+                      const row = Math.floor(startIndex / 8), col = startIndex % 8;
+                      const checkRow = row + i * dRow, checkCol = col + i * dCol;
+                      if (checkRow < 0 || checkRow >= 8 || checkCol < 0 || checkCol >= 8) break;
+                      const checkIndex = checkRow * 8 + checkCol;
+                      const piece = currentBoard[checkIndex];
+                      if (piece) { if (piece.player === opponent && !capturedSoFar.includes(checkIndex)) opponentPieceIndex = checkIndex; break; }
+                  }
+                  if (opponentPieceIndex !== -1) {
+                      const viaRow = Math.floor(opponentPieceIndex / 8);
+                      for (let i = 1; i < 8; i++) {
+                          const toRow = viaRow + i * dRow, toCol = (opponentPieceIndex % 8) + i * dCol;
+                          if (toRow < 0 || toRow >= 8 || toCol < 0 || toCol >= 8) break;
+                          const toIndex = toRow * 8 + toCol;
+                          if (currentBoard[toIndex]) break;
+                          canContinue = true;
+                          const nextBoard = [...currentBoard];
+                          nextBoard[toIndex] = nextBoard[startIndex]; nextBoard[startIndex] = null; nextBoard[opponentPieceIndex] = null;
+                          recursivelyFindKingCaptures(toIndex, nextBoard, [...capturedSoFar, opponentPieceIndex], finalPaths, player);
+                      }
+                  }
+              }
+          }
+          if (!canContinue && capturedSoFar.length > 0) {
+              finalPaths.push({ to: startIndex, captures: capturedSoFar });
+          }
+      }
+
+      function findAllValidMoves() {
+          const { currentPlayer, board } = AppState.game;
+          let allCaptures = {}, maxCaptureLength = 0;
+          for (let i = 0; i < board.length; i++) {
+              if (board[i]?.player === currentPlayer) {
+                  const { captures } = getMovesForPiece(i, board, currentPlayer);
+                  if (captures.length > 0) {
+                      allCaptures[i] = captures;
+                      captures.forEach(c => maxCaptureLength = Math.max(maxCaptureLength, c.captures.length));
+                  }
+              }
+          }
+          if (maxCaptureLength > 0) {
+              const bestCaptures = {};
+              for (const fromIndex in allCaptures) {
+                  const filtered = allCaptures[fromIndex].filter(c => c.captures.length === maxCaptureLength);
+                  if (filtered.length > 0) bestCaptures[fromIndex] = filtered;
+              }
+              AppState.game.validMoves = bestCaptures; return;
+          }
+          const allMoves = {};
+          for (let i = 0; i < board.length; i++) {
+              if (board[i]?.player === currentPlayer) {
+                  const { moves } = getMovesForPiece(i, board, currentPlayer);
+                  if (moves.length > 0) allMoves[i] = moves;
+              }
+          }
+          AppState.game.validMoves = allMoves;
+      }
+      
+      // --- User Interaction & Game Flow ---
+      
+      function handleCellClick(index) {
+          if (!AppState.game.isActive || (AppState.game.mode === 'coop' && AppState.playerSymbol !== AppState.game.currentPlayer)) return;
+          if (AppState.game.mustContinueJump) {
+              const movesForSelected = AppState.game.validMoves[AppState.game.selectedPieceIndex] || [];
+              if (movesForSelected.some(move => move.to === index)) makeMove(AppState.game.selectedPieceIndex, index);
+              return;
+          }
+          const piece = AppState.game.board[index];
+          if (piece?.player === AppState.game.currentPlayer && AppState.game.validMoves[index]) {
+              AppState.game.selectedPieceIndex = index;
+              renderBoard();
+          } else if (AppState.game.selectedPieceIndex !== null) {
+              const movesForSelected = AppState.game.validMoves[AppState.game.selectedPieceIndex] || [];
+              if (movesForSelected.some(move => move.to === index)) makeMove(AppState.game.selectedPieceIndex, index);
+          }
+      }
+      
+      function makeMove(fromIndex, toIndex) {
+          const move = AppState.game.validMoves[fromIndex]?.find(m => m.to === toIndex);
+          if (!move) return;
+
+          let newBoard = [...AppState.game.board];
+          newBoard[toIndex] = newBoard[fromIndex];
+          newBoard[fromIndex] = null;
+          const wasCapture = move.captures.length > 0;
+          move.captures.forEach(capturedIndex => newBoard[capturedIndex] = null);
+          
+          const player = newBoard[toIndex].player;
+          const endRow = player === 'X' ? 0 : 7; // End row is 7 on 8x8 board
+          if (Math.floor(toIndex / 8) === endRow) newBoard[toIndex].isKing = true;
+
+          if (AppState.game.mode === 'coop') {
+              const nextTurn = AppState.game.currentPlayer === 'X' ? 'O' : 'X';
+              updateDoc(doc(db, "rooms", AppState.currentRoom.id), { 
+                  "game.board": newBoard, 
+                  "game.turn": nextTurn,
+                  "game.lastMove": { from: fromIndex, to: toIndex, player: player },
+              });
+          } else {
+              AppState.game.board = newBoard;
+              checkPostMoveState(toIndex, wasCapture, player);
+          }
+      }
+
+      function checkPostMoveState(currentIndex, wasCapture, player) {
+          const board = AppState.game.board;
+          if (wasCapture && currentIndex !== null) {
+              const piece = board[currentIndex];
+              if (piece) {
+                const { captures } = piece.isKing ? getKingMoves(currentIndex, board, player) : getManMoves(currentIndex, board, player);
+                if (captures.length > 0) {
+                    AppState.game.mustContinueJump = true;
+                    AppState.game.selectedPieceIndex = currentIndex;
+                    AppState.game.validMoves = { [currentIndex]: captures };
+                    renderBoard(); return;
+                }
+              }
+          }
+
+          AppState.game.mustContinueJump = false;
+          AppState.game.selectedPieceIndex = null;
+          
+          if (AppState.game.mode === 'bot') {
+              AppState.game.currentPlayer = player === 'X' ? 'O' : 'X';
+          }
+          
+          findAllValidMoves();
+          
+          if (Object.keys(AppState.game.validMoves).length === 0) {
+              const winner = AppState.game.currentPlayer === 'X' ? 'O' : 'X';
+              renderBoard();
+              endGame(winner);
+              return;
+          }
+          
+          renderBoard();
+
+          if (AppState.game.mode === 'bot' && AppState.game.currentPlayer === 'O') {
+              setTimeout(botMove, 500);
+          }
+      }
+      
+      function botMove() {
+          if (!AppState.game.isActive) return;
+          const movablePieces = Object.keys(AppState.game.validMoves);
+          if (movablePieces.length === 0) return;
+          const fromIndex = parseInt(movablePieces[Math.floor(Math.random() * movablePieces.length)]);
+          const moves = AppState.game.validMoves[fromIndex];
+          const move = moves[Math.floor(Math.random() * moves.length)];
+          makeMove(fromIndex, move.to);
+      }
+
+      function endGame(winner) {
+          AppState.game.isActive = false;
+          updateTurnDisplay();
+          const playerWon = (AppState.game.mode === 'bot' && winner === 'X') || (AppState.game.mode === 'coop' && winner === AppState.playerSymbol);
+          DOM.gameOverMessage.textContent = playerWon ? "คุณชนะ!" : "คุณแพ้!";
+          
+          document.getElementById('leave-game-btn').style.display = 'none';
+          DOM.gameOverOverlay.classList.remove('hidden');
+
+          if (AppState.game.mode === 'coop' && AppState.currentRoom.data?.players?.[AppState.currentUser.uid]) {
+              updateDoc(doc(db, "rooms", AppState.currentRoom.id), { status: 'finished', 'game.winner': winner, 'game.rematch': {} });
+          }
+      }
+      
+      // --- Online Logic ---
+      
+      async function handleCreateRoom(button) {
+          button.disabled = true;
+          const roomId = Math.random().toString(36).substring(2, 2 + CONST.ROOM_CODE_LENGTH).toUpperCase();
+          const creatorSymbol = Math.random() < 0.5 ? 'X' : 'O';
+          
+          const roomData = {
+              status: 'lobby',
+              players: { [AppState.currentUser.uid]: { username: AppState.currentUser.username, symbol: creatorSymbol, ready: false }},
+              game: { board: [], turn: "X", winner: null, rematch: {}, lastMove: null }, createdAt: serverTimestamp()
+          };
+          await setDoc(doc(db, "rooms", roomId), roomData);
+          AppState.currentRoom.id = roomId;
+          AppState.playerSymbol = creatorSymbol;
+          listenToRoomUpdates(roomId);
+          showScreen('roomLobby');
+          button.disabled = false;
+      }
+
+      async function handleJoinRoom() {
+           const roomId = document.getElementById('room-code-input').value.trim().toUpperCase();
+           if (!roomId) return;
+           const roomRef = doc(db, "rooms", roomId);
+           try {
+             await runTransaction(db, async (t) => {
+                 const roomDoc = await t.get(roomRef);
+                 if (!roomDoc.exists()) throw new Error("ไม่พบห้องนี้");
+                 const roomData = roomDoc.data();
+                 if (Object.keys(roomData.players).length >= 2) throw new Error("ห้องเต็มแล้ว");
+                 const existingSymbol = Object.values(roomData.players)[0].symbol;
+                 AppState.playerSymbol = existingSymbol === 'X' ? 'O' : 'X';
+                 AppState.currentRoom.id = roomId;
+                 t.update(roomRef, { [`players.${AppState.currentUser.uid}`]: { username: AppState.currentUser.username, symbol: AppState.playerSymbol, ready: false }});
+             });
+             listenToRoomUpdates(roomId);
+             showScreen('roomLobby');
+           } catch (error) { console.error(error); }
+      }
+
+      function listenToRoomUpdates(roomId) {
+          if (AppState.listeners.room) AppState.listeners.room();
+          const roomRef = doc(db, "rooms", roomId);
+          AppState.listeners.room = onSnapshot(roomRef, (docSnap) => {
+              if (!docSnap.exists()) { cleanupAfterRoom(); return; }
+
+              const oldData = AppState.currentRoom.data;
+              const newData = docSnap.data();
+              AppState.currentRoom.data = newData;
+
+              if (newData.status === 'lobby') {
+                  showScreen('roomLobby'); updateLobbyUI(newData);
+              } else if (newData.status === 'playing' && oldData?.status !== 'playing') {
+                  AppState.game.mode = 'coop'; startGame();
+              } else if (oldData?.status === 'finished' && newData.status === 'playing') {
+                  AppState.game.board = newData.game.board;
+                  AppState.game.currentPlayer = 'X';
+                  DOM.gameOverOverlay.classList.add('hidden');
+                  let countdown = 3;
+                  DOM.rematchStatus.textContent = `เริ่มใน ${countdown}...`;
+                  const interval = setInterval(() => {
+                      countdown--;
+                      DOM.rematchStatus.textContent = countdown > 0 ? `เริ่มใน ${countdown}...` : 'เริ่ม!';
+                      if (countdown <= 0) {
+                          clearInterval(interval);
+                          resetGameUIAndState();
+                          findAllValidMoves();
+                          renderBoard();
+                      }
+                  }, 1000);
+              } else if (newData.status === 'playing') {
+                  const localBoardStr = JSON.stringify(AppState.game.board), remoteBoardStr = JSON.stringify(newData.game.board);
+                  if (localBoardStr !== remoteBoardStr) {
+                      AppState.game.board = newData.game.board;
+                      AppState.game.currentPlayer = newData.game.turn;
+                      const lastMove = newData.game.lastMove;
+                      if(lastMove){
+                        const wasCapture = Math.abs(lastMove.from - lastMove.to) > (CONST.BOARD_SIZE + 1);
+                        checkPostMoveState(lastMove.to, wasCapture, lastMove.player);
+                      }
+                  }
+              } else if (newData.status === 'finished' && AppState.game.isActive) {
+                  endGame(newData.game.winner);
+              }
+
+              if(newData.game.rematch) updateRematchStatusUI(newData.game.rematch);
+          });
+      }
+
+      function updateLobbyUI(data) {
+          document.getElementById('room-code-display').innerText = AppState.currentRoom.id;
+          const playerListDiv = document.getElementById('player-list');
+          playerListDiv.innerHTML = '';
+          let allReady = Object.keys(data.players).length === 2;
+          Object.values(data.players).forEach(p => {
+              playerListDiv.innerHTML += `<div>${p.username} (${p.symbol}) - <span class="${p.ready ? 'text-green-500' : 'text-red-500'}">${p.ready ? 'พร้อม' : 'ยังไม่พร้อม'}</span></div>`;
+              if (!p.ready) allReady = false;
+          });
+          if (allReady && Object.keys(data.players)[0] === AppState.currentUser.uid) {
+              updateDoc(doc(db, "rooms", AppState.currentRoom.id), { status: 'playing' });
+          }
+      }
+
+      async function handleReadyClick() {
+          const ready = AppState.currentRoom.data.players[AppState.currentUser.uid]?.ready || false;
+          await updateDoc(doc(db, "rooms", AppState.currentRoom.id), { [`players.${AppState.currentUser.uid}.ready`]: !ready });
+      }
+
+      async function handleRematchRequest(button) {
+          button.disabled = true;
+          await updateDoc(doc(db, "rooms", AppState.currentRoom.id), { [`game.rematch.${AppState.currentUser.uid}`]: true });
+      }
+
+      function updateRematchStatusUI(rematchData) {
+          const uids = Object.keys(AppState.currentRoom.data.players);
+          if(uids.length < 2) return;
+          const myUid = AppState.currentUser.uid;
+          const opponentUid = uids.find(uid => uid !== myUid);
+
+          if (rematchData[myUid] && rematchData[opponentUid]) {
+              if (uids[0] === myUid) {
+                  updateDoc(doc(db, "rooms", AppState.currentRoom.id), {
+                      status: "playing",
+                      'game.board': createInitialBoard(),
+                      'game.turn': 'X',
+                      'game.winner': null,
+                      'game.rematch': {},
+                      'game.lastMove': null
+                  });
+              }
+          } else if (rematchData[myUid]) {
+              DOM.rematchStatus.textContent = "คุณต้องการเล่นอีกครั้ง รออีกฝ่าย...";
+          } else if (rematchData[opponentUid]) {
+              DOM.rematchStatus.textContent = "อีกฝ่ายต้องการเล่นอีกครั้ง!";
+          } else {
+              DOM.rematchStatus.textContent = "";
+          }
+      }
+
+      function cleanupAfterRoom() {
+          if (AppState.listeners.room) { AppState.listeners.room(); AppState.listeners.room = null; }
+          AppState.currentRoom = { id: null, data: null };
+          showScreen('mainMenu');
+      }
+
+      // --- Event Listeners ---
+      function addEventListeners() {
+          document.getElementById('play-bot-btn').onclick = () => { AppState.game.mode = 'bot'; startGame(); };
+          document.getElementById('play-coop-btn').onclick = () => showScreen('coopMenu');
+          document.getElementById('back-to-main-from-coop-btn').onclick = () => showScreen('mainMenu');
+          document.getElementById('create-room-btn').onclick = (e) => handleCreateRoom(e.currentTarget);
+          document.getElementById('join-room-btn').onclick = handleJoinRoom;
+          document.getElementById('ready-btn').onclick = handleReadyClick;
+          DOM.gameBoard.addEventListener('click', (e) => {
+              const cell = e.target.closest('.cell');
+              if (cell) handleCellClick(parseInt(cell.dataset.index));
+          });
+          document.getElementById('back-to-menu-from-game-btn').onclick = () => {
+              if (AppState.game.mode === 'coop') cleanupAfterRoom(); else showScreen('mainMenu');
+          };
+          DOM.rematchBtn.onclick = (e) => {
+              if (AppState.game.mode === 'bot') startGame();
+              else handleRematchRequest(e.currentTarget);
+          };
+      }
+      
+      function showScreen(screenName) {
+          Object.values(DOM.screens).forEach(s => s.classList.remove('active'));
+          DOM.screens[screenName].classList.add('active');
+      }
+      
+      init();
+  </script>
 </body>
 </html>
