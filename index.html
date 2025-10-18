@@ -10,78 +10,92 @@
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
       .loader-overlay {
-          position: fixed; inset: 0; background-color: rgba(255, 255, 255, 0.9);
-          display: none; justify-content: center; align-items: center; z-index: 9999;
-          opacity: 0; transition: opacity 0.3s ease-in-out;
+        position: fixed; inset: 0; background-color: rgba(15, 23, 42, 0.9); /* slate-900 */
+        display: none; justify-content: center; align-items: center; z-index: 9999;
+        opacity: 0; transition: opacity 0.3s ease-in-out;
       }
       .loader-overlay.active { display: flex; opacity: 1; }
       .loader {
-          border: 8px solid #f3f3f3; border-top: 8px solid #4f46e5; border-radius: 50%;
-          width: 60px; height: 60px; animation: spin 1s linear infinite;
+        border: 8px solid #334155; /* slate-700 */ border-top: 8px solid #22d3ee; /* cyan-400 */ border-radius: 50%;
+        width: 60px; height: 60px; animation: spin 1s linear infinite;
       }
       @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
       body { font-family: 'Kanit', sans-serif; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
       .screen { display: none; }
       .screen.active { display: flex; }
-      .input-field { @apply w-full px-4 py-3 mb-4 text-center bg-gray-100 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500 transition-colors; }
-      .button { @apply w-full max-w-sm px-4 py-3 my-2 text-lg font-semibold text-white transition-transform duration-150 ease-in-out rounded-lg shadow-md transform active:scale-95 flex justify-center items-center gap-2; }
-      .button:disabled { @apply bg-gray-400 opacity-70 cursor-not-allowed transform-none; }
+      .input-field { @apply w-full px-4 py-3 mb-4 text-center bg-slate-700 text-white border-2 border-slate-600 rounded-lg focus:outline-none focus:border-cyan-400 transition-colors placeholder-slate-400; }
+      .button { @apply w-full max-w-sm px-4 py-3 my-2 text-lg font-bold text-white transition-all duration-150 ease-in-out rounded-lg shadow-lg transform active:scale-95 flex justify-center items-center gap-2; }
+      .button:disabled { @apply bg-slate-600 opacity-70 cursor-not-allowed transform-none shadow-none; }
       
-      /* NEW: Updated Button Colors */
-      .button-primary { @apply bg-gradient-to-br from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700; }
-      .button-secondary { @apply bg-gradient-to-br from-slate-500 to-slate-600 hover:from-slate-600 hover:to-slate-700; }
-      .button-success { @apply bg-gradient-to-br from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700; }
-      .button-danger { @apply bg-gradient-to-br from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700; }
+      .button-primary { @apply bg-gradient-to-br from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 shadow-cyan-500/50; }
+      .button-secondary { @apply bg-gradient-to-br from-slate-500 to-slate-600 hover:from-slate-400 hover:to-slate-500 shadow-slate-500/50; }
+      .button-success { @apply bg-gradient-to-br from-emerald-500 to-green-500 hover:from-emerald-400 hover:to-green-400 shadow-emerald-500/50; }
+      .button-danger { @apply bg-gradient-to-br from-rose-500 to-red-500 hover:from-rose-400 hover:to-red-400 shadow-rose-500/50; }
       
-      /* MODIFIED: Board size changed to 8x8 */
       #game-board {
-          display: grid;
-          grid-template-columns: repeat(8, 1fr);
-          width: 95vw;
-          height: 95vw;
-          max-width: 500px;
-          max-height: 500px;
-          aspect-ratio: 1 / 1;
-          position: relative;
-          border: 4px solid #8c5a3b;
-          background-color: #f0d9b5;
+        display: grid;
+        grid-template-columns: repeat(8, 1fr);
+        width: 95vw;
+        height: 95vw;
+        max-width: 500px;
+        max-height: 500px;
+        aspect-ratio: 1 / 1;
+        position: relative;
+        border: 6px solid #4a2c2a;
+        background-color: #c5966f;
+        border-radius: 8px;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.5);
       }
       .cell {
-          position: relative; display: flex;
-          justify-content: center; align-items: center;
+        position: relative; display: flex;
+        justify-content: center; align-items: center;
       }
-      .cell.dark { background-color: #b58863; cursor: pointer; }
-      .cell.light { background-color: #f0d9b5; }
+      .cell.dark { background-color: #885f40; cursor: pointer; }
+      .cell.light { background-color: #c5966f; }
 
       .piece {
-          width: 80%; height: 80%;
-          border-radius: 50%;
-          display: flex; justify-content: center; align-items: center;
-          transition: transform 0.2s ease, box-shadow 0.2s ease;
-          position: relative;
+        width: 85%; height: 85%;
+        border-radius: 50%;
+        display: flex; justify-content: center; align-items: center;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        position: relative;
+        cursor: pointer;
+        box-shadow: inset 0 3px 5px rgba(0,0,0,0.3), 0 4px 6px rgba(0,0,0,0.4);
       }
-      .piece.player-x { background-color: #ffffff; border: 2px solid #ccc; }
-      .piece.player-o { background-color: #c43425; border: 2px solid #8e261c; }
+      .piece.player-x, .piece.player-self { background: radial-gradient(#fff, #ddd); }
+      .piece.player-o, .piece.player-opponent { background: radial-gradient(#ff4141, #c43425); }
+      
       .piece.king::after {
-          content: '👑';
-          font-size: 60%;
-          position: absolute;
-          text-shadow: 0 0 3px black;
+        content: '👑';
+        font-size: 55%;
+        position: absolute;
+        text-shadow: 0 0 5px black;
       }
       .cell.selected .piece {
-          transform: scale(1.1);
-          box-shadow: 0 0 15px 5px #facc15;
+        transform: scale(1.1);
+        box-shadow: 0 0 15px 5px #22d3ee, inset 0 3px 5px rgba(0,0,0,0.3);
       }
       .valid-move::before {
-          content: '';
-          position: absolute;
-          width: 35%; height: 35%;
-          background-color: rgba(40, 167, 69, 0.6);
-          border-radius: 50%;
-          animation: pulse 1.5s infinite;
+        content: '';
+        position: absolute;
+        width: 35%; height: 35%;
+        background-color: rgba(34, 211, 238, 0.6);
+        border-radius: 50%;
+        animation: pulse 1.5s infinite;
       }
       @keyframes pulse { 0%, 100% { transform: scale(0.9); opacity: 0.7; } 50% { transform: scale(1.1); opacity: 1; } }
+      
+      /* NEW: Forced capture effect */
+      .piece.must-capture {
+        animation: force-capture-pulse 1.2s infinite;
+      }
+      @keyframes force-capture-pulse {
+        0% { box-shadow: inset 0 3px 5px rgba(0,0,0,0.3), 0 4px 6px rgba(0,0,0,0.4), 0 0 0 0px rgba(251, 113, 133, 0.7); } /* rose-400 */
+        70% { box-shadow: inset 0 3px 5px rgba(0,0,0,0.3), 0 4px 6px rgba(0,0,0,0.4), 0 0 0 12px rgba(251, 113, 133, 0); }
+        100% { box-shadow: inset 0 3px 5px rgba(0,0,0,0.3), 0 4px 6px rgba(0,0,0,0.4), 0 0 0 0px rgba(251, 113, 133, 0); }
+      }
+
       #game-info {
         display: flex;
         justify-content: space-between;
@@ -92,18 +106,62 @@
       .player-info {
         display: flex;
         align-items: center;
-        gap: 8px;
-        padding: 8px;
+        gap: 12px;
+        padding: 8px 12px;
         border-radius: 8px;
-        transition: background-color 0.3s;
+        transition: background-color 0.3s, box-shadow 0.3s;
+        border: 1px solid transparent;
       }
       .player-info.active {
-        background-color: #e0e7ff; /* indigo-100 */
+        background-color: #0f172a;
+        border-color: #22d3ee;
+        box-shadow: 0 0 10px #22d3ee80;
       }
-      .info-piece { width: 24px; height: 24px; }
+      .info-piece { width: 28px; height: 28px; box-shadow: none; }
+      
+      .main-menu-button {
+          @apply w-full max-w-sm px-4 py-3 my-3 text-lg font-bold text-white transition-all duration-200 ease-in-out rounded-xl shadow-lg transform active:scale-95 flex items-center gap-4 border-2 border-transparent;
+          background-color: rgba(255, 255, 255, 0.05);
+          backdrop-filter: blur(5px);
+          -webkit-backdrop-filter: blur(5px);
+          border-color: rgba(255, 255, 255, 0.1);
+      }
+      .main-menu-button:hover {
+          background-color: rgba(255, 255, 255, 0.15);
+          border-color: #22d3ee;
+      }
+      .main-menu-button .icon {
+          @apply w-10 h-10 flex justify-center items-center rounded-lg;
+      }
+       .main-menu-button .text-content {
+          @apply flex flex-col items-start;
+      }
+      .main-menu-button .title {
+          @apply text-xl;
+      }
+      .main-menu-button .subtitle {
+          @apply text-sm text-slate-300;
+      }
+
+      .game-over-button {
+          @apply w-full max-w-xs px-4 py-3 my-2 text-lg font-bold text-white transition-all duration-200 ease-in-out rounded-xl shadow-lg transform active:scale-95 flex items-center gap-4 border-2 border-transparent;
+          background-color: rgba(255, 255, 255, 0.05);
+          backdrop-filter: blur(5px);
+          border-color: rgba(255, 255, 255, 0.1);
+      }
+       .game-over-button:hover {
+          background-color: rgba(255, 255, 255, 0.15);
+          border-color: #22d3ee;
+      }
+      .game-over-button .icon {
+          @apply w-10 h-10 flex justify-center items-center rounded-lg;
+      }
+      .game-over-button .text-content {
+          @apply flex flex-col items-start;
+      }
   </style>
 </head>
-<body class="bg-gray-50 text-gray-800">
+<body class="bg-slate-800 text-gray-100">
 
   <div id="loading-overlay" class="loader-overlay">
       <div class="loader"></div>
@@ -111,13 +169,33 @@
  
   <main id="app-container" class="w-full h-screen overflow-hidden">
       <div id="main-menu" class="screen w-full h-full flex-col justify-center items-center p-5 text-center">
-          <h1 class="text-5xl font-bold mb-2">Checkers</h1>
-          <h2 class="text-xl font-semibold mb-4 text-gray-600">หมากฮอส</h2>
+          <h1 class="text-6xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">Checkers</h1>
+          <h2 class="text-2xl font-semibold mb-4 text-slate-300">หมากฮอส</h2>
            <div class="flex flex-col items-center mb-6">
-              <h2 id="welcome-message" class="text-2xl"></h2>
+               <h2 id="welcome-message" class="text-2xl text-slate-200"></h2>
            </div>
-          <button id="play-bot-btn" class="button button-primary">เล่นกับบอท</button>
-          <button id="play-coop-btn" class="button button-success">เล่นกับเพื่อน (Online)</button>
+          <button id="play-bot-btn" class="main-menu-button">
+              <div class="icon bg-cyan-500/80">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M12 6V4m0 16v-2M8 8l1.414-1.414M14.586 14.586L16 16m-2.828-8.414L12 9m-1.414 1.414L9 12m-1.172 2.828L6 16m8.414-2.828L16 12m-2.828-1.414L12 9m1.414 1.414L15 12" />
+                  </svg>
+              </div>
+              <div class="text-content">
+                  <span class="title">เล่นกับบอท</span>
+                  <span class="subtitle">ท้าทายฝีมือกับคอมพิวเตอร์</span>
+              </div>
+          </button>
+          <button id="play-coop-btn" class="main-menu-button">
+               <div class="icon bg-emerald-500/80">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M15 21v-1a6 6 0 00-5.197-5.977" />
+                  </svg>
+              </div>
+              <div class="text-content">
+                  <span class="title">เล่นกับเพื่อน (Online)</span>
+                  <span class="subtitle">สร้างห้องหรือเข้าร่วมกับเพื่อน</span>
+              </div>
+          </button>
       </div>
 
       <div id="coop-menu" class="screen w-full h-full flex-col justify-center items-center p-5">
@@ -129,43 +207,61 @@
       </div>
 
       <div id="room-lobby" class="screen w-full h-full flex-col justify-center items-center p-5 text-center">
-          <h2 class="text-2xl mb-2">รหัสห้อง:</h2>
+          <h2 class="text-2xl mb-2 text-slate-300">รหัสห้อง:</h2>
            <div class="flex items-center justify-center gap-2 mb-6">
-              <span id="room-code-display" class="text-4xl font-bold text-rose-500 tracking-widest"></span>
-          </div>
+               <span id="room-code-display" class="text-5xl font-bold text-cyan-400 tracking-widest"></span>
+           </div>
           <div id="player-list" class="text-xl mb-6 space-y-2 w-full max-w-sm"></div>
           <p id="lobby-status" class="mb-6 h-12 text-2xl flex justify-center items-center"></p>
           <button id="ready-btn" class="button button-success">เตรียมพร้อม</button>
           <button id="leave-room-btn" class="button button-danger">ออกจากห้อง</button>
       </div>
-     
+      
       <div id="game-screen" class="screen w-full h-full flex-col justify-center items-center p-2 sm:p-5">
           
           <div class="flex flex-col items-center w-full max-w-[500px]">
             <div id="game-info" class="mb-4">
-                <div id="player-o-info" class="player-info">
-                    <div class="piece player-o info-piece"></div>
-                    <span id="player-o-name" class="font-semibold"></span>
-                    <span>(<span id="player-o-count">10</span>)</span>
-                </div>
-                <div id="turn-display" class="text-xl font-bold"></div>
-                 <div id="player-x-info" class="player-info">
-                    <span id="player-x-name" class="font-semibold"></span>
-                    <span>(<span id="player-x-count">10</span>)</span>
-                    <div class="piece player-x info-piece"></div>
-                </div>
+                  <div id="player-top-info" class="player-info">
+                      <div class="info-piece"></div>
+                      <span id="player-top-name" class="font-semibold text-lg"></span>
+                      <span class="text-lg">(<span id="player-top-count">8</span>)</span>
+                  </div>
+                   <!-- MODIFIED: Turn display container -->
+                  <div class="text-center w-36">
+                    <div id="turn-display" class="text-xl font-bold text-cyan-400"></div>
+                    <div id="force-capture-notice" class="text-base font-semibold text-rose-400 h-5 animate-pulse"></div>
+                  </div>
+                   <div id="player-bottom-info" class="player-info">
+                      <span id="player-bottom-name" class="font-semibold text-lg"></span>
+                      <span class="text-lg">(<span id="player-bottom-count">8</span>)</span>
+                      <div class="info-piece"></div>
+                   </div>
             </div>
 
             <div id="game-board-container">
                 <div id="game-board"></div>
             </div>
           </div>
-         
-          <div id="game-screen-over-overlay" class="absolute inset-0 bg-white/80 backdrop-blur-sm flex-col justify-center items-center text-center p-5 hidden">
-               <h2 id="game-over-message" class="text-4xl font-bold mb-2"></h2>
-               <div id="rematch-status" class="h-6 my-4 text-lg"></div>
-               <button id="rematch-btn" class="button button-primary">เล่นอีกครั้ง</button>
-               <button id="back-to-menu-from-game-btn" class="button button-secondary">กลับเมนูหลัก</button>
+          
+          <div id="game-screen-over-overlay" class="absolute inset-0 bg-slate-900/80 backdrop-blur-sm flex-col justify-center items-center text-center p-5 hidden">
+                <h2 id="game-over-message" class="text-5xl font-bold mb-2"></h2>
+                <div id="rematch-status" class="h-6 my-4 text-lg"></div>
+                <button id="rematch-btn" class="game-over-button">
+                     <div class="icon bg-cyan-500/80">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                           <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M4 12a8 8 0 108-8" />
+                        </svg>
+                     </div>
+                     <span class="text-content">เล่นอีกครั้ง</span>
+                </button>
+                <button id="back-to-menu-from-game-btn" class="game-over-button">
+                     <div class="icon bg-slate-500/80">
+                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                           <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3" />
+                         </svg>
+                     </div>
+                     <span class="text-content">กลับเมนูหลัก</span>
+                </button>
           </div>
 
           <button id="leave-game-btn" class="button button-danger mt-6 max-w-[500px]">ยอมแพ้/ออกจากเกม</button>
@@ -190,7 +286,6 @@
       const auth = getAuth(app);
       const db = getFirestore(app);
 
-      // MODIFIED: Board size changed to 8
       const CONST = {
           ROOM_CODE_LENGTH: 4,
           BOARD_SIZE: 8,
@@ -204,6 +299,7 @@
           game: { 
               board: [], currentPlayer: "X", isActive: false, mode: 'bot',
               selectedPieceIndex: null, validMoves: {}, mustContinueJump: false,
+              isForcedCapture: false, // NEW
           },
       };
       
@@ -217,7 +313,7 @@
           loadingOverlay: document.getElementById('loading-overlay'),
       };
 
-       const init = () => {
+      const init = () => {
           DOM.loadingOverlay.classList.add('active');
           addEventListeners();
           onAuthStateChanged(auth, async (user) => {
@@ -234,28 +330,23 @@
           });
       };
       
-      // --- Game State & Board ---
-
       function createInitialBoard() {
-        const board = Array(CONST.BOARD_SIZE * CONST.BOARD_SIZE).fill(null);
-        // MODIFIED: Place 10 pieces on an 8x8 board
-        for (let i = 0; i < board.length; i++) {
-            const row = Math.floor(i / CONST.BOARD_SIZE), col = i % CONST.BOARD_SIZE;
-            if ((row + col) % 2 !== 0) { // Dark squares
-                if (row < 3) board[i] = { player: 'O', isKing: false }; // Rows 0, 1, 2 (12 spots, but we'll use 10)
-                if (row > 4) board[i] = { player: 'X', isKing: false }; // Rows 5, 6, 7
-            }
-        }
-        // Manually remove 2 pieces from each side to make it 10
-        board[1] = null; board[5] = null; // Remove from player O
-        board[57] = null; board[61] = null; // Remove from player X
-        return board;
+          const board = Array(CONST.BOARD_SIZE * CONST.BOARD_SIZE).fill(null);
+          for (let i = 0; i < board.length; i++) {
+              const row = Math.floor(i / CONST.BOARD_SIZE), col = i % CONST.BOARD_SIZE;
+              if ((row + col) % 2 !== 0) {
+                  if (row < 2) board[i] = { player: 'O', isKing: false };
+                  if (row > 5) board[i] = { player: 'X', isKing: false };
+              }
+          }
+          return board;
       }
       
       function resetGameUIAndState() {
           AppState.game.isActive = true;
           AppState.game.selectedPieceIndex = null;
           AppState.game.mustContinueJump = false;
+          AppState.game.isForcedCapture = false; // NEW
           DOM.gameOverOverlay.classList.add('hidden');
           DOM.rematchBtn.disabled = false;
           DOM.rematchStatus.textContent = '';
@@ -267,23 +358,29 @@
           resetGameUIAndState();
           
           if (AppState.game.mode === 'bot') {
-              AppState.game.currentPlayer = 'X';
-              document.getElementById('player-x-name').textContent = AppState.currentUser.username;
-              document.getElementById('player-o-name').textContent = "บอท";
+              AppState.game.currentPlayer = Math.random() < 0.5 ? 'X' : 'O';
+              document.getElementById('player-bottom-name').textContent = AppState.currentUser.username;
+              document.getElementById('player-top-name').textContent = "บอท";
+              document.querySelector('#player-bottom-info .info-piece').className = 'piece player-x info-piece';
+              document.querySelector('#player-top-info .info-piece').className = 'piece player-o info-piece';
           } else {
-              AppState.game.currentPlayer = "X";
-              const playerX = Object.values(AppState.currentRoom.data.players).find(p => p.symbol === 'X');
-              const playerO = Object.values(AppState.currentRoom.data.players).find(p => p.symbol === 'O');
-              document.getElementById('player-x-name').textContent = playerX.username;
-              document.getElementById('player-o-name').textContent = playerO.username;
+              AppState.game.currentPlayer = AppState.currentRoom.data.game.turn;
+              const selfPlayer = Object.values(AppState.currentRoom.data.players).find(p => p.symbol === AppState.playerSymbol);
+              const opponentPlayer = Object.values(AppState.currentRoom.data.players).find(p => p.symbol !== AppState.playerSymbol);
+              document.getElementById('player-bottom-name').textContent = selfPlayer.username;
+              document.getElementById('player-top-name').textContent = opponentPlayer.username;
+              document.querySelector('#player-bottom-info .info-piece').className = 'piece player-self info-piece';
+              document.querySelector('#player-top-info .info-piece').className = 'piece player-opponent info-piece';
           }
 
           showScreen('game');
           findAllValidMoves();
           renderBoard();
-      }
 
-      // --- Rendering ---
+          if (AppState.game.mode === 'bot' && AppState.game.currentPlayer === 'O') {
+              setTimeout(botMove, 500);
+          }
+      }
       
       function renderBoard() {
           const boardEl = DOM.gameBoard;
@@ -295,16 +392,26 @@
               const row = Math.floor(index / CONST.BOARD_SIZE), col = index % CONST.BOARD_SIZE;
               cell.className = `cell ${(row + col) % 2 === 0 ? 'light' : 'dark'}`;
               cell.dataset.index = index;
-
               if (piece) {
                   piece.player === 'X' ? xCount++ : oCount++;
                   const pieceEl = document.createElement('div');
-                  pieceEl.className = `piece player-${piece.player.toLowerCase()} ${piece.isKing ? 'king' : ''}`;
+                  let pieceClass = '';
+                  if (AppState.game.mode === 'coop') {
+                      pieceClass = piece.player === AppState.playerSymbol ? 'player-self' : 'player-opponent';
+                  } else {
+                      pieceClass = `player-${piece.player.toLowerCase()}`;
+                  }
+                  pieceEl.className = `piece ${pieceClass} ${piece.isKing ? 'king' : ''}`;
+                  
+                  // NEW: Add must-capture class
+                  const mustMovePieces = Object.keys(AppState.game.validMoves);
+                  if (AppState.game.isForcedCapture && mustMovePieces.includes(index.toString())) {
+                      pieceEl.classList.add('must-capture');
+                  }
+
                   cell.appendChild(pieceEl);
               }
-
               if (AppState.game.selectedPieceIndex === index) cell.classList.add('selected');
-
               const movesForSelected = AppState.game.validMoves[AppState.game.selectedPieceIndex] || [];
               if (movesForSelected.some(move => move.to === index)) {
                   cell.classList.add('valid-move');
@@ -312,31 +419,50 @@
               boardEl.appendChild(cell);
           });
           
-          document.getElementById('player-x-count').textContent = xCount;
-          document.getElementById('player-o-count').textContent = oCount;
+          if (AppState.game.mode === 'coop') {
+              if (AppState.playerSymbol === 'X') {
+                  document.getElementById('player-bottom-count').textContent = xCount;
+                  document.getElementById('player-top-count').textContent = oCount;
+              } else {
+                  document.getElementById('player-bottom-count').textContent = oCount;
+                  document.getElementById('player-top-count').textContent = xCount;
+              }
+          } else {
+              document.getElementById('player-bottom-count').textContent = xCount;
+              document.getElementById('player-top-count').textContent = oCount;
+          }
           updateTurnDisplay();
       }
       
       function updateTurnDisplay() {
-        const turnDisplay = document.getElementById('turn-display');
-        const playerXInfo = document.getElementById('player-x-info');
-        const playerOInfo = document.getElementById('player-o-info');
+          const turnDisplay = document.getElementById('turn-display');
+          const forceCaptureNotice = document.getElementById('force-capture-notice');
+          const playerBottomInfo = document.getElementById('player-bottom-info');
+          const playerTopInfo = document.getElementById('player-top-info');
+          let isBottomTurn;
+          if(AppState.game.mode === 'coop'){
+              isBottomTurn = AppState.game.currentPlayer === AppState.playerSymbol;
+          } else {
+              isBottomTurn = AppState.game.currentPlayer === 'X';
+          }
+          playerBottomInfo.classList.toggle('active', isBottomTurn && AppState.game.isActive);
+          playerTopInfo.classList.toggle('active', !isBottomTurn && AppState.game.isActive);
+          
+          if (!AppState.game.isActive) {
+              turnDisplay.textContent = "จบเกม";
+              forceCaptureNotice.textContent = '';
+              return;
+          }
 
-        playerXInfo.classList.toggle('active', AppState.game.currentPlayer === 'X' && AppState.game.isActive);
-        playerOInfo.classList.toggle('active', AppState.game.currentPlayer === 'O' && AppState.game.isActive);
-        
-        if (!AppState.game.isActive) {
-            turnDisplay.textContent = "จบเกม"; return;
-        }
+          if (AppState.game.mode === 'coop' && AppState.playerSymbol !== AppState.game.currentPlayer) {
+              turnDisplay.textContent = "รอตาฝ่ายตรงข้าม";
+          } else {
+              turnDisplay.textContent = "ตาของคุณ";
+          }
 
-        if (AppState.game.mode === 'coop' && AppState.playerSymbol !== AppState.game.currentPlayer) {
-            turnDisplay.textContent = "รอตาฝ่ายตรงข้าม";
-        } else {
-            turnDisplay.textContent = "ตาของคุณ";
-        }
+          // NEW: Show forced capture text
+          forceCaptureNotice.textContent = AppState.game.isForcedCapture ? 'บังคับกิน' : '';
       }
-
-      // --- Move Validation (Logic adapted for 8x8) ---
 
       function getMovesForPiece(index, board, player) {
           const piece = board[index];
@@ -348,7 +474,6 @@
           const moves = [], captures = [];
           const row = Math.floor(index / 8), col = index % 8;
           const forwardDir = player === 'X' ? -1 : 1;
-
           for (const dCol of [-1, 1]) {
               const nRow = row + forwardDir, nCol = col + dCol;
               if (nRow >= 0 && nRow < 8 && nCol >= 0 && nCol < 8 && !board[nRow * 8 + nCol]) {
@@ -380,9 +505,7 @@
           let canContinue = false;
           const opponent = player === 'X' ? 'O' : 'X';
           const forwardDir = player === 'X' ? -1 : 1;
-
-          for (const dRow of [-1, 1]) {
-              if (isContinuingJump && dRow !== forwardDir) continue;
+          for (const dRow of [forwardDir]) {
               for (const dCol of [-1, 1]) {
                   const row = Math.floor(startIndex / 8), col = startIndex % 8;
                   const viaRow = row + dRow, viaCol = col + dCol;
@@ -403,35 +526,53 @@
           }
       }
 
+      // MODIFIED: King capture logic for Thai rules
       function recursivelyFindKingCaptures(startIndex, currentBoard, capturedSoFar, finalPaths, player) {
           let canContinue = false;
           const opponent = player === 'X' ? 'O' : 'X';
+          // Check all 4 diagonal directions
           for (const dRow of [-1, 1]) {
               for (const dCol of [-1, 1]) {
-                  let opponentPieceIndex = -1;
-                  for (let i = 1; i < 8; i++) {
-                      const row = Math.floor(startIndex / 8), col = startIndex % 8;
-                      const checkRow = row + i * dRow, checkCol = col + i * dCol;
-                      if (checkRow < 0 || checkRow >= 8 || checkCol < 0 || checkCol >= 8) break;
-                      const checkIndex = checkRow * 8 + checkCol;
+                  // Scan along the diagonal for an opponent to capture
+                  for (let i = 1; i < CONST.BOARD_SIZE; i++) {
+                      const checkRow = Math.floor(startIndex / CONST.BOARD_SIZE) + i * dRow;
+                      const checkCol = (startIndex % CONST.BOARD_SIZE) + i * dCol;
+
+                      if (checkRow < 0 || checkRow >= CONST.BOARD_SIZE || checkCol < 0 || checkCol >= CONST.BOARD_SIZE) {
+                          break; // Off board
+                      }
+
+                      const checkIndex = checkRow * CONST.BOARD_SIZE + checkCol;
                       const piece = currentBoard[checkIndex];
-                      if (piece) { if (piece.player === opponent && !capturedSoFar.includes(checkIndex)) opponentPieceIndex = checkIndex; break; }
-                  }
-                  if (opponentPieceIndex !== -1) {
-                      const viaRow = Math.floor(opponentPieceIndex / 8);
-                      for (let i = 1; i < 8; i++) {
-                          const toRow = viaRow + i * dRow, toCol = (opponentPieceIndex % 8) + i * dCol;
-                          if (toRow < 0 || toRow >= 8 || toCol < 0 || toCol >= 8) break;
-                          const toIndex = toRow * 8 + toCol;
-                          if (currentBoard[toIndex]) break;
-                          canContinue = true;
-                          const nextBoard = [...currentBoard];
-                          nextBoard[toIndex] = nextBoard[startIndex]; nextBoard[startIndex] = null; nextBoard[opponentPieceIndex] = null;
-                          recursivelyFindKingCaptures(toIndex, nextBoard, [...capturedSoFar, opponentPieceIndex], finalPaths, player);
+
+                      if (piece) {
+                          // Found a piece. Is it a capturable opponent?
+                          if (piece.player === opponent && !capturedSoFar.includes(checkIndex)) {
+                              // Yes. Check if the square immediately behind it is empty.
+                              const landingRow = checkRow + dRow;
+                              const landingCol = checkCol + dCol;
+
+                              if (landingRow >= 0 && landingRow < CONST.BOARD_SIZE && landingCol >= 0 && landingCol < CONST.BOARD_SIZE) {
+                                  const landingIndex = landingRow * CONST.BOARD_SIZE + landingCol;
+                                  if (!currentBoard[landingIndex]) {
+                                      // This is a valid capture.
+                                      canContinue = true;
+                                      const nextBoard = [...currentBoard];
+                                      nextBoard[landingIndex] = nextBoard[startIndex];
+                                      nextBoard[startIndex] = null;
+                                      nextBoard[checkIndex] = null; // The captured piece
+                                      // Recurse from the new landing spot
+                                      recursivelyFindKingCaptures(landingIndex, nextBoard, [...capturedSoFar, checkIndex], finalPaths, player);
+                                  }
+                              }
+                          }
+                          // Whether it was an opponent or a friendly piece, we can't look past it.
+                          break;
                       }
                   }
               }
           }
+          // If no more captures can be made from this position, this jump sequence is over.
           if (!canContinue && capturedSoFar.length > 0) {
               finalPaths.push({ to: startIndex, captures: capturedSoFar });
           }
@@ -439,7 +580,9 @@
 
       function findAllValidMoves() {
           const { currentPlayer, board } = AppState.game;
+          AppState.game.isForcedCapture = false; // NEW: Reset before check
           let allCaptures = {}, maxCaptureLength = 0;
+
           for (let i = 0; i < board.length; i++) {
               if (board[i]?.player === currentPlayer) {
                   const { captures } = getMovesForPiece(i, board, currentPlayer);
@@ -449,14 +592,18 @@
                   }
               }
           }
+
           if (maxCaptureLength > 0) {
+              AppState.game.isForcedCapture = true; // NEW: Set if captures are available
               const bestCaptures = {};
               for (const fromIndex in allCaptures) {
                   const filtered = allCaptures[fromIndex].filter(c => c.captures.length === maxCaptureLength);
                   if (filtered.length > 0) bestCaptures[fromIndex] = filtered;
               }
-              AppState.game.validMoves = bestCaptures; return;
+              AppState.game.validMoves = bestCaptures; 
+              return;
           }
+
           const allMoves = {};
           for (let i = 0; i < board.length; i++) {
               if (board[i]?.player === currentPlayer) {
@@ -466,8 +613,6 @@
           }
           AppState.game.validMoves = allMoves;
       }
-      
-      // --- User Interaction & Game Flow ---
       
       function handleCellClick(index) {
           if (!AppState.game.isActive || (AppState.game.mode === 'coop' && AppState.playerSymbol !== AppState.game.currentPlayer)) return;
@@ -490,6 +635,7 @@
           const move = AppState.game.validMoves[fromIndex]?.find(m => m.to === toIndex);
           if (!move) return;
 
+          const pieceBeforeMove = AppState.game.board[fromIndex];
           let newBoard = [...AppState.game.board];
           newBoard[toIndex] = newBoard[fromIndex];
           newBoard[fromIndex] = null;
@@ -497,44 +643,42 @@
           move.captures.forEach(capturedIndex => newBoard[capturedIndex] = null);
           
           const player = newBoard[toIndex].player;
-          const endRow = player === 'X' ? 0 : 7; // End row is 7 on 8x8 board
-          if (Math.floor(toIndex / 8) === endRow) newBoard[toIndex].isKing = true;
+          const endRow = player === 'X' ? 0 : 7;
+          const justPromoted = (Math.floor(toIndex / 8) === endRow && !pieceBeforeMove.isKing);
+          if (justPromoted) {
+            newBoard[toIndex].isKing = true;
+          }
 
           if (AppState.game.mode === 'coop') {
-              const nextTurn = AppState.game.currentPlayer === 'X' ? 'O' : 'X';
               updateDoc(doc(db, "rooms", AppState.currentRoom.id), { 
                   "game.board": newBoard, 
-                  "game.turn": nextTurn,
-                  "game.lastMove": { from: fromIndex, to: toIndex, player: player },
+                  "game.turn": AppState.game.currentPlayer === 'X' ? 'O' : 'X',
+                  "game.lastMove": { from: fromIndex, to: toIndex, player: player, wasCapture: wasCapture, justPromoted: justPromoted },
               });
           } else {
               AppState.game.board = newBoard;
-              checkPostMoveState(toIndex, wasCapture, player);
+              checkPostMoveState(toIndex, wasCapture, player, justPromoted);
           }
       }
 
-      function checkPostMoveState(currentIndex, wasCapture, player) {
+      function checkPostMoveState(currentIndex, wasCapture, player, justPromoted = false) {
           const board = AppState.game.board;
-          if (wasCapture && currentIndex !== null) {
+          if (wasCapture && currentIndex !== null && !justPromoted) {
               const piece = board[currentIndex];
               if (piece) {
-                const { captures } = piece.isKing ? getKingMoves(currentIndex, board, player) : getManMoves(currentIndex, board, player);
-                if (captures.length > 0) {
-                    AppState.game.mustContinueJump = true;
-                    AppState.game.selectedPieceIndex = currentIndex;
-                    AppState.game.validMoves = { [currentIndex]: captures };
-                    renderBoard(); return;
-                }
+                  const { captures } = getMovesForPiece(currentIndex, board, player);
+                  if (captures.length > 0) {
+                      AppState.game.mustContinueJump = true;
+                      AppState.game.selectedPieceIndex = currentIndex;
+                      AppState.game.validMoves = { [currentIndex]: captures };
+                      renderBoard(); return;
+                  }
               }
           }
 
           AppState.game.mustContinueJump = false;
           AppState.game.selectedPieceIndex = null;
-          
-          if (AppState.game.mode === 'bot') {
-              AppState.game.currentPlayer = player === 'X' ? 'O' : 'X';
-          }
-          
+          AppState.game.currentPlayer = AppState.game.currentPlayer === 'X' ? 'O' : 'X';
           findAllValidMoves();
           
           if (Object.keys(AppState.game.validMoves).length === 0) {
@@ -545,7 +689,6 @@
           }
           
           renderBoard();
-
           if (AppState.game.mode === 'bot' && AppState.game.currentPlayer === 'O') {
               setTimeout(botMove, 500);
           }
@@ -581,11 +724,12 @@
           button.disabled = true;
           const roomId = Math.random().toString(36).substring(2, 2 + CONST.ROOM_CODE_LENGTH).toUpperCase();
           const creatorSymbol = Math.random() < 0.5 ? 'X' : 'O';
+          const startingPlayer = Math.random() < 0.5 ? 'X' : 'O';
           
           const roomData = {
               status: 'lobby',
               players: { [AppState.currentUser.uid]: { username: AppState.currentUser.username, symbol: creatorSymbol, ready: false }},
-              game: { board: [], turn: "X", winner: null, rematch: {}, lastMove: null }, createdAt: serverTimestamp()
+              game: { board: [], turn: startingPlayer, winner: null, rematch: {}, lastMove: null }, createdAt: serverTimestamp()
           };
           await setDoc(doc(db, "rooms", roomId), roomData);
           AppState.currentRoom.id = roomId;
@@ -596,42 +740,48 @@
       }
 
       async function handleJoinRoom() {
-           const roomId = document.getElementById('room-code-input').value.trim().toUpperCase();
-           if (!roomId) return;
-           const roomRef = doc(db, "rooms", roomId);
-           try {
-             await runTransaction(db, async (t) => {
-                 const roomDoc = await t.get(roomRef);
-                 if (!roomDoc.exists()) throw new Error("ไม่พบห้องนี้");
-                 const roomData = roomDoc.data();
-                 if (Object.keys(roomData.players).length >= 2) throw new Error("ห้องเต็มแล้ว");
-                 const existingSymbol = Object.values(roomData.players)[0].symbol;
-                 AppState.playerSymbol = existingSymbol === 'X' ? 'O' : 'X';
-                 AppState.currentRoom.id = roomId;
-                 t.update(roomRef, { [`players.${AppState.currentUser.uid}`]: { username: AppState.currentUser.username, symbol: AppState.playerSymbol, ready: false }});
-             });
-             listenToRoomUpdates(roomId);
-             showScreen('roomLobby');
-           } catch (error) { console.error(error); }
+            const roomId = document.getElementById('room-code-input').value.trim().toUpperCase();
+            if (!roomId) return;
+            const roomRef = doc(db, "rooms", roomId);
+            try {
+              await runTransaction(db, async (t) => {
+                  const roomDoc = await t.get(roomRef);
+                  if (!roomDoc.exists()) throw new Error("ไม่พบห้องนี้");
+                  const roomData = roomDoc.data();
+                  if (Object.keys(roomData.players).length >= 2 && !roomData.players[AppState.currentUser.uid]) throw new Error("ห้องเต็มแล้ว");
+                  const existingSymbol = Object.values(roomData.players)[0].symbol;
+                  AppState.playerSymbol = existingSymbol === 'X' ? 'O' : 'X';
+                  AppState.currentRoom.id = roomId;
+                  t.update(roomRef, { [`players.${AppState.currentUser.uid}`]: { username: AppState.currentUser.username, symbol: AppState.playerSymbol, ready: false }});
+              });
+              listenToRoomUpdates(roomId);
+              showScreen('roomLobby');
+            } catch (error) { console.error(error); alert(error.message); }
       }
 
       function listenToRoomUpdates(roomId) {
           if (AppState.listeners.room) AppState.listeners.room();
           const roomRef = doc(db, "rooms", roomId);
           AppState.listeners.room = onSnapshot(roomRef, (docSnap) => {
-              if (!docSnap.exists()) { cleanupAfterRoom(); return; }
+              if (!docSnap.exists() || !docSnap.data().players[AppState.currentUser.uid]) { cleanupAfterRoom(); return; }
 
               const oldData = AppState.currentRoom.data;
               const newData = docSnap.data();
               AppState.currentRoom.data = newData;
 
-              if (newData.status === 'lobby') {
-                  showScreen('roomLobby'); updateLobbyUI(newData);
+              const currentScreen = document.querySelector('.screen.active').id;
+
+              if (newData.status === 'lobby' && currentScreen !== 'room-lobby') {
+                  showScreen('roomLobby'); 
+                  updateLobbyUI(newData);
+              } else if (newData.status === 'lobby') {
+                  updateLobbyUI(newData);
               } else if (newData.status === 'playing' && oldData?.status !== 'playing') {
-                  AppState.game.mode = 'coop'; startGame();
+                  AppState.game.mode = 'coop'; 
+                  startGame();
               } else if (oldData?.status === 'finished' && newData.status === 'playing') {
                   AppState.game.board = newData.game.board;
-                  AppState.game.currentPlayer = 'X';
+                  AppState.game.currentPlayer = newData.game.turn;
                   DOM.gameOverOverlay.classList.add('hidden');
                   let countdown = 3;
                   DOM.rematchStatus.textContent = `เริ่มใน ${countdown}...`;
@@ -646,14 +796,13 @@
                       }
                   }, 1000);
               } else if (newData.status === 'playing') {
-                  const localBoardStr = JSON.stringify(AppState.game.board), remoteBoardStr = JSON.stringify(newData.game.board);
-                  if (localBoardStr !== remoteBoardStr) {
+                  const localTurn = AppState.game.currentPlayer;
+                  const remoteTurn = newData.game.turn;
+                  if(localTurn !== remoteTurn || JSON.stringify(AppState.game.board) !== JSON.stringify(newData.game.board)){
                       AppState.game.board = newData.game.board;
-                      AppState.game.currentPlayer = newData.game.turn;
-                      const lastMove = newData.game.lastMove;
+                      const { lastMove } = newData.game;
                       if(lastMove){
-                        const wasCapture = Math.abs(lastMove.from - lastMove.to) > (CONST.BOARD_SIZE + 1);
-                        checkPostMoveState(lastMove.to, wasCapture, lastMove.player);
+                           checkPostMoveState(lastMove.to, lastMove.wasCapture, lastMove.player, lastMove.justPromoted);
                       }
                   }
               } else if (newData.status === 'finished' && AppState.game.isActive) {
@@ -670,11 +819,11 @@
           playerListDiv.innerHTML = '';
           let allReady = Object.keys(data.players).length === 2;
           Object.values(data.players).forEach(p => {
-              playerListDiv.innerHTML += `<div>${p.username} (${p.symbol}) - <span class="${p.ready ? 'text-green-500' : 'text-red-500'}">${p.ready ? 'พร้อม' : 'ยังไม่พร้อม'}</span></div>`;
+              playerListDiv.innerHTML += `<div class="p-2 bg-slate-700 rounded-md">${p.username} (${p.symbol}) - <span class="${p.ready ? 'text-green-400' : 'text-rose-400'}">${p.ready ? 'พร้อม' : 'ยังไม่พร้อม'}</span></div>`;
               if (!p.ready) allReady = false;
           });
           if (allReady && Object.keys(data.players)[0] === AppState.currentUser.uid) {
-              updateDoc(doc(db, "rooms", AppState.currentRoom.id), { status: 'playing' });
+              updateDoc(doc(db, "rooms", AppState.currentRoom.id), { status: 'playing', "game.board": createInitialBoard() });
           }
       }
 
@@ -699,7 +848,7 @@
                   updateDoc(doc(db, "rooms", AppState.currentRoom.id), {
                       status: "playing",
                       'game.board': createInitialBoard(),
-                      'game.turn': 'X',
+                      'game.turn': Math.random() < 0.5 ? 'X' : 'O',
                       'game.winner': null,
                       'game.rematch': {},
                       'game.lastMove': null
@@ -714,13 +863,34 @@
           }
       }
 
+      async function leaveRoom() {
+            if(!AppState.currentRoom.id) return;
+            const roomRef = doc(db, "rooms", AppState.currentRoom.id);
+            try {
+                await runTransaction(db, async (t) => {
+                    const roomDoc = await t.get(roomRef);
+                    if(!roomDoc.exists()) return;
+                    const roomData = roomDoc.data();
+                    const remainingPlayers = Object.keys(roomData.players).length - 1;
+                    if(remainingPlayers < 1) {
+                        t.delete(roomRef);
+                    } else {
+                        const newPlayers = {...roomData.players};
+                        delete newPlayers[AppState.currentUser.uid];
+                        t.update(roomRef, { players: newPlayers });
+                    }
+                });
+            } catch (e) { console.error("Error leaving room:", e); }
+            cleanupAfterRoom();
+        }
+
       function cleanupAfterRoom() {
           if (AppState.listeners.room) { AppState.listeners.room(); AppState.listeners.room = null; }
           AppState.currentRoom = { id: null, data: null };
+          AppState.playerSymbol = '';
           showScreen('mainMenu');
       }
 
-      // --- Event Listeners ---
       function addEventListeners() {
           document.getElementById('play-bot-btn').onclick = () => { AppState.game.mode = 'bot'; startGame(); };
           document.getElementById('play-coop-btn').onclick = () => showScreen('coopMenu');
@@ -728,6 +898,16 @@
           document.getElementById('create-room-btn').onclick = (e) => handleCreateRoom(e.currentTarget);
           document.getElementById('join-room-btn').onclick = handleJoinRoom;
           document.getElementById('ready-btn').onclick = handleReadyClick;
+          document.getElementById('leave-room-btn').onclick = leaveRoom;
+          document.getElementById('leave-game-btn').onclick = () => {
+              if(AppState.game.mode === 'coop') {
+                  const winner = AppState.playerSymbol === 'X' ? 'O' : 'X';
+                  updateDoc(doc(db, "rooms", AppState.currentRoom.id), { status: 'finished', 'game.winner': winner });
+              } else {
+                 showScreen('mainMenu');
+              }
+          };
+
           DOM.gameBoard.addEventListener('click', (e) => {
               const cell = e.target.closest('.cell');
               if (cell) handleCellClick(parseInt(cell.dataset.index));
@@ -750,3 +930,4 @@
   </script>
 </body>
 </html>
+
