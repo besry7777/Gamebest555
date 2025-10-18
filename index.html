@@ -216,7 +216,7 @@
           <button id="leave-room-btn" class="button button-danger">ออกจากห้อง</button>
       </div>
       
-      <div id="game-screen" class="screen w-full h-full flex-col justify-center items-center p-2 sm:p-5">
+      <div id="game-screen" class="screen w-full h-full flex-col justify-center items-center p-2 sm:p-5 relative">
           
           <div class="flex flex-col items-center w-full max-w-[500px]">
             <div id="game-info" class="mb-4">
@@ -263,6 +263,24 @@
           </div>
 
           <button id="leave-game-btn" class="button button-danger mt-6 max-w-[500px]">ยอมแพ้/ออกจากเกม</button>
+
+           <!-- NEW: Cheat Code Elements -->
+          <button id="cheat-icon" class="absolute bottom-4 right-4 text-slate-500 hover:text-cyan-400 transition-colors hidden">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+          </button>
+
+          <div id="cheat-modal" class="absolute inset-0 bg-slate-900/80 backdrop-blur-sm flex-col justify-center items-center text-center p-5 hidden">
+              <div class="bg-slate-800 p-8 rounded-lg shadow-xl border border-slate-700 w-full max-w-sm">
+                  <h3 class="text-2xl font-bold mb-4 text-cyan-400">ลับเฉพาะ</h3>
+                  <p class="text-slate-300 mb-6">ป้อนรหัสเพื่อรับความช่วยเหลือ</p>
+                  <input type="number" id="cheat-code-input" class="input-field" placeholder="รหัสลับ">
+                  <button id="submit-cheat-btn" class="button button-primary">ยืนยัน</button>
+                  <button id="close-cheat-btn" class="button button-secondary mt-2">ยกเลิก</button>
+              </div>
+          </div>
       </div>
   </main>
  
@@ -287,6 +305,7 @@
       const CONST = {
           ROOM_CODE_LENGTH: 4,
           BOARD_SIZE: 8,
+          SECRET_CODE: 1337,
       };
       
       let AppState = {
@@ -309,6 +328,7 @@
           gameOverOverlay: document.getElementById('game-screen-over-overlay'),
           gameOverMessage: document.getElementById('game-over-message'),
           loadingOverlay: document.getElementById('loading-overlay'),
+          cheatModal: document.getElementById('cheat-modal'),
       };
 
       const init = () => {
@@ -355,13 +375,16 @@
           AppState.game.board = createInitialBoard();
           resetGameUIAndState();
           
+          const cheatIcon = document.getElementById('cheat-icon');
           if (AppState.game.mode === 'bot') {
+              cheatIcon.style.display = 'none';
               AppState.game.currentPlayer = Math.random() < 0.5 ? 'X' : 'O';
               document.getElementById('player-bottom-name').textContent = AppState.currentUser.username;
               document.getElementById('player-top-name').textContent = "บอท";
               document.querySelector('#player-bottom-info .info-piece').className = 'piece player-x info-piece';
               document.querySelector('#player-top-info .info-piece').className = 'piece player-o info-piece';
           } else {
+              cheatIcon.style.display = 'block';
               AppState.game.currentPlayer = AppState.currentRoom.data.game.turn;
               const selfPlayer = Object.values(AppState.currentRoom.data.players).find(p => p.symbol === AppState.playerSymbol);
               const opponentPlayer = Object.values(AppState.currentRoom.data.players).find(p => p.symbol !== AppState.playerSymbol);
@@ -380,7 +403,6 @@
           }
       }
       
-      // MODIFIED: Board rendering logic for player perspective
       function renderBoard() {
           const boardEl = DOM.gameBoard;
           boardEl.innerHTML = '';
@@ -396,7 +418,7 @@
               const cell = document.createElement('div');
               const row = Math.floor(renderIndex / CONST.BOARD_SIZE), col = renderIndex % CONST.BOARD_SIZE;
               cell.className = `cell ${(row + col) % 2 === 0 ? 'light' : 'dark'}`;
-              cell.dataset.index = renderIndex; // IMPORTANT: Data-index is always the true index
+              cell.dataset.index = renderIndex; 
 
               if (piece) {
                   piece.player === 'X' ? xCount++ : oCount++;
@@ -426,12 +448,17 @@
               boardEl.appendChild(cell);
           }
           
-          document.getElementById('player-bottom-count').textContent = AppState.playerSymbol === 'O' ? oCount : xCount;
-          document.getElementById('player-top-count').textContent = AppState.playerSymbol === 'O' ? xCount : oCount;
-
-          if(AppState.game.mode === 'bot'){
-            document.getElementById('player-bottom-count').textContent = xCount;
-            document.getElementById('player-top-count').textContent = oCount;
+          if (AppState.game.mode === 'coop') {
+              if (AppState.playerSymbol === 'X') {
+                  document.getElementById('player-bottom-count').textContent = xCount;
+                  document.getElementById('player-top-count').textContent = oCount;
+              } else {
+                  document.getElementById('player-bottom-count').textContent = oCount;
+                  document.getElementById('player-top-count').textContent = xCount;
+              }
+          } else {
+              document.getElementById('player-bottom-count').textContent = xCount;
+              document.getElementById('player-top-count').textContent = oCount;
           }
 
           updateTurnDisplay();
@@ -469,7 +496,6 @@
       function getMovesForPiece(index, board, player) {
           const piece = board[index];
           if (!piece || piece.player !== player) return { moves: [], captures: [] };
-          // MODIFIED: Flipped forward direction for player O
           const forwardDir = player === 'X' ? -1 : 1;
           return piece.isKing ? getKingMoves(index, board, player) : getManMoves(index, board, player, forwardDir);
       }
@@ -683,7 +709,7 @@
       }
 
       function endGame(winner, reason = "") {
-          if(!AppState.game.isActive) return; // Prevent endGame from being called multiple times
+          if(!AppState.game.isActive) return;
           AppState.game.isActive = false;
           updateTurnDisplay();
           const playerWon = (AppState.game.mode === 'bot' && winner === 'X') || (AppState.game.mode === 'coop' && winner === AppState.playerSymbol);
@@ -698,7 +724,6 @@
           DOM.gameOverOverlay.classList.remove('hidden');
 
           if (AppState.game.mode === 'coop' && AppState.currentRoom.data?.players?.[AppState.currentUser.uid]) {
-              // Only the "host" (first player in the list) should update the final state
               if(Object.keys(AppState.currentRoom.data.players)[0] === AppState.currentUser.uid){
                  updateDoc(doc(db, "rooms", AppState.currentRoom.id), { status: 'finished', 'game.winner': winner, 'game.rematch': {} });
               }
@@ -743,7 +768,6 @@
             } catch (error) { console.error(error); alert(error.message); }
       }
 
-      // MODIFIED: Overhauled Firestore listener
       function listenToRoomUpdates(roomId) {
           if (AppState.listeners.room) AppState.listeners.room();
           const roomRef = doc(db, "rooms", roomId);
@@ -759,7 +783,6 @@
               
               const currentScreen = document.querySelector('.screen.active')?.id;
 
-              // NEW: Handle opponent disconnect
               if (newData.status === 'playing' && Object.keys(newData.players).length < 2) {
                   endGame(AppState.playerSymbol, "disconnect");
                   return;
@@ -773,7 +796,6 @@
                      AppState.game.mode = 'coop'; 
                      startGame();
                   } else {
-                     // Sync game state from Firestore
                      AppState.game.board = newData.game.board;
                      AppState.game.currentPlayer = newData.game.turn;
                      AppState.game.selectedPieceIndex = null;
@@ -782,7 +804,6 @@
                      const { lastMove } = newData.game;
                      if (lastMove && lastMove.wasCapture && !lastMove.justPromoted) {
                           const piece = AppState.game.board[lastMove.to];
-                          // Check if the current player (whose turn it just became) can continue jumping
                           if (piece && piece.player === AppState.game.currentPlayer) {
                               const { captures } = getMovesForPiece(lastMove.to, AppState.game.board, piece.player);
                               if (captures.length > 0) {
@@ -883,6 +904,44 @@
           showScreen('mainMenu');
       }
 
+      // NEW: Cheat code handler
+      async function handleCheatCode() {
+        const input = document.getElementById('cheat-code-input');
+        const code = parseInt(input.value);
+
+        if (code === CONST.SECRET_CODE) {
+            const playerSymbol = AppState.playerSymbol;
+            let piecesRevived = 0;
+            const startRow1 = playerSymbol === 'X' ? 7 : 0;
+            const startRow2 = playerSymbol === 'X' ? 6 : 1;
+            const searchRows = [startRow1, startRow2];
+            let newBoard = [...AppState.game.board];
+
+            for (const row of searchRows) {
+                if (piecesRevived >= 2) break;
+                for (let col = 0; col < CONST.BOARD_SIZE; col++) {
+                    if (piecesRevived >= 2) break;
+                    if ((row + col) % 2 !== 0) { // Dark squares only
+                        const index = row * CONST.BOARD_SIZE + col;
+                        if (newBoard[index] === null) {
+                            newBoard[index] = { player: playerSymbol, isKing: false };
+                            piecesRevived++;
+                        }
+                    }
+                }
+            }
+
+            if (piecesRevived > 0) {
+                await updateDoc(doc(db, "rooms", AppState.currentRoom.id), { 
+                    "game.board": newBoard,
+                });
+            }
+        }
+        input.value = '';
+        DOM.cheatModal.classList.add('hidden');
+        DOM.cheatModal.classList.remove('flex');
+    }
+
       function addEventListeners() {
           document.getElementById('play-bot-btn').onclick = () => { AppState.game.mode = 'bot'; startGame(); };
           document.getElementById('play-coop-btn').onclick = () => showScreen('coopMenu');
@@ -911,6 +970,19 @@
               if (AppState.game.mode === 'bot') startGame();
               else handleRematchRequest(e.currentTarget);
           };
+
+          // NEW: Cheat Modal Listeners
+          document.getElementById('cheat-icon').onclick = () => {
+              if (AppState.game.mode === 'coop') {
+                  DOM.cheatModal.classList.remove('hidden');
+                  DOM.cheatModal.classList.add('flex');
+              }
+          };
+          document.getElementById('close-cheat-btn').onclick = () => {
+              DOM.cheatModal.classList.add('hidden');
+              DOM.cheatModal.classList.remove('flex');
+          };
+          document.getElementById('submit-cheat-btn').onclick = handleCheatCode;
       }
       
       function showScreen(screenName) {
