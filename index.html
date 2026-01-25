@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>PARTY GAME: ONLY GAMES EDITION</title>
+<title>PARTY GAME: FULL MINI-GAMES</title>
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;800&display=swap" rel="stylesheet">
 <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 
@@ -158,7 +158,6 @@ h1 {
     border-radius: 20px; padding: 4px 10px; font-size: 0.7rem; cursor: pointer;
 }
 
-/* Mini Games Area */
 #special-game-area {
     margin-top: 15px;
     width: 100%;
@@ -203,7 +202,6 @@ h1 {
     margin: 10px 0;
 }
 
-/* Wire Buttons for Bomb Game */
 .wire-container {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -218,7 +216,6 @@ h1 {
     transition: all 0.2s;
 }
 
-/* Modal History */
 .modal-overlay {
     position: fixed; top: 0; left: 0;
     width: 100%; height: 100%;
@@ -332,34 +329,34 @@ h1 {
 
 <div id="game-container">
     <header>
-        <h1>PARTY GAME</h1>
+        <h1>PARTY MINI-GAMES</h1>
     </header>
 
     <div class="display-area">
         <button id="sound-toggle">🔊 เปิดเสียง</button>
-        <div id="count-display"></div>
+        <div id="count-display">Game Mode</div>
 
-        <div id="category-badge" class="category-badge">CATEGORY</div>
+        <div id="category-badge" class="category-badge">GAME</div>
         
         <div class="big-instruction" id="wheel-result">
-            พร้อมเล่นเกม?<br>กดปุ่มเริ่มเลย!
+            สุ่มมินิเกมวัดดวง<br>กดปุ่มเริ่มเลย!
         </div>
 
         <div id="special-game-area"></div>
 
-        <div class="hint-text">MODE: ALL GAMES (NO QUESTIONS)</div>
+        <div class="hint-text">13 GAMES INCLUDED</div>
     </div>
 
     <div class="controls-area">
-        <button class="btn" id="spin-btn" onclick="startSpin()">🎲 สุ่มเกม!</button>
-        <button class="btn btn-secondary" onclick="openHistory()">📜 ดูประวัติ</button>
+        <button class="btn" id="spin-btn" onclick="startSpin()">🎲 สุ่มมินิเกม!</button>
+        <button class="btn btn-secondary" onclick="openHistory()">📜 ประวัติ</button>
     </div>
 </div>
 
 <div class="modal-overlay" id="historyModal">
     <div class="modal-content">
         <div class="modal-header">
-            <h2>📜 ประวัติเกมที่เล่น</h2>
+            <h2>📜 ประวัติการสุ่ม</h2>
             <button class="close-modal" onclick="closeHistory()">✕</button>
         </div>
         <ul class="history-list" id="historyListDisplay"></ul>
@@ -373,26 +370,25 @@ h1 {
 <audio id="bangSound" src="https://www.soundjay.com/mechanical/sounds/explosion-01.mp3"></audio>
 
 <script>
-// =================== 1. ข้อมูลเกมทั้งหมด (ลบคำถามปกติออกหมดแล้ว) ===================
+// =================== 1. รายชื่อเกมทั้งหมด (13 เกม) ===================
 
 const gameList = [
-    // --- เกมเดิม ---
     { t: "จับเวลา 40 วิ! ใครส่งเสียงก่อนโดน", c: "QUIET GAME", color: "#ffca28", type: "timer", time: 40 },
     { t: "กดหยุดเวลาให้ได้ 5.00 วิ (±0.10)", c: "SKILL", color: "#42a5f5", type: "stopwatch", target: 5.00, range: 0.10 },
-    { t: "วัดดวงรัสเซียนรูเล็ต! (ส่งมือถือวน)", c: "LUCK", color: "#ef5350", type: "roulette" },
+    { t: "วัดดวงรัสเซียนรูเล็ต!", c: "LUCK", color: "#ef5350", type: "roulette" },
     { t: "กู้ระเบิด! ตัดสายไฟผิด...ตู้ม", c: "BOMB", color: "#ef5350", type: "bomb" },
     { t: "จำเลขให้แม่น! ผิดดื่ม", c: "MEMORY", color: "#ab47bc", type: "memory" },
     { t: "AI ตรวจจับรอยยิ้ม! ห้ามยิ้ม 10 วิ", c: "AI CHALLENGE", color: "#fff", type: "dontsmile" },
-    
-    // --- เพิ่มเกมใหม่ 1: รัวนิ้ว ---
     { t: "นิ้วรัว! กดปุ่มให้ครบ 30 ครั้งใน 5 วิ", c: "SPEED", color: "#ff4081", type: "clicker", target: 30, time: 5 },
-    
-    // --- เพิ่มเกมใหม่ 2: สูงต่ำ ---
-    { t: "วัดดวง! เลขถัดไป สูง หรือ ต่ำ ?", c: "HIGH-LOW", color: "#00e5ff", type: "highlow" }
+    { t: "วัดดวง! เลขถัดไป สูง หรือ ต่ำ ?", c: "HIGH-LOW", color: "#00e5ff", type: "highlow" },
+    { t: "เป่ายิ้งฉุบวัดดวง! แพ้ AI ดื่ม", c: "BATTLE", color: "#ff9800", type: "rps" },
+    { t: "จั่วไพ่ปีศาจ! 1 ใน 4 ใบคือกับดัก", c: "LUCK", color: "#795548", type: "cards" },
+    { t: "คณิตคิดเร็ว! ตอบถูกใน 3 วิ", c: "BRAIN", color: "#607d8b", type: "math" },
+    { t: "ตาดีได้! จิ้มปุ่มให้ทันใน 1.5 วิ", c: "REFLEX", color: "#cddc39", type: "reflex" },
+    { t: "ทายเลขท้าย! คู่ หรือ คี่ ?", c: "LOTTO", color: "#9c27b0", type: "parity" }
 ];
 
 // =================== 2. ตัวแปรระบบ ===================
-let availableQuestions = [...gameList]; // ใช้ gameList แทน normalQuestions
 let history = []; 
 let soundEnabled = true;
 
@@ -405,11 +401,8 @@ const soundToggle = document.getElementById("sound-toggle");
 
 const resultDisplay = document.getElementById('wheel-result');
 const spinBtn = document.getElementById('spin-btn');
-const countDisplay = document.getElementById('count-display');
 const categoryBadge = document.getElementById('category-badge');
 const specialGameArea = document.getElementById('special-game-area');
-
-// =================== 3. ฟังก์ชันหลัก ===================
 
 soundToggle.onclick = () => {
     soundEnabled = !soundEnabled;
@@ -419,18 +412,9 @@ soundToggle.onclick = () => {
 
 function playSound(sound) {
     if (!soundEnabled) return;
-    if (!sound.paused) {
-        sound.pause();
-        sound.currentTime = 0;
-    }
+    sound.currentTime = 0;
     sound.play().catch(()=>{});
 }
-
-function updateCountDisplay() {
-    countDisplay.innerText = "Game Mode";
-}
-
-updateCountDisplay();
 
 function startSpin() {
     specialGameArea.style.display = 'none';
@@ -442,7 +426,6 @@ function startSpin() {
     resultDisplay.classList.remove("pop-in");
     resultDisplay.classList.add("blur-anim");
 
-    // เอฟเฟกต์สุ่มตัวอักษร
     let shuffleInterval = setInterval(() => {
         const randomQ = gameList[Math.floor(Math.random() * gameList.length)];
         resultDisplay.innerText = randomQ.t;
@@ -455,58 +438,60 @@ function startSpin() {
 }
 
 function processResult() {
-    // สุ่มเกมจากรายการที่มี
     const selectedObj = gameList[Math.floor(Math.random() * gameList.length)];
-
     history.unshift(selectedObj);
+    
     resultDisplay.classList.remove("blur-anim");
     resultDisplay.innerText = selectedObj.t;
     categoryBadge.innerText = selectedObj.c;
     categoryBadge.style.backgroundColor = selectedObj.color;
-    categoryBadge.style.color = "#000"; 
     categoryBadge.style.opacity = '1';
 
     void resultDisplay.offsetWidth; 
     resultDisplay.classList.add("pop-in");
     playSound(resultSound);
 
-    // เข้าสู่โหมดตั้งค่าเกมทันที เพราะทุกอันคือเกม
     setupGame(selectedObj);
-    updateCountDisplay();
 }
 
-// =================== 4. Logic Games ===================
+// =================== 3. Logic Manager ===================
 
 async function setupGame(gameObj) {
     specialGameArea.style.display = 'flex';
     
-    // เช็คประเภทเกมและเรียกฟังก์ชันที่ถูกต้อง
     if (gameObj.type === 'timer') setupTimerGame(gameObj.time);
     else if (gameObj.type === 'stopwatch') setupStopwatchGame(gameObj.target, gameObj.range);
     else if (gameObj.type === 'roulette') setupRouletteGame();
     else if (gameObj.type === 'bomb') setupBombGame();
     else if (gameObj.type === 'memory') setupMemoryGame();
+    else if (gameObj.type === 'clicker') setupClickerGame(gameObj.target, gameObj.time);
+    else if (gameObj.type === 'highlow') setupHighLowGame();
+    else if (gameObj.type === 'rps') setupRPSGame();
+    else if (gameObj.type === 'cards') setupCardGame();
+    else if (gameObj.type === 'math') setupMathGame();
+    else if (gameObj.type === 'reflex') setupReflexGame();
+    else if (gameObj.type === 'parity') setupParityGame();
     else if (gameObj.type === 'dontsmile') {
         specialGameArea.innerHTML = `<button class="game-btn" onclick="setupSmileGame()">📸 เปิดกล้องจับรอยยิ้ม</button>${getSkipButtonHTML()}`;
     }
-    // เกมใหม่
-    else if (gameObj.type === 'clicker') setupClickerGame(gameObj.target, gameObj.time);
-    else if (gameObj.type === 'highlow') setupHighLowGame();
 }
 
 function skipGame() {
     clearInterval(window.currentInterval);
-    if(window.clickTimeout) clearTimeout(window.clickTimeout);
+    if(window.mathTimeout) clearTimeout(window.mathTimeout);
+    if(window.reflexFail) clearTimeout(window.reflexFail);
     specialGameArea.style.display = 'none';
     spinBtn.disabled = false;
     playSound(clickSound);
 }
 
 function getSkipButtonHTML() {
-    return `<button class="skip-btn" onclick="skipGame()">⏭ ข้ามเกมนี้</button>`;
+    return `<button class="skip-btn" onclick="skipGame()">⏭ ข้ามไปสุ่มใหม่</button>`;
 }
 
-// --- Game Logic เดิม ---
+// =================== 4. มินิเกมทั้ง 13 (Logic) ===================
+
+// 1. Timer
 function setupTimerGame(seconds) {
     specialGameArea.innerHTML = `<button class="game-btn" onclick="runTimer(${seconds})">⏱️ เริ่มจับเวลา (${seconds} วิ)</button>${getSkipButtonHTML()}`;
 }
@@ -525,8 +510,10 @@ function runTimer(seconds) {
         }
     }, 1000);
 }
+
+// 2. Stopwatch
 function setupStopwatchGame(target, range) {
-    specialGameArea.innerHTML = `<div style="margin-bottom:5px;">หยุดให้ได้: ${target.toFixed(2)}</div><button class="game-btn" id="stopwatch-btn" onclick="runStopwatch(${target}, ${range})">▶️ เริ่ม!</button>${getSkipButtonHTML()}`;
+    specialGameArea.innerHTML = `<div style="margin-bottom:5px;">หยุดที่: ${target.toFixed(2)}</div><button class="game-btn" onclick="runStopwatch(${target}, ${range})">▶️ เริ่ม!</button>${getSkipButtonHTML()}`;
 }
 function runStopwatch(target, range) {
     let startTime = Date.now();
@@ -540,14 +527,16 @@ function stopStopwatch(btn, target, range) {
     clearInterval(window.currentInterval);
     const finalTime = parseFloat(document.getElementById('sw-display').innerText);
     const diff = Math.abs(finalTime - target);
-    if (diff <= range) { btn.innerText = "🎉 เทพว่ะ! รอด"; btn.style.background = "#00e676"; playSound(resultSound); }
-    else { btn.innerText = "💀 ไม่เนียน! ดื่ม"; btn.style.background = "#ef5350"; playSound(alarmSound); }
+    if (diff <= range) { btn.innerText = "🎉 รอด!"; btn.style.background = "#00e676"; playSound(resultSound); }
+    else { btn.innerText = "💀 ดื่ม!"; btn.style.background = "#ef5350"; playSound(alarmSound); }
     btn.disabled = true; spinBtn.disabled = false;
 }
+
+// 3. Roulette
 function setupRouletteGame() {
     window.bulletChamber = Math.floor(Math.random() * 6);
     window.currentChamber = 0;
-    specialGameArea.innerHTML = `<div id="roulette-status" style="margin-bottom:10px;">นัดที่ 1 / 6</div><button class="game-btn" id="trigger-btn" onclick="pullTrigger()">🤞 เหนี่ยวไก</button>${getSkipButtonHTML()}`;
+    specialGameArea.innerHTML = `<div id="roulette-status">นัดที่ 1 / 6</div><button class="game-btn" id="trigger-btn" onclick="pullTrigger()">🤞 เหนี่ยวไก</button>${getSkipButtonHTML()}`;
 }
 function pullTrigger() {
     const btn = document.getElementById('trigger-btn');
@@ -555,7 +544,7 @@ function pullTrigger() {
     setTimeout(() => {
         if (window.currentChamber === window.bulletChamber) {
             playSound(bangSound);
-            specialGameArea.innerHTML = `<div class="timer-text">💥</div><div style="color:#ef5350; font-weight:bold;">เรียบร้อย! หมดแก้ว</div>${getSkipButtonHTML()}`;
+            specialGameArea.innerHTML = `<div class="timer-text">💥</div><div style="color:#ef5350;">ปัง! ดื่ม!</div>${getSkipButtonHTML()}`;
             spinBtn.disabled = false;
         } else {
             playSound(clickSound); window.currentChamber++;
@@ -564,6 +553,8 @@ function pullTrigger() {
         }
     }, 600);
 }
+
+// 4. Bomb
 function setupBombGame() {
     const bombWire = Math.floor(Math.random() * 4);
     const colors = ["#ef5350", "#00e676", "#42a5f5", "#ffca28"];
@@ -572,253 +563,184 @@ function setupBombGame() {
 }
 function cutWire(el, isBomb) {
     if (isBomb) {
-        playSound(bangSound); 
-        el.style.background = "#000"; el.style.boxShadow = "0 0 20px #ff3b3b"; el.innerText = "💥";
-        specialGameArea.style.animation = "shake 0.5s";
-        setTimeout(() => { specialGameArea.style.animation = ""; }, 500);
-        resultDisplay.innerText = "บึ้มมม! ดื่มมม!";
+        playSound(bangSound); el.innerText = "💥";
         spinBtn.disabled = false;
-        document.querySelectorAll('.wire-btn').forEach(b => { b.onclick = null; b.style.cursor = "default"; });
+        document.querySelectorAll('.wire-btn').forEach(b => b.onclick = null);
     } else {
         playSound(clickSound); el.style.opacity = "0.1"; el.style.pointerEvents = "none";
     }
 }
+
+// 5. Memory
 function setupMemoryGame() {
     const num = Math.floor(10000 + Math.random() * 90000);
-    specialGameArea.innerHTML = `<div style="font-size:0.9rem; margin-bottom:10px; color:#aaa;">จำเลขนี้ใน 5 วินาที!</div><div class="timer-text" id="mem-num" style="color:#00e676;">${num}</div><div style="width:100%; height:6px; background:#333; border-radius:10px; overflow:hidden; margin-top:10px;"><div id="mem-progress" style="width:100%; height:100%; background:#00e676; transition: width 5s linear;"></div></div>`;
-    setTimeout(() => { const progressBar = document.getElementById('mem-progress'); if(progressBar) progressBar.style.width = '0%'; }, 50);
+    specialGameArea.innerHTML = `<div style="color:#aaa;">จำเลขนี้ใน 5 วิ!</div><div class="timer-text">${num}</div>`;
     setTimeout(() => {
-        const memNumDisplay = document.getElementById('mem-num');
-        if (memNumDisplay) {
-            specialGameArea.innerHTML = `<div style="font-size:1.1rem; margin-bottom:15px; font-weight:bold;">เมื่อกี้เลขอะไร!?</div><input type="number" id="mem-input" autocomplete="off" placeholder="?" style="padding:15px; border-radius:12px; border:2px solid #00e676; width:90%; text-align:center; font-size:1.8rem; background:#000; color:#fff; margin-bottom:15px; outline:none;"><button class="game-btn" onclick="checkMemory(${num})" style="background:#00e676; color:#000;">ส่งคำตอบ</button>${getSkipButtonHTML()}`;
-            document.getElementById('mem-input').focus();
-        }
+        specialGameArea.innerHTML = `<input type="number" id="mem-input" placeholder="เลขอะไร?" style="padding:15px; border-radius:12px; width:90%; font-size:1.8rem; background:#000; color:#fff; border:2px solid #00e676; text-align:center; margin-bottom:15px;"><button class="game-btn" onclick="checkMemory(${num})">ส่งคำตอบ</button>${getSkipButtonHTML()}`;
     }, 5000);
 }
 function checkMemory(correct) {
-    const inputEl = document.getElementById('mem-input');
-    const val = parseInt(inputEl.value);
-    if (val === correct) { resultDisplay.innerText = "ถูกต้อง! รอดตาย"; playSound(resultSound); }
-    else { resultDisplay.innerText = `ผิด! เลขที่ถูกคือ ${correct}`; playSound(alarmSound); }
-    specialGameArea.innerHTML = getSkipButtonHTML(); spinBtn.disabled = false;
+    const val = parseInt(document.getElementById('mem-input').value);
+    if (val === correct) { resultDisplay.innerText = "รอด!"; playSound(resultSound); }
+    else { resultDisplay.innerText = "ผิด! ดื่ม"; playSound(alarmSound); }
+    spinBtn.disabled = false;
 }
 
-// --- เกมใหม่ 1: Clicker (รัวนิ้ว) ---
+// 6. Clicker
 function setupClickerGame(target, time) {
-    specialGameArea.innerHTML = `
-        <div style="font-size:1rem; margin-bottom:5px;">กดให้ครบ ${target} ครั้ง ภายใน ${time} วิ</div>
-        <button class="game-btn" onclick="startClicker(${target}, ${time})">🚀 เริ่มเกมรัวนิ้ว!</button>
-        ${getSkipButtonHTML()}
-    `;
+    specialGameArea.innerHTML = `<button class="game-btn" onclick="startClicker(${target}, ${time})">🚀 เริ่มกดรัว! (${target} ครั้ง)</button>${getSkipButtonHTML()}`;
 }
 function startClicker(target, time) {
     let count = 0;
-    let isActive = true;
-    
-    specialGameArea.innerHTML = `
-        <div class="timer-text" id="clicker-count" style="color:#fff">0</div>
-        <div style="color:#aaa; margin-bottom:10px;">เหลือเวลา: <span id="clicker-time">${time}</span> วิ</div>
-        <button class="game-btn" id="click-btn" style="height:80px; font-size:1.5rem;" onclick="handleClicker(${target})">🔥 กด!!!</button>
-        ${getSkipButtonHTML()}
-    `;
-
-    // ตัวจับเวลา
+    specialGameArea.innerHTML = `<div class="timer-text" id="cl-count">0</div><button class="game-btn" id="cl-btn" onclick="doClick(${target})">กด!!!</button>`;
     let timeLeft = time;
     window.currentInterval = setInterval(() => {
         timeLeft--;
-        const timeEl = document.getElementById('clicker-time');
-        if(timeEl) timeEl.innerText = timeLeft;
-        
         if (timeLeft <= 0) {
             clearInterval(window.currentInterval);
-            isActive = false;
-            document.getElementById('click-btn').disabled = true;
-            if (count < target) {
-                resultDisplay.innerText = "ไม่ทัน! อ่อนแอ...ดื่ม!";
-                playSound(alarmSound);
-            }
+            if (count < target) { resultDisplay.innerText = "ไม่ทัน! ดื่ม"; playSound(alarmSound); }
             spinBtn.disabled = false;
         }
     }, 1000);
-
-    // ฟังก์ชันกด
-    window.handleClicker = (targetVal) => {
-        if (!isActive) return;
-        count++;
-        document.getElementById('clicker-count').innerText = count;
-        playSound(clickSound);
-        
-        if (count >= targetVal) {
+    window.doClick = (t) => {
+        count++; document.getElementById('cl-count').innerText = count;
+        if (count >= t) {
             clearInterval(window.currentInterval);
-            isActive = false;
-            document.getElementById('click-btn').disabled = true;
-            document.getElementById('click-btn').style.background = "#00e676";
-            document.getElementById('click-btn').innerText = "สำเร็จ!";
-            resultDisplay.innerText = "ยอดเยี่ยม! นิ้วรัวมาก";
-            playSound(resultSound);
+            resultDisplay.innerText = "รอด!"; playSound(resultSound);
             spinBtn.disabled = false;
         }
     };
 }
 
-// --- เกมใหม่ 2: High-Low (สูงต่ำ) ---
+// 7. High-Low
 function setupHighLowGame() {
-    const currentNum = Math.floor(Math.random() * 9) + 1; // 1-9
-    specialGameArea.innerHTML = `
-        <div style="color:#aaa; margin-bottom:5px;">เลขปัจจุบันคือ</div>
-        <div class="timer-text" style="color:#fff;">${currentNum}</div>
-        <div style="margin-bottom:15px; font-size:1.1rem;">ทายว่าเลขถัดไป (1-10) จะ...</div>
-        <div style="display:flex; gap:10px; width:100%;">
-            <button class="game-btn" style="background:#42a5f5;" onclick="checkHighLow('low', ${currentNum})">⬇️ ต่ำกว่า</button>
-            <button class="game-btn" style="background:#ef5350;" onclick="checkHighLow('high', ${currentNum})">⬆️ สูงกว่า</button>
-        </div>
-        ${getSkipButtonHTML()}
-    `;
+    const cur = Math.floor(Math.random() * 9) + 1;
+    specialGameArea.innerHTML = `<div style="color:#aaa;">เลขปัจจุบัน</div><div class="timer-text">${cur}</div><div style="display:flex; gap:10px; width:100%;"><button class="game-btn" onclick="checkHL('low', ${cur})">⬇️ ต่ำกว่า</button><button class="game-btn" onclick="checkHL('high', ${cur})">⬆️ สูงกว่า</button></div>${getSkipButtonHTML()}`;
 }
-function checkHighLow(guess, prevNum) {
-    let nextNum = Math.floor(Math.random() * 10) + 1; // 1-10
-    
-    // กันเลขซ้ำเพื่อให้มีผลแพ้ชนะเสมอ
-    while(nextNum === prevNum) {
-        nextNum = Math.floor(Math.random() * 10) + 1;
-    }
-
-    let isWin = false;
-    if (guess === 'high' && nextNum > prevNum) isWin = true;
-    if (guess === 'low' && nextNum < prevNum) isWin = true;
-
-    let msg = isWin ? "รอดตัวไป!" : "ผิด! ดื่มซะ";
-    let color = isWin ? "#00e676" : "#ef5350";
-    let sound = isWin ? resultSound : alarmSound;
-
-    playSound(sound);
-
-    specialGameArea.innerHTML = `
-        <div style="font-size:1rem; color:#aaa;">เลขที่ออกคือ...</div>
-        <div class="timer-text" style="color:${color}; margin-bottom:5px;">${nextNum}</div>
-        <div style="font-size:1.5rem; font-weight:bold; margin-bottom:10px;">${msg}</div>
-        ${getSkipButtonHTML()}
-    `;
+function checkHL(guess, old) {
+    const next = Math.floor(Math.random() * 10) + 1;
+    const win = (guess === 'high' && next > old) || (guess === 'low' && next < old);
+    resultDisplay.innerText = `เลขคือ ${next}: ${win ? 'รอด!' : 'ดื่ม!'}`;
+    playSound(win ? resultSound : alarmSound);
     spinBtn.disabled = false;
 }
 
-// =================== Face AI Logic ===================
-let smileInterval;
-let gameTimerInterval;
+// 8. RPS
+function setupRPSGame() {
+    specialGameArea.innerHTML = `<div style="display:flex; gap:10px; width:100%;"><button class="game-btn" onclick="playRPS('🔨')">🔨</button><button class="game-btn" onclick="playRPS('✌️')">✌️</button><button class="game-btn" onclick="playRPS('📄')">📄</button></div>${getSkipButtonHTML()}`;
+}
+function playRPS(user) {
+    const items = ['🔨', '✌️', '📄'];
+    const ai = items[Math.floor(Math.random() * 3)];
+    let res = '';
+    if (user === ai) { resultDisplay.innerText = `เสมอ (${ai})!`; return setupRPSGame(); }
+    if ((user === '🔨' && ai === '✌️') || (user === '✌️' && ai === '📄') || (user === '📄' && ai === '🔨')) res = 'ชนะ!';
+    else res = 'แพ้ (ดื่ม!)';
+    resultDisplay.innerText = `คุณ ${user} VS AI ${ai}: ${res}`;
+    playSound(res === 'ชนะ!' ? resultSound : alarmSound);
+    spinBtn.disabled = false;
+}
 
+// 9. Cards
+function setupCardGame() {
+    const bomb = Math.floor(Math.random() * 4);
+    let html = '';
+    for(let i=0; i<4; i++) html += `<div onclick="pickCard(this, ${i===bomb})" style="background:#fff; color:#000; height:70px; width:22%; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:1.5rem; font-weight:bold;">?</div>`;
+    specialGameArea.innerHTML = `<div style="display:flex; justify-content:space-between; width:100%;">${html}</div>${getSkipButtonHTML()}`;
+}
+function pickCard(el, isBomb) {
+    if (isBomb) { el.style.background = "#ef5350"; el.innerText = "👹"; playSound(bangSound); resultDisplay.innerText = "ดื่ม!"; }
+    else { el.style.background = "#00e676"; el.innerText = "😇"; playSound(clickSound); resultDisplay.innerText = "รอด!"; }
+    spinBtn.disabled = false;
+}
+
+// 10. Math
+function setupMathGame() {
+    const n1 = Math.floor(Math.random() * 10) + 1, n2 = Math.floor(Math.random() * 10) + 1;
+    const ans = n1 + n2;
+    let choices = [ans, ans+1, ans-1].sort(() => Math.random() - 0.5);
+    specialGameArea.innerHTML = `<div class="timer-text">${n1}+${n2}=?</div><div style="display:flex; gap:10px; width:100%;">${choices.map(c => `<button class="game-btn" onclick="checkMath(${c},${ans})">${c}</button>`).join('')}</div>`;
+    window.mathTimeout = setTimeout(() => { resultDisplay.innerText = "ช้าไป! ดื่ม"; playSound(alarmSound); spinBtn.disabled = false; }, 3000);
+}
+function checkMath(a, c) {
+    clearTimeout(window.mathTimeout);
+    const win = a === c;
+    resultDisplay.innerText = win ? "ถูก! รอด" : "ผิด! ดื่ม";
+    playSound(win ? resultSound : alarmSound);
+    spinBtn.disabled = false;
+}
+
+// 11. Reflex
+function setupReflexGame() {
+    specialGameArea.innerHTML = `<button class="game-btn" onclick="startReflex()">เริ่ม!</button>`;
+}
+function startReflex() {
+    specialGameArea.innerHTML = `<div id="re-box" style="height:150px; width:100%; background:#222; border-radius:12px; position:relative;"></div>`;
+    setTimeout(() => {
+        const box = document.getElementById('re-box');
+        if(!box) return;
+        const btn = document.createElement('button');
+        btn.innerText = "กด!";
+        btn.style.cssText = `position:absolute; top:${Math.random()*70}%; left:${Math.random()*70}%; background:#ff4081; border:none; padding:10px 20px; border-radius:20px; color:#fff; font-weight:bold;`;
+        btn.onclick = () => { clearTimeout(window.reflexFail); resultDisplay.innerText = "รอด!"; playSound(resultSound); spinBtn.disabled = false; };
+        box.appendChild(btn);
+        window.reflexFail = setTimeout(() => { resultDisplay.innerText = "ช้า! ดื่ม"; playSound(alarmSound); spinBtn.disabled = false; }, 1200);
+    }, 1000 + Math.random()*2000);
+}
+
+// 12. Parity
+function setupParityGame() {
+    const num = Math.floor(Math.random() * 100);
+    specialGameArea.innerHTML = `<div style="margin-bottom:10px;">เลขปริศนาคือ คู่ หรือ คี่?</div><div style="display:flex; gap:10px; width:100%;"><button class="game-btn" style="background:#42a5f5;" onclick="checkP('even', ${num})">คู่</button><button class="game-btn" style="background:#9c27b0;" onclick="checkP('odd', ${num})">คี่</button></div>`;
+}
+function checkP(g, n) {
+    const win = (n % 2 === 0 && g === 'even') || (n % 2 !== 0 && g === 'odd');
+    resultDisplay.innerText = `เลขคือ ${n}: ${win ? 'รอด!' : 'ดื่ม!'}`;
+    playSound(win ? resultSound : alarmSound);
+    spinBtn.disabled = false;
+}
+
+// 13. AI Smile (Dont Smile)
+let smileInterval, gameTimerInterval;
 async function setupSmileGame() {
-    const overlay = document.getElementById('camera-overlay');
-    const status = document.getElementById('smile-status');
-    const timerDisplay = document.getElementById('smile-timer');
-    const video = document.getElementById('camera-video');
-    const backBtn = document.querySelector('.back-btn');
-    
+    const overlay = document.getElementById('camera-overlay'), status = document.getElementById('smile-status'), video = document.getElementById('camera-video');
     overlay.style.display = 'flex';
-    overlay.classList.remove("smile-detected");
-    status.innerText = "กำลังปลุก AI... (รอแป๊บ)";
-    status.style.color = "#fff";
-    timerDisplay.innerText = "--";
-    backBtn.style.display = 'none'; 
-
     try {
-        let faceModelsLoaded = false;
-        if (!faceModelsLoaded) {
-            await faceapi.nets.tinyFaceDetector.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models');
-            await faceapi.nets.faceExpressionNet.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models');
-            faceModelsLoaded = true;
-        }
-
+        await faceapi.nets.tinyFaceDetector.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models');
+        await faceapi.nets.faceExpressionNet.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models');
         const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
         video.srcObject = stream;
-        status.innerText = "หันหน้าเข้ากล้องเพื่อเริ่ม...";
-        video.addEventListener('play', () => { startSmileDetection(video); });
-
-    } catch (err) {
-        console.error(err);
-        alert("ไม่สามารถเปิดกล้องได้ (เช็คเน็ต หรือ อนุญาตกล้อง)");
-        closeCameraGame();
-    }
-}
-
-function startSmileDetection(video) {
-    const status = document.getElementById('smile-status');
-    const timerDisplay = document.getElementById('smile-timer');
-    const backBtn = document.querySelector('.back-btn');
-    
-    let timeLeft = 10;
-    let gameStarted = false; 
-
-    timerDisplay.innerText = "รอหน้า..."; 
-    clearInterval(gameTimerInterval);
-    clearInterval(smileInterval);
-
-    smileInterval = setInterval(async () => {
-        const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions()).withFaceExpressions();
-        
-        if (detections.length > 0) {
-            if (!gameStarted) {
-                gameStarted = true;
-                status.innerText = "จับหน้าได้แล้ว! ห้ามยิ้ม!";
-                status.style.color = "#ef5350";
-                timerDisplay.innerText = timeLeft;
-
-                gameTimerInterval = setInterval(() => {
-                    timeLeft--;
-                    timerDisplay.innerText = timeLeft;
-                    if (timeLeft <= 0) {
-                        clearInterval(gameTimerInterval);
-                        clearInterval(smileInterval);
-                        status.innerText = "🎉 เก่งมาก! รอดตัวไป";
-                        status.style.color = "#00e676";
-                        playSound(resultSound);
-                        backBtn.style.display = 'inline-block';
+        video.onplay = () => {
+            let timeLeft = 10;
+            smileInterval = setInterval(async () => {
+                const detect = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions()).withFaceExpressions();
+                if (detect.length > 0) {
+                    if (!gameTimerInterval) {
+                        gameTimerInterval = setInterval(() => {
+                            timeLeft--; document.getElementById('smile-timer').innerText = timeLeft;
+                            if(timeLeft <= 0) { clearInterval(smileInterval); clearInterval(gameTimerInterval); status.innerText = "รอด!"; document.querySelector('.back-btn').style.display='block'; playSound(resultSound); }
+                        }, 1000);
                     }
-                }, 1000);
-            }
-            const happiness = detections[0].expressions.happy;
-            if (happiness > 0.4) { 
-                failSmileGame();
-            }
-        }
-    }, 100);
+                    if (detect[0].expressions.happy > 0.4) { clearInterval(smileInterval); clearInterval(gameTimerInterval); status.innerText = "ยิ้ม! ดื่ม!"; overlay.classList.add("smile-detected"); playSound(alarmSound); document.querySelector('.back-btn').style.display='block'; }
+                }
+            }, 100);
+        };
+    } catch { alert("เปิดกล้องไม่ได้"); closeCameraGame(); }
 }
-
-function failSmileGame() {
-    clearInterval(gameTimerInterval);
-    clearInterval(smileInterval);
-    const status = document.getElementById('smile-status');
-    const overlay = document.getElementById('camera-overlay');
-    const backBtn = document.querySelector('.back-btn');
-    
-    status.innerHTML = "💀 จับได้แล้ว! ยิ้มทำไม!<br>ดื่มหมดแก้ว!";
-    status.style.color = "#ef5350";
-    overlay.classList.add("smile-detected");
-    playSound(alarmSound); 
-    playSound(bangSound);
-    backBtn.style.display = 'inline-block'; 
-}
-
 function closeCameraGame() {
-    const overlay = document.getElementById('camera-overlay');
     const video = document.getElementById('camera-video');
-    if (video.srcObject) video.srcObject.getTracks().forEach(track => track.stop());
-    clearInterval(smileInterval);
-    clearInterval(gameTimerInterval);
-    overlay.style.display = 'none';
-    specialGameArea.style.display = 'none'; 
-    spinBtn.disabled = false; 
-    resultDisplay.innerText = "จบเกม! เล่นต่อไหม?";
+    if (video.srcObject) video.srcObject.getTracks().forEach(t => t.stop());
+    clearInterval(smileInterval); clearInterval(gameTimerInterval);
+    document.getElementById('camera-overlay').style.display = 'none';
+    spinBtn.disabled = false;
 }
 
-// =================== History ===================
+// History
 function openHistory() {
-    playSound(clickSound); historyModal.classList.add('active');
-    if (history.length === 0) { historyListDisplay.innerHTML = '<li style="text-align:center; padding:20px;">ยังไม่มีประวัติ</li>'; return; }
-    historyListDisplay.innerHTML = history.map(h => `<li class="history-item"><span class="history-tag" style="background:${h.color}">${h.c}</span><span style="flex:1;">${h.t}</span></li>`).join("");
+    historyModal.classList.add('active');
+    historyListDisplay.innerHTML = history.length ? history.map(h => `<li class="history-item"><span class="history-tag" style="background:${h.color}">${h.c}</span>${h.t}</li>`).join('') : '<li style="padding:20px; text-align:center;">ไม่มีประวัติ</li>';
 }
 function closeHistory() { historyModal.classList.remove('active'); }
-historyModal.addEventListener('click', (e) => { if (e.target === historyModal) closeHistory(); });
 </script>
-    
 </body>
 </html>
