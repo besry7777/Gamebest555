@@ -3,159 +3,822 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>PARTY ไทบ้านห้วยทราย (DEMO)</title>
+<title>PARTY GAME: ONLY GAMES EDITION</title>
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;800&display=swap" rel="stylesheet">
 <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 
 <style>
-/* ===== CSS เดิมทั้งหมด (ไม่แตะ) ===== */
+/* ================= CSS (คงเดิม 100%) ================= */
 :root {
-    --bg-color:#121212;--card-bg:#1e1e1e;--primary:#00e676;
-    --text-main:#fff;--text-muted:#b0b0b0;
-    --danger:#ef5350;--warning:#ffca28;--radius:16px;
+    --bg-color: #121212;
+    --card-bg: #1e1e1e;
+    --primary: #00e676;
+    --text-main: #ffffff;
+    --text-muted: #b0b0b0;
+    --danger: #ef5350;
+    --warning: #ffca28;
+    --radius: 16px;
 }
-*{box-sizing:border-box;font-family:'Sarabun',sans-serif}
-body{margin:0;background:var(--bg-color);color:#fff;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
-#game-container{flex:1;max-width:500px;margin:auto;padding:16px;display:flex;flex-direction:column}
-header{text-align:center;margin-bottom:10px}
-h1{color:var(--primary);font-weight:800}
-.display-area{flex:1;background:#1e1e1e;border-radius:16px;padding:20px;display:flex;flex-direction:column;align-items:center;justify-content:center}
-.big-instruction{font-size:2rem;font-weight:800;text-align:center}
-.category-badge{margin-bottom:10px;padding:6px 16px;border-radius:50px;font-weight:700;opacity:0}
-.controls-area{display:flex;flex-direction:column;gap:10px}
-.btn{padding:18px;border:none;border-radius:16px;font-size:1.2rem;font-weight:800;background:#00e676}
-.btn-secondary{background:#333;color:#fff}
-#special-game-area{margin-top:15px;width:100%;display:none}
-.game-btn{width:100%;padding:14px;border-radius:50px;border:none;font-size:1.1rem;font-weight:800;background:#ef5350;color:#fff}
-.skip-btn{margin-top:10px;background:none;border:1px solid #666;color:#aaa;padding:8px 16px;border-radius:30px}
-.timer-text{font-size:4rem;font-weight:800}
+
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+    font-family: 'Sarabun', sans-serif;
+    touch-action: manipulation; 
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    margin: 0;
+    padding: 0;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+#game-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto;
+    padding: 16px;
+    position: relative;
+    z-index: 1;
+}
+
+header {
+    flex: 0 0 auto;
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+h1 {
+    font-size: 1.8rem;
+    margin: 0;
+    font-weight: 800;
+    letter-spacing: 1px;
+    color: var(--primary);
+    text-transform: uppercase;
+}
+
+.display-area {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-color: var(--card-bg);
+    border-radius: var(--radius);
+    padding: 20px;
+    border: 1px solid #333;
+    position: relative;
+    margin-bottom: 16px;
+    overflow: hidden;
+    min-height: 0;
+}
+
+.big-instruction {
+    font-size: clamp(1.4rem, 5vw, 2.2rem);
+    font-weight: 800;
+    color: #fff;
+    text-align: center;
+    line-height: 1.4;
+    width: 100%;
+    word-wrap: break-word;
+    z-index: 2;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.category-badge {
+    display: inline-block;
+    padding: 6px 16px;
+    border-radius: 50px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 15px;
+    color: #000;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.hint-text {
+    margin-top: auto;
+    padding-top: 15px;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.pop-in { animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+@keyframes popIn {
+    0% { transform: scale(0.8); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+.blur-anim { filter: blur(4px); opacity: 0.6; }
+
+.controls-area {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.btn {
+    width: 100%;
+    padding: 18px;
+    font-size: 1.3rem;
+    border: none;
+    border-radius: var(--radius);
+    font-weight: 800;
+    cursor: pointer;
+    background-color: var(--primary);
+    color: #000;
+    transition: transform 0.1s;
+}
+.btn:active { transform: scale(0.97); }
+.btn:disabled { background-color: #333; color: #555; cursor: not-allowed; }
+.btn-secondary { background-color: #2c2c2c; color: #fff; font-size: 1rem; padding: 12px; }
+
+#count-display {
+    position: absolute; top: 10px; right: 10px;
+    font-size: 0.75rem; color: #666; background: #111;
+    padding: 4px 8px; border-radius: 6px;
+}
+#sound-toggle {
+    position: absolute; top: 10px; left: 10px;
+    background: transparent; color: #666; border: 1px solid #333;
+    border-radius: 20px; padding: 4px 10px; font-size: 0.7rem; cursor: pointer;
+}
+
+/* Mini Games Area */
+#special-game-area {
+    margin-top: 15px;
+    width: 100%;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    padding: 15px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 12px;
+    border: 1px solid #444;
+}
+
+.game-btn {
+    background: var(--danger);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 50px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    cursor: pointer;
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+.skip-btn {
+    background: transparent;
+    border: 1px solid #666;
+    color: #888;
+    padding: 8px 16px;
+    border-radius: 30px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    margin-top: 5px;
+}
+
+.timer-text {
+    font-size: clamp(3rem, 10vw, 5rem);
+    font-weight: 800;
+    color: var(--danger);
+    font-variant-numeric: tabular-nums;
+    margin: 10px 0;
+}
+
+/* Wire Buttons for Bomb Game */
+.wire-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    width: 100%;
+}
+.wire-btn {
+    height: 60px;
+    border-radius: 8px;
+    border: 3px solid rgba(255,255,255,0.2);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+/* Modal History */
+.modal-overlay {
+    position: fixed; top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(3px);
+    z-index: 100;
+    display: flex; justify-content: center; align-items: flex-end;
+    opacity: 0; pointer-events: none; transition: opacity 0.3s;
+}
+.modal-overlay.active { opacity: 1; pointer-events: all; }
+.modal-content {
+    background: #252525;
+    width: 100%; max-width: 500px; height: 70vh;
+    border-radius: 20px 20px 0 0;
+    display: flex; flex-direction: column;
+    transform: translateY(100%); transition: transform 0.3s ease;
+}
+.modal-overlay.active .modal-content { transform: translateY(0); }
+.modal-header {
+    padding: 15px 20px; border-bottom: 1px solid #333;
+    display: flex; justify-content: space-between; align-items: center;
+}
+.modal-header h2 { margin: 0; font-size: 1.2rem; color: #fff; }
+.close-modal { background: none; border: none; color: #aaa; font-size: 1.5rem; }
+.history-list { flex: 1; overflow-y: auto; padding: 0; margin: 0; list-style: none; }
+.history-item {
+    padding: 15px 20px; border-bottom: 1px solid #333;
+    font-size: 0.9rem; display: flex; align-items: flex-start; color: #ddd;
+}
+.history-tag {
+    font-size: 0.65rem; padding: 2px 6px; border-radius: 4px;
+    margin-right: 8px; color: #000; font-weight: bold; white-space: nowrap; margin-top: 3px;
+}
+
+/* --- Camera Overlay --- */
+#camera-overlay {
+    position: fixed; top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: #000;
+    z-index: 2000;
+    display: none; 
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+#camera-video {
+    position: absolute;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    opacity: 0.7;
+}
+#smile-ui-layer {
+    position: relative; z-index: 2005;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    width: 100%; height: 100%;
+    padding: 20px;
+    text-align: center;
+}
+#smile-status {
+    font-size: 1.5rem; font-weight: 800;
+    color: #fff; text-shadow: 0 0 10px #000;
+    margin-bottom: 20px;
+}
+#smile-timer {
+    font-size: 5rem; font-weight: 800;
+    color: #00e676;
+    text-shadow: 0 0 20px #000;
+    font-variant-numeric: tabular-nums;
+}
+.scanning-line {
+    position: absolute; top: 0; left: 0; width: 100%; height: 5px;
+    background: #00e676; box-shadow: 0 0 15px #00e676;
+    z-index: 2001; animation: scan 2s infinite linear;
+}
+@keyframes scan { 0% { top: 0%; } 50% { top: 100%; } 100% { top: 0%; } }
+.smile-detected {
+    border: 10px solid #ef5350;
+    box-shadow: inset 0 0 100px #ef5350;
+}
+@keyframes shake {
+    0% { transform: translate(1px, 1px) rotate(0deg); }
+    10% { transform: translate(-1px, -2px) rotate(-1deg); }
+    30% { transform: translate(3px, 2px) rotate(0deg); }
+    50% { transform: translate(-1px, 2px) rotate(1deg); }
+    70% { transform: translate(3px, 1px) rotate(-1deg); }
+    100% { transform: translate(1px, -2px) rotate(0deg); }
+}
+.back-btn {
+    background: #fff; color: #000;
+    border: none; padding: 15px 30px;
+    border-radius: 50px; font-size: 1.2rem;
+    font-weight: bold; margin-top: 30px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+    display: none; cursor: pointer;
+}
 </style>
 </head>
 
 <body>
 
+<div id="camera-overlay">
+    <video id="camera-video" autoplay muted playsinline></video>
+    <div class="scanning-line"></div>
+    <div id="smile-ui-layer">
+        <div id="smile-status">กำลังโหลด AI...</div>
+        <div id="smile-timer">--</div>
+        <button class="back-btn" onclick="closeCameraGame()">🔙 กลับหน้าหลัก</button>
+    </div>
+</div>
+
 <div id="game-container">
-<header>
-<h1>PARTY GAME (DEMO)</h1>
-</header>
+    <header>
+        <h1>PARTY GAME</h1>
+    </header>
 
-<div class="display-area">
-<div id="category-badge" class="category-badge">DEMO</div>
-<div id="wheel-result" class="big-instruction">โหมดเดโม<br>กดปุ่มเพื่อเริ่ม</div>
-<div id="special-game-area"></div>
+    <div class="display-area">
+        <button id="sound-toggle">🔊 เปิดเสียง</button>
+        <div id="count-display"></div>
+
+        <div id="category-badge" class="category-badge">CATEGORY</div>
+        
+        <div class="big-instruction" id="wheel-result">
+            พร้อมเล่นเกม?<br>กดปุ่มเริ่มเลย!
+        </div>
+
+        <div id="special-game-area"></div>
+
+        <div class="hint-text">MODE: ALL GAMES (NO QUESTIONS)</div>
+    </div>
+
+    <div class="controls-area">
+        <button class="btn" id="spin-btn" onclick="startSpin()">🎲 สุ่มเกม!</button>
+        <button class="btn btn-secondary" onclick="openHistory()">📜 ดูประวัติ</button>
+    </div>
 </div>
 
-<div class="controls-area">
-<button class="btn" id="spin-btn">🔥 เล่นมินิเกม</button>
-<button class="btn btn-secondary">DEMO MODE</button>
+<div class="modal-overlay" id="historyModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>📜 ประวัติเกมที่เล่น</h2>
+            <button class="close-modal" onclick="closeHistory()">✕</button>
+        </div>
+        <ul class="history-list" id="historyListDisplay"></ul>
+    </div>
 </div>
-</div>
+
+<audio id="clickSound" src="https://www.soundjay.com/buttons/sounds/button-50.mp3"></audio>
+<audio id="resultSound" src="https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3"></audio>
+<audio id="alarmSound" src="https://www.soundjay.com/misc/sounds/magic-chime-01.mp3"></audio>
+<audio id="gunSound" src="https://www.soundjay.com/mechanical/sounds/gun-cocking-01.mp3"></audio>
+<audio id="bangSound" src="https://www.soundjay.com/mechanical/sounds/explosion-01.mp3"></audio>
 
 <script>
-// =================== DEMO MODE ===================
+// =================== 1. ข้อมูลเกมทั้งหมด (ลบคำถามปกติออกหมดแล้ว) ===================
 
-// ❌ ไม่มีคำถามทั่วไป
-const normalQuestions = [];
-
-// ✅ Mini Games เท่านั้น
-const specialGamesList = [
-    { t:"⏱️ ห้ามพูด 40 วิ", c:"MINI GAME", color:"#ffca28", type:"timer", time:40 },
-    { t:"⏱️ หยุดเวลา 5.00 วิ", c:"SKILL", color:"#42a5f5", type:"stopwatch", target:5, range:0.1 },
-    { t:"🔫 Russian Roulette", c:"LUCK", color:"#ef5350", type:"roulette" },
-    { t:"💣 ตัดสายไฟ", c:"BOMB", color:"#ef5350", type:"bomb" },
-    { t:"🧠 เกมความจำ", c:"MEMORY", color:"#ab47bc", type:"memory" }
+const gameList = [
+    // --- เกมเดิม ---
+    { t: "จับเวลา 40 วิ! ใครส่งเสียงก่อนโดน", c: "QUIET GAME", color: "#ffca28", type: "timer", time: 40 },
+    { t: "กดหยุดเวลาให้ได้ 5.00 วิ (±0.10)", c: "SKILL", color: "#42a5f5", type: "stopwatch", target: 5.00, range: 0.10 },
+    { t: "วัดดวงรัสเซียนรูเล็ต! (ส่งมือถือวน)", c: "LUCK", color: "#ef5350", type: "roulette" },
+    { t: "กู้ระเบิด! ตัดสายไฟผิด...ตู้ม", c: "BOMB", color: "#ef5350", type: "bomb" },
+    { t: "จำเลขให้แม่น! ผิดดื่ม", c: "MEMORY", color: "#ab47bc", type: "memory" },
+    { t: "AI ตรวจจับรอยยิ้ม! ห้ามยิ้ม 10 วิ", c: "AI CHALLENGE", color: "#fff", type: "dontsmile" },
+    
+    // --- เพิ่มเกมใหม่ 1: รัวนิ้ว ---
+    { t: "นิ้วรัว! กดปุ่มให้ครบ 30 ครั้งใน 5 วิ", c: "SPEED", color: "#ff4081", type: "clicker", target: 30, time: 5 },
+    
+    // --- เพิ่มเกมใหม่ 2: สูงต่ำ ---
+    { t: "วัดดวง! เลขถัดไป สูง หรือ ต่ำ ?", c: "HIGH-LOW", color: "#00e5ff", type: "highlow" }
 ];
 
-// =================== Element ===================
-const spinBtn = document.getElementById("spin-btn");
-const resultDisplay = document.getElementById("wheel-result");
-const categoryBadge = document.getElementById("category-badge");
-const specialGameArea = document.getElementById("special-game-area");
+// =================== 2. ตัวแปรระบบ ===================
+let availableQuestions = [...gameList]; // ใช้ gameList แทน normalQuestions
+let history = []; 
+let soundEnabled = true;
 
-// =================== DEMO SPIN ===================
-spinBtn.onclick = () => {
-    const game = specialGamesList[Math.floor(Math.random()*specialGamesList.length)];
-    showGame(game);
+const clickSound = document.getElementById("clickSound");
+const resultSound = document.getElementById("resultSound");
+const alarmSound = document.getElementById("alarmSound");
+const gunSound = document.getElementById("gunSound");
+const bangSound = document.getElementById("bangSound");
+const soundToggle = document.getElementById("sound-toggle");
+
+const resultDisplay = document.getElementById('wheel-result');
+const spinBtn = document.getElementById('spin-btn');
+const countDisplay = document.getElementById('count-display');
+const categoryBadge = document.getElementById('category-badge');
+const specialGameArea = document.getElementById('special-game-area');
+
+// =================== 3. ฟังก์ชันหลัก ===================
+
+soundToggle.onclick = () => {
+    soundEnabled = !soundEnabled;
+    soundToggle.innerText = soundEnabled ? "🔊 เปิดเสียง" : "🔇 ปิดเสียง";
+    soundToggle.style.opacity = soundEnabled ? "1" : "0.5";
 };
 
-function showGame(game){
-    resultDisplay.innerText = game.t;
-    categoryBadge.innerText = game.c;
-    categoryBadge.style.background = game.color;
-    categoryBadge.style.opacity = 1;
-    setupGame(game);
+function playSound(sound) {
+    if (!soundEnabled) return;
+    if (!sound.paused) {
+        sound.pause();
+        sound.currentTime = 0;
+    }
+    sound.play().catch(()=>{});
 }
 
-// =================== Mini Games ===================
-function setupGame(game){
-    specialGameArea.style.display="block";
-    if(game.type==="timer") timerGame(game.time);
-    if(game.type==="stopwatch") stopwatchGame(game.target,game.range);
-    if(game.type==="roulette") rouletteGame();
-    if(game.type==="bomb") bombGame();
-    if(game.type==="memory") memoryGame();
+function updateCountDisplay() {
+    countDisplay.innerText = "Game Mode";
 }
 
-function timerGame(sec){
-    let t=sec;
-    specialGameArea.innerHTML=`<div class="timer-text">${t}</div>`;
-    const id=setInterval(()=>{
-        t--;
-        specialGameArea.innerHTML=`<div class="timer-text">${t}</div>`;
-        if(t<=0){clearInterval(id);specialGameArea.innerHTML=`<div class="timer-text">หมดเวลา!</div>`}
-    },1000);
+updateCountDisplay();
+
+function startSpin() {
+    specialGameArea.style.display = 'none';
+    specialGameArea.innerHTML = ''; 
+    categoryBadge.style.opacity = '0';
+    
+    playSound(clickSound); 
+    spinBtn.disabled = true;
+    resultDisplay.classList.remove("pop-in");
+    resultDisplay.classList.add("blur-anim");
+
+    // เอฟเฟกต์สุ่มตัวอักษร
+    let shuffleInterval = setInterval(() => {
+        const randomQ = gameList[Math.floor(Math.random() * gameList.length)];
+        resultDisplay.innerText = randomQ.t;
+    }, 50);
+
+    setTimeout(() => {
+        clearInterval(shuffleInterval);
+        processResult();
+    }, 1000);
 }
 
-function stopwatchGame(target,range){
-    let start=Date.now();
-    specialGameArea.innerHTML=`<div class="timer-text" id="sw">0.00</div>
-    <button class="game-btn" onclick="stopSW(${target},${range})">หยุด</button>`;
-    window.swInt=setInterval(()=>{
-        document.getElementById("sw").innerText=((Date.now()-start)/1000).toFixed(2);
-    },30);
-}
-function stopSW(t,r){
-    clearInterval(window.swInt);
-    const v=parseFloat(document.getElementById("sw").innerText);
-    specialGameArea.innerHTML = Math.abs(v-t)<=r
-        ? `<div class="timer-text">🎉 รอด</div>`
-        : `<div class="timer-text">💀 ดื่ม</div>`;
+function processResult() {
+    // สุ่มเกมจากรายการที่มี
+    const selectedObj = gameList[Math.floor(Math.random() * gameList.length)];
+
+    history.unshift(selectedObj);
+    resultDisplay.classList.remove("blur-anim");
+    resultDisplay.innerText = selectedObj.t;
+    categoryBadge.innerText = selectedObj.c;
+    categoryBadge.style.backgroundColor = selectedObj.color;
+    categoryBadge.style.color = "#000"; 
+    categoryBadge.style.opacity = '1';
+
+    void resultDisplay.offsetWidth; 
+    resultDisplay.classList.add("pop-in");
+    playSound(resultSound);
+
+    // เข้าสู่โหมดตั้งค่าเกมทันที เพราะทุกอันคือเกม
+    setupGame(selectedObj);
+    updateCountDisplay();
 }
 
-function rouletteGame(){
-    const lose=Math.floor(Math.random()*6);
-    let cur=0;
-    specialGameArea.innerHTML=`<button class="game-btn" onclick="pull()">เหนี่ยวไก</button>`;
-    window.pull=()=>{
-        if(cur===lose) specialGameArea.innerHTML=`<div class="timer-text">💥 ดื่ม</div>`;
-        else {cur++;alert("คลิก…รอด");}
+// =================== 4. Logic Games ===================
+
+async function setupGame(gameObj) {
+    specialGameArea.style.display = 'flex';
+    
+    // เช็คประเภทเกมและเรียกฟังก์ชันที่ถูกต้อง
+    if (gameObj.type === 'timer') setupTimerGame(gameObj.time);
+    else if (gameObj.type === 'stopwatch') setupStopwatchGame(gameObj.target, gameObj.range);
+    else if (gameObj.type === 'roulette') setupRouletteGame();
+    else if (gameObj.type === 'bomb') setupBombGame();
+    else if (gameObj.type === 'memory') setupMemoryGame();
+    else if (gameObj.type === 'dontsmile') {
+        specialGameArea.innerHTML = `<button class="game-btn" onclick="setupSmileGame()">📸 เปิดกล้องจับรอยยิ้ม</button>${getSkipButtonHTML()}`;
+    }
+    // เกมใหม่
+    else if (gameObj.type === 'clicker') setupClickerGame(gameObj.target, gameObj.time);
+    else if (gameObj.type === 'highlow') setupHighLowGame();
+}
+
+function skipGame() {
+    clearInterval(window.currentInterval);
+    if(window.clickTimeout) clearTimeout(window.clickTimeout);
+    specialGameArea.style.display = 'none';
+    spinBtn.disabled = false;
+    playSound(clickSound);
+}
+
+function getSkipButtonHTML() {
+    return `<button class="skip-btn" onclick="skipGame()">⏭ ข้ามเกมนี้</button>`;
+}
+
+// --- Game Logic เดิม ---
+function setupTimerGame(seconds) {
+    specialGameArea.innerHTML = `<button class="game-btn" onclick="runTimer(${seconds})">⏱️ เริ่มจับเวลา (${seconds} วิ)</button>${getSkipButtonHTML()}`;
+}
+function runTimer(seconds) {
+    let timeLeft = seconds;
+    specialGameArea.innerHTML = `<div class="timer-text" id="game-timer">${timeLeft}</div>${getSkipButtonHTML()}`;
+    window.currentInterval = setInterval(() => {
+        timeLeft--;
+        document.getElementById('game-timer').innerText = timeLeft;
+        if (timeLeft <= 5 && timeLeft > 0) playSound(clickSound);
+        if (timeLeft <= 0) {
+            clearInterval(window.currentInterval);
+            document.getElementById('game-timer').innerText = "หมดเวลา!";
+            playSound(alarmSound);
+            spinBtn.disabled = false;
+        }
+    }, 1000);
+}
+function setupStopwatchGame(target, range) {
+    specialGameArea.innerHTML = `<div style="margin-bottom:5px;">หยุดให้ได้: ${target.toFixed(2)}</div><button class="game-btn" id="stopwatch-btn" onclick="runStopwatch(${target}, ${range})">▶️ เริ่ม!</button>${getSkipButtonHTML()}`;
+}
+function runStopwatch(target, range) {
+    let startTime = Date.now();
+    specialGameArea.innerHTML = `<div class="timer-text" id="sw-display">0.00</div><button class="game-btn" onclick="stopStopwatch(this, ${target}, ${range})">🟥 หยุด!</button>${getSkipButtonHTML()}`;
+    window.currentInterval = setInterval(() => {
+        const elapsed = (Date.now() - startTime) / 1000;
+        document.getElementById('sw-display').innerText = elapsed.toFixed(2);
+    }, 30);
+}
+function stopStopwatch(btn, target, range) {
+    clearInterval(window.currentInterval);
+    const finalTime = parseFloat(document.getElementById('sw-display').innerText);
+    const diff = Math.abs(finalTime - target);
+    if (diff <= range) { btn.innerText = "🎉 เทพว่ะ! รอด"; btn.style.background = "#00e676"; playSound(resultSound); }
+    else { btn.innerText = "💀 ไม่เนียน! ดื่ม"; btn.style.background = "#ef5350"; playSound(alarmSound); }
+    btn.disabled = true; spinBtn.disabled = false;
+}
+function setupRouletteGame() {
+    window.bulletChamber = Math.floor(Math.random() * 6);
+    window.currentChamber = 0;
+    specialGameArea.innerHTML = `<div id="roulette-status" style="margin-bottom:10px;">นัดที่ 1 / 6</div><button class="game-btn" id="trigger-btn" onclick="pullTrigger()">🤞 เหนี่ยวไก</button>${getSkipButtonHTML()}`;
+}
+function pullTrigger() {
+    const btn = document.getElementById('trigger-btn');
+    playSound(gunSound); btn.disabled = true;
+    setTimeout(() => {
+        if (window.currentChamber === window.bulletChamber) {
+            playSound(bangSound);
+            specialGameArea.innerHTML = `<div class="timer-text">💥</div><div style="color:#ef5350; font-weight:bold;">เรียบร้อย! หมดแก้ว</div>${getSkipButtonHTML()}`;
+            spinBtn.disabled = false;
+        } else {
+            playSound(clickSound); window.currentChamber++;
+            btn.disabled = false;
+            document.getElementById('roulette-status').innerText = `นัดที่ ${window.currentChamber + 1} / 6 (รอด...)`;
+        }
+    }, 600);
+}
+function setupBombGame() {
+    const bombWire = Math.floor(Math.random() * 4);
+    const colors = ["#ef5350", "#00e676", "#42a5f5", "#ffca28"];
+    let wiresHTML = colors.map((color, i) => `<div class="wire-btn" style="background:${color}" onclick="cutWire(this, ${i === bombWire})"></div>`).join('');
+    specialGameArea.innerHTML = `<div class="wire-container">${wiresHTML}</div>${getSkipButtonHTML()}`;
+}
+function cutWire(el, isBomb) {
+    if (isBomb) {
+        playSound(bangSound); 
+        el.style.background = "#000"; el.style.boxShadow = "0 0 20px #ff3b3b"; el.innerText = "💥";
+        specialGameArea.style.animation = "shake 0.5s";
+        setTimeout(() => { specialGameArea.style.animation = ""; }, 500);
+        resultDisplay.innerText = "บึ้มมม! ดื่มมม!";
+        spinBtn.disabled = false;
+        document.querySelectorAll('.wire-btn').forEach(b => { b.onclick = null; b.style.cursor = "default"; });
+    } else {
+        playSound(clickSound); el.style.opacity = "0.1"; el.style.pointerEvents = "none";
+    }
+}
+function setupMemoryGame() {
+    const num = Math.floor(10000 + Math.random() * 90000);
+    specialGameArea.innerHTML = `<div style="font-size:0.9rem; margin-bottom:10px; color:#aaa;">จำเลขนี้ใน 5 วินาที!</div><div class="timer-text" id="mem-num" style="color:#00e676;">${num}</div><div style="width:100%; height:6px; background:#333; border-radius:10px; overflow:hidden; margin-top:10px;"><div id="mem-progress" style="width:100%; height:100%; background:#00e676; transition: width 5s linear;"></div></div>`;
+    setTimeout(() => { const progressBar = document.getElementById('mem-progress'); if(progressBar) progressBar.style.width = '0%'; }, 50);
+    setTimeout(() => {
+        const memNumDisplay = document.getElementById('mem-num');
+        if (memNumDisplay) {
+            specialGameArea.innerHTML = `<div style="font-size:1.1rem; margin-bottom:15px; font-weight:bold;">เมื่อกี้เลขอะไร!?</div><input type="number" id="mem-input" autocomplete="off" placeholder="?" style="padding:15px; border-radius:12px; border:2px solid #00e676; width:90%; text-align:center; font-size:1.8rem; background:#000; color:#fff; margin-bottom:15px; outline:none;"><button class="game-btn" onclick="checkMemory(${num})" style="background:#00e676; color:#000;">ส่งคำตอบ</button>${getSkipButtonHTML()}`;
+            document.getElementById('mem-input').focus();
+        }
+    }, 5000);
+}
+function checkMemory(correct) {
+    const inputEl = document.getElementById('mem-input');
+    const val = parseInt(inputEl.value);
+    if (val === correct) { resultDisplay.innerText = "ถูกต้อง! รอดตาย"; playSound(resultSound); }
+    else { resultDisplay.innerText = `ผิด! เลขที่ถูกคือ ${correct}`; playSound(alarmSound); }
+    specialGameArea.innerHTML = getSkipButtonHTML(); spinBtn.disabled = false;
+}
+
+// --- เกมใหม่ 1: Clicker (รัวนิ้ว) ---
+function setupClickerGame(target, time) {
+    specialGameArea.innerHTML = `
+        <div style="font-size:1rem; margin-bottom:5px;">กดให้ครบ ${target} ครั้ง ภายใน ${time} วิ</div>
+        <button class="game-btn" onclick="startClicker(${target}, ${time})">🚀 เริ่มเกมรัวนิ้ว!</button>
+        ${getSkipButtonHTML()}
+    `;
+}
+function startClicker(target, time) {
+    let count = 0;
+    let isActive = true;
+    
+    specialGameArea.innerHTML = `
+        <div class="timer-text" id="clicker-count" style="color:#fff">0</div>
+        <div style="color:#aaa; margin-bottom:10px;">เหลือเวลา: <span id="clicker-time">${time}</span> วิ</div>
+        <button class="game-btn" id="click-btn" style="height:80px; font-size:1.5rem;" onclick="handleClicker(${target})">🔥 กด!!!</button>
+        ${getSkipButtonHTML()}
+    `;
+
+    // ตัวจับเวลา
+    let timeLeft = time;
+    window.currentInterval = setInterval(() => {
+        timeLeft--;
+        const timeEl = document.getElementById('clicker-time');
+        if(timeEl) timeEl.innerText = timeLeft;
+        
+        if (timeLeft <= 0) {
+            clearInterval(window.currentInterval);
+            isActive = false;
+            document.getElementById('click-btn').disabled = true;
+            if (count < target) {
+                resultDisplay.innerText = "ไม่ทัน! อ่อนแอ...ดื่ม!";
+                playSound(alarmSound);
+            }
+            spinBtn.disabled = false;
+        }
+    }, 1000);
+
+    // ฟังก์ชันกด
+    window.handleClicker = (targetVal) => {
+        if (!isActive) return;
+        count++;
+        document.getElementById('clicker-count').innerText = count;
+        playSound(clickSound);
+        
+        if (count >= targetVal) {
+            clearInterval(window.currentInterval);
+            isActive = false;
+            document.getElementById('click-btn').disabled = true;
+            document.getElementById('click-btn').style.background = "#00e676";
+            document.getElementById('click-btn').innerText = "สำเร็จ!";
+            resultDisplay.innerText = "ยอดเยี่ยม! นิ้วรัวมาก";
+            playSound(resultSound);
+            spinBtn.disabled = false;
+        }
+    };
+}
+
+// --- เกมใหม่ 2: High-Low (สูงต่ำ) ---
+function setupHighLowGame() {
+    const currentNum = Math.floor(Math.random() * 9) + 1; // 1-9
+    specialGameArea.innerHTML = `
+        <div style="color:#aaa; margin-bottom:5px;">เลขปัจจุบันคือ</div>
+        <div class="timer-text" style="color:#fff;">${currentNum}</div>
+        <div style="margin-bottom:15px; font-size:1.1rem;">ทายว่าเลขถัดไป (1-10) จะ...</div>
+        <div style="display:flex; gap:10px; width:100%;">
+            <button class="game-btn" style="background:#42a5f5;" onclick="checkHighLow('low', ${currentNum})">⬇️ ต่ำกว่า</button>
+            <button class="game-btn" style="background:#ef5350;" onclick="checkHighLow('high', ${currentNum})">⬆️ สูงกว่า</button>
+        </div>
+        ${getSkipButtonHTML()}
+    `;
+}
+function checkHighLow(guess, prevNum) {
+    let nextNum = Math.floor(Math.random() * 10) + 1; // 1-10
+    
+    // กันเลขซ้ำเพื่อให้มีผลแพ้ชนะเสมอ
+    while(nextNum === prevNum) {
+        nextNum = Math.floor(Math.random() * 10) + 1;
+    }
+
+    let isWin = false;
+    if (guess === 'high' && nextNum > prevNum) isWin = true;
+    if (guess === 'low' && nextNum < prevNum) isWin = true;
+
+    let msg = isWin ? "รอดตัวไป!" : "ผิด! ดื่มซะ";
+    let color = isWin ? "#00e676" : "#ef5350";
+    let sound = isWin ? resultSound : alarmSound;
+
+    playSound(sound);
+
+    specialGameArea.innerHTML = `
+        <div style="font-size:1rem; color:#aaa;">เลขที่ออกคือ...</div>
+        <div class="timer-text" style="color:${color}; margin-bottom:5px;">${nextNum}</div>
+        <div style="font-size:1.5rem; font-weight:bold; margin-bottom:10px;">${msg}</div>
+        ${getSkipButtonHTML()}
+    `;
+    spinBtn.disabled = false;
+}
+
+// =================== Face AI Logic ===================
+let smileInterval;
+let gameTimerInterval;
+
+async function setupSmileGame() {
+    const overlay = document.getElementById('camera-overlay');
+    const status = document.getElementById('smile-status');
+    const timerDisplay = document.getElementById('smile-timer');
+    const video = document.getElementById('camera-video');
+    const backBtn = document.querySelector('.back-btn');
+    
+    overlay.style.display = 'flex';
+    overlay.classList.remove("smile-detected");
+    status.innerText = "กำลังปลุก AI... (รอแป๊บ)";
+    status.style.color = "#fff";
+    timerDisplay.innerText = "--";
+    backBtn.style.display = 'none'; 
+
+    try {
+        let faceModelsLoaded = false;
+        if (!faceModelsLoaded) {
+            await faceapi.nets.tinyFaceDetector.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models');
+            await faceapi.nets.faceExpressionNet.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models');
+            faceModelsLoaded = true;
+        }
+
+        const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
+        video.srcObject = stream;
+        status.innerText = "หันหน้าเข้ากล้องเพื่อเริ่ม...";
+        video.addEventListener('play', () => { startSmileDetection(video); });
+
+    } catch (err) {
+        console.error(err);
+        alert("ไม่สามารถเปิดกล้องได้ (เช็คเน็ต หรือ อนุญาตกล้อง)");
+        closeCameraGame();
     }
 }
 
-function bombGame(){
-    const boom=Math.floor(Math.random()*4);
-    let html="";
-    for(let i=0;i<4;i++){
-        html+=`<button class="game-btn" onclick="cut(${i===boom})">ตัดสาย</button>`;
-    }
-    specialGameArea.innerHTML=html;
-    window.cut=(b)=>{specialGameArea.innerHTML=b?"💥 ดื่ม":"😅 รอด"};
+function startSmileDetection(video) {
+    const status = document.getElementById('smile-status');
+    const timerDisplay = document.getElementById('smile-timer');
+    const backBtn = document.querySelector('.back-btn');
+    
+    let timeLeft = 10;
+    let gameStarted = false; 
+
+    timerDisplay.innerText = "รอหน้า..."; 
+    clearInterval(gameTimerInterval);
+    clearInterval(smileInterval);
+
+    smileInterval = setInterval(async () => {
+        const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions()).withFaceExpressions();
+        
+        if (detections.length > 0) {
+            if (!gameStarted) {
+                gameStarted = true;
+                status.innerText = "จับหน้าได้แล้ว! ห้ามยิ้ม!";
+                status.style.color = "#ef5350";
+                timerDisplay.innerText = timeLeft;
+
+                gameTimerInterval = setInterval(() => {
+                    timeLeft--;
+                    timerDisplay.innerText = timeLeft;
+                    if (timeLeft <= 0) {
+                        clearInterval(gameTimerInterval);
+                        clearInterval(smileInterval);
+                        status.innerText = "🎉 เก่งมาก! รอดตัวไป";
+                        status.style.color = "#00e676";
+                        playSound(resultSound);
+                        backBtn.style.display = 'inline-block';
+                    }
+                }, 1000);
+            }
+            const happiness = detections[0].expressions.happy;
+            if (happiness > 0.4) { 
+                failSmileGame();
+            }
+        }
+    }, 100);
 }
 
-function memoryGame(){
-    const num=Math.floor(1000+Math.random()*9000);
-    specialGameArea.innerHTML=`<div class="timer-text">${num}</div>`;
-    setTimeout(()=>{
-        specialGameArea.innerHTML=`<input id="m" style="font-size:2rem;text-align:center">
-        <button class="game-btn" onclick="check(${num})">ตอบ</button>`;
-    },3000);
+function failSmileGame() {
+    clearInterval(gameTimerInterval);
+    clearInterval(smileInterval);
+    const status = document.getElementById('smile-status');
+    const overlay = document.getElementById('camera-overlay');
+    const backBtn = document.querySelector('.back-btn');
+    
+    status.innerHTML = "💀 จับได้แล้ว! ยิ้มทำไม!<br>ดื่มหมดแก้ว!";
+    status.style.color = "#ef5350";
+    overlay.classList.add("smile-detected");
+    playSound(alarmSound); 
+    playSound(bangSound);
+    backBtn.style.display = 'inline-block'; 
 }
-function check(n){
-    specialGameArea.innerHTML =
-        parseInt(document.getElementById("m").value)===n
-        ? "🎉 ถูก"
-        : `💀 ผิด (${n})`;
+
+function closeCameraGame() {
+    const overlay = document.getElementById('camera-overlay');
+    const video = document.getElementById('camera-video');
+    if (video.srcObject) video.srcObject.getTracks().forEach(track => track.stop());
+    clearInterval(smileInterval);
+    clearInterval(gameTimerInterval);
+    overlay.style.display = 'none';
+    specialGameArea.style.display = 'none'; 
+    spinBtn.disabled = false; 
+    resultDisplay.innerText = "จบเกม! เล่นต่อไหม?";
 }
+
+// =================== History ===================
+function openHistory() {
+    playSound(clickSound); historyModal.classList.add('active');
+    if (history.length === 0) { historyListDisplay.innerHTML = '<li style="text-align:center; padding:20px;">ยังไม่มีประวัติ</li>'; return; }
+    historyListDisplay.innerHTML = history.map(h => `<li class="history-item"><span class="history-tag" style="background:${h.color}">${h.c}</span><span style="flex:1;">${h.t}</span></li>`).join("");
+}
+function closeHistory() { historyModal.classList.remove('active'); }
+historyModal.addEventListener('click', (e) => { if (e.target === historyModal) closeHistory(); });
 </script>
+    
 </body>
 </html>
