@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>PARTY GAME: FULL MINI-GAMES</title>
+<title>PARTY GAME: FULL MINI-GAMES (28 GAMES)</title>
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;800&display=swap" rel="stylesheet">
 <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 
@@ -344,7 +344,7 @@ h1 {
 
         <div id="special-game-area"></div>
 
-        <div class="hint-text">13 GAMES INCLUDED</div>
+        <div class="hint-text">28 GAMES INCLUDED</div>
     </div>
 
     <div class="controls-area">
@@ -370,9 +370,10 @@ h1 {
 <audio id="bangSound" src="https://www.soundjay.com/mechanical/sounds/explosion-01.mp3"></audio>
 
 <script>
-// =================== 1. รายชื่อเกมทั้งหมด (13 เกม) ===================
+// =================== 1. รายชื่อเกมทั้งหมด (28 เกม: 13 เดิม + 15 ใหม่) ===================
 
 const gameList = [
+    // --- Original 13 Games ---
     { t: "จับเวลา 40 วิ! ใครส่งเสียงก่อนโดน", c: "QUIET GAME", color: "#ffca28", type: "timer", time: 40 },
     { t: "กดหยุดเวลาให้ได้ 5.00 วิ (±0.10)", c: "SKILL", color: "#42a5f5", type: "stopwatch", target: 5.00, range: 0.10 },
     { t: "วัดดวงรัสเซียนรูเล็ต!", c: "LUCK", color: "#ef5350", type: "roulette" },
@@ -385,7 +386,24 @@ const gameList = [
     { t: "จั่วไพ่ปีศาจ! 1 ใน 4 ใบคือกับดัก", c: "LUCK", color: "#795548", type: "cards" },
     { t: "คณิตคิดเร็ว! ตอบถูกใน 3 วิ", c: "BRAIN", color: "#607d8b", type: "math" },
     { t: "ตาดีได้! จิ้มปุ่มให้ทันใน 1.5 วิ", c: "REFLEX", color: "#cddc39", type: "reflex" },
-    { t: "ทายเลขท้าย! คู่ หรือ คี่ ?", c: "LOTTO", color: "#9c27b0", type: "parity" }
+    { t: "ทายเลขท้าย! คู่ หรือ คี่ ?", c: "LOTTO", color: "#9c27b0", type: "parity" },
+
+    // --- New 15 Games ---
+    { t: "จำลำดับสีให้ทัน! (Simon Says)", c: "MEMORY", color: "#e91e63", type: "simon" },
+    { t: "หมุนขวดวัดดวง! (ชี้ใครดื่ม)", c: "LUCK", color: "#8bc34a", type: "bottle" },
+    { t: "รอสีเขียวแล้วกด! (ห้ามกดก่อน)", c: "REFLEX", color: "#009688", type: "colorreflex" },
+    { t: "จับจุด! กดจุดที่วิ่งไปมาให้ทัน 5 ครั้ง", c: "SKILL", color: "#3f51b5", type: "catchdot" },
+    { t: "ทายตัวเลข 1-100 (บอกใบ้ สูง/ต่ำ)", c: "LOGIC", color: "#673ab7", type: "guessnum" },
+    { t: "หลับตากด! ปล่อยปุ่มที่ 4 วินาที", c: "SENSE", color: "#607d8b", type: "blindhold" },
+    { t: "เรียงคำปริศนา! (ภาษาอังกฤษง่ายๆ)", c: "BRAIN", color: "#ff5722", type: "scramble" },
+    { t: "นับเร็ว! มีอีโมจิกี่ตัว?", c: "VISION", color: "#ffeb3b", type: "quickcount" },
+    { t: "ซ้าย หรือ ขวา? กดตามคำสั่งให้ทัน", c: "CONFUSION", color: "#795548", type: "leftright" },
+    { t: "ตัวอักษรที่หายไปคือ? (A-Z)", c: "KNOW", color: "#9e9e9e", type: "missingchar" },
+    { t: "หาตัวที่ต่าง! (Odd One Out)", c: "VISION", color: "#00bcd4", type: "oddone" },
+    { t: "สูบลูกโป่งวัดใจ! (อย่าให้แตก)", c: "RISK", color: "#f44336", type: "balloon" },
+    { t: "Truth or Dare? (ความจริง หรือ กล้า)", c: "PARTY", color: "#e040fb", type: "tord" },
+    { t: "ทอยเต๋าประลอง! (แต้มต่ำกว่าดื่ม)", c: "LUCK", color: "#ffc107", type: "diceduel" },
+    { t: "สงครามจิ้มจอ! (2 คนช่วยกันจิ้ม)", c: "BATTLE", color: "#ff1744", type: "tapwar" }
 ];
 
 // =================== 2. ตัวแปรระบบ ===================
@@ -459,6 +477,7 @@ function processResult() {
 async function setupGame(gameObj) {
     specialGameArea.style.display = 'flex';
     
+    // Existing 13 Games
     if (gameObj.type === 'timer') setupTimerGame(gameObj.time);
     else if (gameObj.type === 'stopwatch') setupStopwatchGame(gameObj.target, gameObj.range);
     else if (gameObj.type === 'roulette') setupRouletteGame();
@@ -474,12 +493,30 @@ async function setupGame(gameObj) {
     else if (gameObj.type === 'dontsmile') {
         specialGameArea.innerHTML = `<button class="game-btn" onclick="setupSmileGame()">📸 เปิดกล้องจับรอยยิ้ม</button>${getSkipButtonHTML()}`;
     }
+
+    // New 15 Games Logic Dispatcher
+    else if (gameObj.type === 'simon') setupSimonGame();
+    else if (gameObj.type === 'bottle') setupBottleGame();
+    else if (gameObj.type === 'colorreflex') setupColorReflexGame();
+    else if (gameObj.type === 'catchdot') setupCatchDotGame();
+    else if (gameObj.type === 'guessnum') setupGuessNumGame();
+    else if (gameObj.type === 'blindhold') setupBlindHoldGame();
+    else if (gameObj.type === 'scramble') setupScrambleGame();
+    else if (gameObj.type === 'quickcount') setupQuickCountGame();
+    else if (gameObj.type === 'leftright') setupLeftRightGame();
+    else if (gameObj.type === 'missingchar') setupMissingCharGame();
+    else if (gameObj.type === 'oddone') setupOddOneGame();
+    else if (gameObj.type === 'balloon') setupBalloonGame();
+    else if (gameObj.type === 'tord') setupTorDGame();
+    else if (gameObj.type === 'diceduel') setupDiceDuelGame();
+    else if (gameObj.type === 'tapwar') setupTapWarGame();
 }
 
 function skipGame() {
     clearInterval(window.currentInterval);
     if(window.mathTimeout) clearTimeout(window.mathTimeout);
     if(window.reflexFail) clearTimeout(window.reflexFail);
+    if(window.gameTimeout) clearTimeout(window.gameTimeout); // Added universal timeout clear
     specialGameArea.style.display = 'none';
     spinBtn.disabled = false;
     playSound(clickSound);
@@ -489,7 +526,7 @@ function getSkipButtonHTML() {
     return `<button class="skip-btn" onclick="skipGame()">⏭ ข้ามไปสุ่มใหม่</button>`;
 }
 
-// =================== 4. มินิเกมทั้ง 13 (Logic) ===================
+// =================== 4. มินิเกมทั้ง 13 (Logic เดิม) ===================
 
 // 1. Timer
 function setupTimerGame(seconds) {
@@ -741,6 +778,334 @@ function openHistory() {
     historyListDisplay.innerHTML = history.length ? history.map(h => `<li class="history-item"><span class="history-tag" style="background:${h.color}">${h.c}</span>${h.t}</li>`).join('') : '<li style="padding:20px; text-align:center;">ไม่มีประวัติ</li>';
 }
 function closeHistory() { historyModal.classList.remove('active'); }
+
+// =================== 5. เพิ่มเติม: 15 เกมใหม่ (Logic) ===================
+
+// 14. Simon Says (Memory)
+function setupSimonGame() {
+    specialGameArea.innerHTML = `<button class="game-btn" onclick="startSimon()">🧠 เริ่มจำลำดับ!</button>`;
+}
+function startSimon() {
+    const colors = ['#f44336', '#4caf50', '#2196f3', '#ffeb3b'];
+    const seq = Array.from({length: 4}, () => Math.floor(Math.random() * 4));
+    let userIdx = 0;
+    
+    // สร้างปุ่ม
+    let html = `<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; width:100%;">`;
+    colors.forEach((c, i) => html += `<div id="simon-${i}" style="height:80px; background:${c}; opacity:0.3; border-radius:10px;"></div>`);
+    html += `</div>`;
+    specialGameArea.innerHTML = html;
+
+    // เล่น Sequence
+    let i = 0;
+    const interval = setInterval(() => {
+        if(i >= seq.length) {
+            clearInterval(interval);
+            specialGameArea.innerHTML += `<div style="margin-top:10px;">ตาคุณแล้ว!</div>`;
+            colors.forEach((c, idx) => {
+                const el = document.getElementById(`simon-${idx}`);
+                el.style.opacity = "1";
+                el.onclick = () => {
+                    playSound(clickSound);
+                    el.style.transform = "scale(0.9)";
+                    setTimeout(()=>el.style.transform="scale(1)", 100);
+                    if(idx !== seq[userIdx]) {
+                        resultDisplay.innerText = "ผิด! ดื่ม"; playSound(alarmSound); spinBtn.disabled = false;
+                        document.querySelectorAll('[id^="simon-"]').forEach(d=>d.onclick=null);
+                    } else {
+                        userIdx++;
+                        if(userIdx === seq.length) {
+                            resultDisplay.innerText = "สุดยอด! รอด"; playSound(resultSound); spinBtn.disabled = false;
+                            document.querySelectorAll('[id^="simon-"]').forEach(d=>d.onclick=null);
+                        }
+                    }
+                }
+            });
+            return;
+        }
+        const active = document.getElementById(`simon-${seq[i]}`);
+        active.style.opacity = "1";
+        playSound(clickSound);
+        setTimeout(() => active.style.opacity = "0.3", 400);
+        i++;
+    }, 600);
+}
+
+// 15. Spin Bottle (Luck)
+function setupBottleGame() {
+    specialGameArea.innerHTML = `<div id="bottle" style="font-size:4rem; transition: transform 3s ease-out;">🍾</div><button class="game-btn" style="margin-top:20px;" onclick="spinBottle()">หมุน!</button>${getSkipButtonHTML()}`;
+}
+function spinBottle() {
+    const rot = 720 + Math.floor(Math.random() * 360);
+    document.getElementById('bottle').style.transform = `rotate(${rot}deg)`;
+    playSound(clickSound);
+    setTimeout(() => {
+        resultDisplay.innerText = "ขวดชี้ใคร ดื่ม!";
+        playSound(alarmSound);
+        spinBtn.disabled = false;
+    }, 3000);
+}
+
+// 16. Color Reflex
+function setupColorReflexGame() {
+    specialGameArea.innerHTML = `<div id="color-box" style="width:100%; height:100px; background:#ef5350; border-radius:10px; display:flex; align-items:center; justify-content:center; font-weight:bold;">รอสีเขียว...</div><button class="game-btn" id="reflex-btn" onclick="checkReflex()">กด!</button>${getSkipButtonHTML()}`;
+    window.canPress = false;
+    
+    const time = 2000 + Math.random() * 3000;
+    window.gameTimeout = setTimeout(() => {
+        const box = document.getElementById('color-box');
+        if(box) {
+            box.style.background = "#00e676";
+            box.innerText = "กดเลย!!!";
+            window.canPress = true;
+            window.reflexStart = Date.now();
+        }
+    }, time);
+}
+function checkReflex() {
+    if(!window.canPress) {
+        clearTimeout(window.gameTimeout);
+        resultDisplay.innerText = "กดก่อน! ดื่ม"; playSound(alarmSound); spinBtn.disabled = false;
+    } else {
+        const diff = Date.now() - window.reflexStart;
+        if(diff < 500) { resultDisplay.innerText = `ไวมาก! (${diff}ms) รอด`; playSound(resultSound); }
+        else { resultDisplay.innerText = `ช้า! (${diff}ms) ดื่ม`; playSound(alarmSound); }
+        spinBtn.disabled = false;
+    }
+}
+
+// 17. Catch Dot (Skill)
+function setupCatchDotGame() {
+    specialGameArea.innerHTML = `<button class="game-btn" onclick="startGameDot()">เริ่มจับจุด!</button>`;
+}
+function startGameDot() {
+    let score = 0;
+    specialGameArea.innerHTML = `<div id="dot-area" style="height:200px; width:100%; position:relative; background:#222; border-radius:10px; overflow:hidden;"></div>`;
+    
+    function spawnDot() {
+        if(score >= 5) { resultDisplay.innerText = "ครบแล้ว! รอด"; playSound(resultSound); spinBtn.disabled = false; return; }
+        const dot = document.createElement('div');
+        dot.style.cssText = `width:40px; height:40px; background:#00e676; border-radius:50%; position:absolute; top:${Math.random()*160}px; left:${Math.random()*(specialGameArea.offsetWidth-50)}px; cursor:pointer;`;
+        dot.onmousedown = () => { score++; playSound(clickSound); dot.remove(); spawnDot(); };
+        document.getElementById('dot-area').appendChild(dot);
+        
+        // Dot moves automatically if not clicked quickly
+        setTimeout(() => { if(dot.parentNode) { dot.remove(); spawnDot(); } }, 900);
+    }
+    spawnDot();
+    window.gameTimeout = setTimeout(() => { if(score < 5) { resultDisplay.innerText = "ไม่ครบ! ดื่ม"; playSound(alarmSound); spinBtn.disabled = false; document.getElementById('dot-area').innerHTML = ''; } }, 6000);
+}
+
+// 18. Guess Number (Logic)
+function setupGuessNumGame() {
+    window.targetNum = Math.floor(Math.random() * 100) + 1;
+    window.guesses = 0;
+    specialGameArea.innerHTML = `<input type="number" id="g-input" placeholder="1-100" style="padding:10px; width:60%; border-radius:8px; border:none;"><button class="game-btn" style="width:35%; float:right;" onclick="doGuess()">ทาย</button><div id="g-hint" style="margin-top:10px; color:#ffca28;">ทายมา...</div>${getSkipButtonHTML()}`;
+}
+function doGuess() {
+    const val = parseInt(document.getElementById('g-input').value);
+    window.guesses++;
+    if(val === window.targetNum) { resultDisplay.innerText = `ถูกต้อง! (${window.guesses} ครั้ง)`; playSound(resultSound); spinBtn.disabled = false; }
+    else if(val < window.targetNum) document.getElementById('g-hint').innerText = "มากกว่านี้!";
+    else document.getElementById('g-hint').innerText = "น้อยกว่านี้!";
+    
+    if(window.guesses >= 6) { resultDisplay.innerText = `หมดสิทธิ์! เลขคือ ${window.targetNum} ดื่ม`; playSound(alarmSound); spinBtn.disabled = false; }
+}
+
+// 19. Blind Hold (Sense)
+function setupBlindHoldGame() {
+    specialGameArea.innerHTML = `<button class="game-btn" onmousedown="startHold()" ontouchstart="startHold(event)" onmouseup="endHold()" ontouchend="endHold(event)">กดค้างแล้วปล่อยที่ 4 วิ</button>${getSkipButtonHTML()}`;
+}
+function startHold(e) {
+    if(e) e.preventDefault();
+    window.holdStart = Date.now();
+    resultDisplay.innerText = "กำลังจับเวลา...";
+}
+function endHold(e) {
+    if(e) e.preventDefault();
+    const dur = (Date.now() - window.holdStart) / 1000;
+    const diff = Math.abs(dur - 4.0);
+    if(diff < 0.5) { resultDisplay.innerText = `${dur.toFixed(2)} วิ! เทพมาก (รอด)`; playSound(resultSound); }
+    else { resultDisplay.innerText = `${dur.toFixed(2)} วิ... ห่างไกล (ดื่ม)`; playSound(alarmSound); }
+    spinBtn.disabled = false;
+}
+
+// 20. Word Scramble
+function setupScrambleGame() {
+    const words = ["PARTY", "DRINK", "SHOTS", "BEER", "WINE", "VODKA", "MUSIC", "DANCE"];
+    const word = words[Math.floor(Math.random() * words.length)];
+    const scrambled = word.split('').sort(() => 0.5 - Math.random()).join('');
+    specialGameArea.innerHTML = `<div class="timer-text" style="letter-spacing:5px;">${scrambled}</div><input type="text" id="s-input" placeholder="ศัพท์ภาษาอังกฤษ?" style="padding:10px; width:100%; margin-bottom:10px;"><button class="game-btn" onclick="checkScramble('${word}')">ตอบ</button>${getSkipButtonHTML()}`;
+}
+function checkScramble(ans) {
+    const val = document.getElementById('s-input').value.toUpperCase();
+    if(val === ans) { resultDisplay.innerText = "ถูกต้อง! รอด"; playSound(resultSound); }
+    else { resultDisplay.innerText = `ผิด! เฉลย ${ans} (ดื่ม)`; playSound(alarmSound); }
+    spinBtn.disabled = false;
+}
+
+// 21. Quick Count
+function setupQuickCountGame() {
+    const count = Math.floor(Math.random() * 8) + 3;
+    const emojis = "🍎🍊🍋🍉🍇🍓🍒🍑".split('');
+    let html = '';
+    for(let i=0; i<count; i++) html += `<span style="font-size:1.5rem;">${emojis[Math.floor(Math.random()*emojis.length)]}</span> `;
+    specialGameArea.innerHTML = `<div style="margin-bottom:10px;">${html}</div><div style="display:flex; gap:5px; flex-wrap:wrap; justify-content:center;">${[3,4,5,6,7,8,9,10].map(n=>`<button class="game-btn" style="width:45px;" onclick="checkCount(${n}, ${count})">${n}</button>`).join('')}</div>`;
+    
+    // Auto hide
+    setTimeout(() => { specialGameArea.innerHTML = `<div style="margin-bottom:10px;">(ซ่อนแล้ว) มีกี่ลูก?</div><div style="display:flex; gap:5px; flex-wrap:wrap; justify-content:center;">${[3,4,5,6,7,8,9,10].map(n=>`<button class="game-btn" style="width:45px;" onclick="checkCount(${n}, ${count})">${n}</button>`).join('')}</div>`; }, 1500);
+}
+function checkCount(ans, correct) {
+    if(ans === correct) { resultDisplay.innerText = "ตาดี! รอด"; playSound(resultSound); }
+    else { resultDisplay.innerText = `ผิด! มี ${correct} (ดื่ม)`; playSound(alarmSound); }
+    spinBtn.disabled = false;
+}
+
+// 22. Left Right
+function setupLeftRightGame() {
+    specialGameArea.innerHTML = `<button class="game-btn" onclick="runLR()">เริ่มทดสอบ!</button>`;
+}
+function runLR() {
+    const dir = Math.random() > 0.5 ? "ซ้าย" : "ขวา";
+    const isTrick = Math.random() > 0.7; // 30% trick (text says Left, arrow points Right)
+    const arrow = dir === "ซ้าย" ? (isTrick ? "➡️" : "⬅️") : (isTrick ? "⬅️" : "➡️");
+    
+    specialGameArea.innerHTML = `<div class="timer-text">${dir}</div><div style="font-size:3rem; margin-bottom:10px;">${arrow}</div><div style="display:flex; gap:10px; width:100%;"><button class="game-btn" onclick="checkLR('ซ้าย', '${dir}')">ซ้าย</button><button class="game-btn" onclick="checkLR('ขวา', '${dir}')">ขวา</button></div>`;
+    
+    window.gameTimeout = setTimeout(() => { resultDisplay.innerText = "ช้าไป! ดื่ม"; playSound(alarmSound); spinBtn.disabled = false; }, 1500);
+}
+function checkLR(ans, correct) {
+    clearTimeout(window.gameTimeout);
+    if(ans === correct) { resultDisplay.innerText = "สติดี! รอด"; playSound(resultSound); }
+    else { resultDisplay.innerText = "สับสน! ดื่ม"; playSound(alarmSound); }
+    spinBtn.disabled = false;
+}
+
+// 23. Missing Char
+function setupMissingCharGame() {
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const start = Math.floor(Math.random() * 22);
+    const sub = chars.substring(start, start+4);
+    const hiddenIdx = Math.floor(Math.random() * 4);
+    const ans = sub[hiddenIdx];
+    const display = sub.split('').map((c,i) => i===hiddenIdx ? "_" : c).join(' ');
+    
+    let choices = [ans];
+    while(choices.length < 3) {
+        let r = chars[Math.floor(Math.random() * 26)];
+        if(!choices.includes(r)) choices.push(r);
+    }
+    choices.sort(()=>Math.random()-0.5);
+
+    specialGameArea.innerHTML = `<div class="timer-text">${display}</div><div style="display:flex; gap:10px; width:100%;">${choices.map(c => `<button class="game-btn" onclick="checkChar('${c}','${ans}')">${c}</button>`).join('')}</div>`;
+}
+function checkChar(ans, correct) {
+    if(ans === correct) { resultDisplay.innerText = "เก่งมาก! รอด"; playSound(resultSound); }
+    else { resultDisplay.innerText = "ท่อง A-Z ใหม่นะ (ดื่ม)"; playSound(alarmSound); }
+    spinBtn.disabled = false;
+}
+
+// 24. Odd One Out
+function setupOddOneGame() {
+    const emojis = ['😀','😂','😍','😎','😡','👻'];
+    const main = emojis[Math.floor(Math.random()*emojis.length)];
+    const odd = ['🤔','😅','😘','🤓','🤬','👽'][Math.floor(Math.random()*6)];
+    
+    let grid = Array(9).fill(main);
+    const oddIdx = Math.floor(Math.random() * 9);
+    grid[oddIdx] = odd;
+    
+    let html = `<div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:5px; width:100%;">`;
+    grid.forEach((e, i) => html += `<div onclick="checkOdd(${i === oddIdx})" style="background:#333; height:60px; display:flex; align-items:center; justify-content:center; font-size:1.5rem; border-radius:5px; cursor:pointer;">${e}</div>`);
+    html += `</div>`;
+    specialGameArea.innerHTML = html;
+    
+    window.gameTimeout = setTimeout(() => { resultDisplay.innerText = "หมดเวลา! ดื่ม"; playSound(alarmSound); spinBtn.disabled = false; }, 3000);
+}
+function checkOdd(isCorrect) {
+    clearTimeout(window.gameTimeout);
+    if(isCorrect) { resultDisplay.innerText = "ตาเหยี่ยว! รอด"; playSound(resultSound); }
+    else { resultDisplay.innerText = "ผิดตัว! ดื่ม"; playSound(alarmSound); }
+    spinBtn.disabled = false;
+}
+
+// 25. Balloon Pop
+function setupBalloonGame() {
+    window.balloonSize = 1;
+    window.balloonLimit = 5 + Math.floor(Math.random() * 10); // Random limit 5-15 clicks
+    window.clicks = 0;
+    specialGameArea.innerHTML = `<div id="balloon" style="font-size:3rem; transition:transform 0.1s;">🎈</div><button class="game-btn" style="margin-top:20px;" onclick="pumpBalloon()">สูบ!</button><button class="skip-btn" onclick="stopBalloon()">พอแค่นี้ (รอด)</button>`;
+}
+function pumpBalloon() {
+    window.clicks++;
+    window.balloonSize += 0.2;
+    const b = document.getElementById('balloon');
+    b.style.transform = `scale(${window.balloonSize})`;
+    playSound(clickSound);
+    
+    if(window.clicks > window.balloonLimit) {
+        b.innerText = "💥";
+        resultDisplay.innerText = "แตก! ดื่มหมดแก้ว";
+        playSound(bangSound);
+        spinBtn.disabled = false;
+        specialGameArea.innerHTML = `<div class="timer-text">💥</div>`;
+    }
+}
+function stopBalloon() {
+    resultDisplay.innerText = `ใจเสาะแต่รอด (${window.clicks} ครั้ง)`;
+    playSound(resultSound);
+    spinBtn.disabled = false;
+    specialGameArea.innerHTML = '';
+}
+
+// 26. Truth or Dare
+function setupTorDGame() {
+    const t = ["แฟนเก่าคนล่าสุดชื่อ?", "เรื่องน่าอายที่สุด?", "เคยแอบชอบใครในวง?", "โกหกครั้งล่าสุดคือ?"];
+    const d = ["เต้นไก่ย่าง", "โทรหาคนล่าสุดในมือถือ", "กินน้ำผสมทุกอย่าง", "ตะโกนว่ารักนะ 3 ครั้ง"];
+    specialGameArea.innerHTML = `<div style="display:flex; gap:10px; width:100%;"><button class="game-btn" style="background:#e91e63;" onclick="pickTD('${t[Math.floor(Math.random()*t.length)]}')">TRUTH</button><button class="game-btn" style="background:#ff9800;" onclick="pickTD('${d[Math.floor(Math.random()*d.length)]}')">DARE</button></div>${getSkipButtonHTML()}`;
+}
+function pickTD(msg) {
+    resultDisplay.innerText = msg;
+    playSound(resultSound);
+    spinBtn.disabled = false;
+    specialGameArea.innerHTML = '';
+}
+
+// 27. Dice Duel
+function setupDiceDuelGame() {
+    specialGameArea.innerHTML = `<button class="game-btn" onclick="rollDice()">🎲 ทอยลูกเต๋า</button>${getSkipButtonHTML()}`;
+}
+function rollDice() {
+    const d1 = Math.floor(Math.random() * 6) + 1;
+    const d2 = Math.floor(Math.random() * 6) + 1;
+    specialGameArea.innerHTML = `<div style="font-size:3rem;">🎲 ${d1} VS ${d2} 🎲</div>`;
+    
+    setTimeout(() => {
+        if(d1 === d2) resultDisplay.innerText = "เสมอ! รอดทั้งคู่";
+        else if(d1 < d2) resultDisplay.innerText = "เต๋าซ้ายแต้มน้อย (ดื่ม!)";
+        else resultDisplay.innerText = "เต๋าขวาแต้มน้อย (ดื่ม!)";
+        playSound(resultSound);
+        spinBtn.disabled = false;
+        specialGameArea.innerHTML += getSkipButtonHTML();
+    }, 1000);
+}
+
+// 28. Tap War (2 Player)
+function setupTapWarGame() {
+    specialGameArea.innerHTML = `<div style="text-align:center; color:#aaa; margin-bottom:10px;">วางมือถือตรงกลาง แข่งกันจิ้ม!</div><div style="display:flex; height:150px; width:100%; border-radius:10px; overflow:hidden;"><div id="p1-area" onclick="tapWar(1)" style="flex:1; background:#2196f3; display:flex; align-items:center; justify-content:center;">🔵</div><div id="p2-area" onclick="tapWar(2)" style="flex:1; background:#f44336; display:flex; align-items:center; justify-content:center;">🔴</div></div>`;
+    window.warScore = 50; // 50%
+}
+function tapWar(player) {
+    if(player === 1) window.warScore += 5;
+    else window.warScore -= 5;
+    
+    document.getElementById('p1-area').style.flex = `${window.warScore}%`;
+    document.getElementById('p2-area').style.flex = `${100 - window.warScore}%`;
+    
+    if(window.warScore >= 100) { resultDisplay.innerText = "สีฟ้าชนะ! สีแดงดื่ม"; playSound(resultSound); spinBtn.disabled = false; }
+    if(window.warScore <= 0) { resultDisplay.innerText = "สีแดงชนะ! สีฟ้าดื่ม"; playSound(resultSound); spinBtn.disabled = false; }
+}
+
 </script>
 </body>
 </html>
