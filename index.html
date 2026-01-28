@@ -441,6 +441,7 @@ const specialGamesList = [
     { t: "จำลำดับสีให้ทัน! (Simon Says)", c: "MEMORY", color: "#e91e63", type: "simon" },
     { t: "หมุนขวดวัดดวง! (ชี้ใครดื่ม)", c: "LUCK", color: "#8bc34a", type: "bottle" },
     { t: "บวกลบเลขไหล! (เช่น 2+3-1=?)", c: "MATH", color: "#607d8b", type: "chainmath" },
+    { t: "สงครามจิ้มจอ! (2 คนช่วยกันจิ้ม)", c: "BATTLE", color: "#ff1744", type: "tapwar" },
 ];
 
 // =================== 2. ตัวแปรระบบ ===================
@@ -583,6 +584,7 @@ async function setupGame(gameObj) {
     else if (gameObj.type === 'simon') setupSimonGame();
     else if (gameObj.type === 'bottle') setupBottleGame();
     else if (gameObj.type === 'chainmath') setupChainMathGame();
+    else if (gameObj.type === 'tapwar') setupTapWarGame();
 }
 
 function skipGame() {
@@ -1068,6 +1070,105 @@ function failMathGame(correctAns) {
         <div style="margin-top:10px;">คิดช้า/ตอบผิด จัดไป 1 แก้ว!</div>
     `;
     resultDisplay.innerText = "ภารกิจล้มเหลว! ดื่มมมม";
+    spinBtn.disabled = false;
+}
+
+// --- Tap War: Battle Royale Edition ---
+function setupTapWarGame() {
+    window.warScore = 50; // เริ่มที่ครึ่งๆ
+    window.warActive = false; // ยังไม่เริ่มจนกว่าจะนับถอยหลังจบ
+    
+    specialGameArea.style.display = 'flex';
+    specialGameArea.innerHTML = `
+        <div id="tap-war-container" style="width:100%; position:relative;">
+            <div style="text-align:center; color:#fff; margin-bottom:10px; font-weight:bold;">
+                🔵 น้ำเงิน VS แดง 🔴
+            </div>
+            
+            <div id="battle-field" style="display:flex; height:200px; width:100%; border-radius:15px; overflow:hidden; border:3px solid #444; position:relative;">
+                <div id="p1-area" onclick="tapWar(1)" style="flex:50; background:linear-gradient(45deg, #1976d2, #2196f3); transition: flex 0.1s ease-out; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+                    <span style="font-size:2rem;">🔵</span>
+                    <span id="p1-percent" style="font-weight:bold;">50%</span>
+                </div>
+                <div id="p2-area" onclick="tapWar(2)" style="flex:50; background:linear-gradient(45deg, #f44336, #d32f2f); transition: flex 0.1s ease-out; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+                    <span style="font-size:2rem;">🔴</span>
+                    <span id="p2-percent" style="font-weight:bold;">50%</span>
+                </div>
+                
+                <div id="war-overlay" style="position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); display:flex; align-items:center; justify-content:center; z-index:10;">
+                    <button class="game-btn" id="start-war-btn" onclick="startTapWarCountdown()">เริ่มศึกนี้!</button>
+                </div>
+            </div>
+            <div id="war-hint" style="text-align:center; font-size:0.8rem; margin-top:10px; color:#aaa;">วางมือถือลง แล้วรัวนิ้วใส่สีตัวเอง!</div>
+        </div>
+    `;
+}
+
+function startTapWarCountdown() {
+    const btn = document.getElementById('start-war-btn');
+    const overlay = document.getElementById('war-overlay');
+    let count = 3;
+    
+    btn.disabled = true;
+    let timer = setInterval(() => {
+        btn.innerText = count;
+        btn.style.fontSize = "3rem";
+        playSound(clickSound);
+        count--;
+        
+        if(count < 0) {
+            clearInterval(timer);
+            overlay.style.display = 'none';
+            window.warActive = true;
+            document.getElementById('war-hint').innerText = "รัวววววววววว!!!";
+            document.getElementById('war-hint').style.color = "#ffca28";
+        }
+    }, 800);
+}
+
+function tapWar(player) {
+    if(!window.warActive) return;
+
+    // ปรับความไว: กด 1 ครั้งเพิ่ม/ลด 4% (ใครกดเร็วกว่าคนนั้นชนะ)
+    if(player === 1) window.warScore += 4;
+    else window.warScore -= 4;
+    
+    // อัปเดต UI
+    const p1 = document.getElementById('p1-area');
+    const p2 = document.getElementById('p2-area');
+    p1.style.flex = window.warScore;
+    p2.style.flex = 100 - window.warScore;
+    
+    document.getElementById('p1-percent').innerText = window.warScore + "%";
+    document.getElementById('p2-percent').innerText = (100 - window.warScore) + "%";
+    
+    playSound(clickSound);
+
+    // ตรวจสอบผู้ชนะ
+    if(window.warScore >= 100 || window.warScore <= 0) {
+        window.warActive = false;
+        const winner = window.warScore >= 100 ? "น้ำเงิน" : "แดง";
+        const winColor = window.warScore >= 100 ? "#2196f3" : "#f44336";
+        const loser = window.warScore >= 100 ? "แดง" : "น้ำเงิน";
+        
+        showWarWinner(winner, winColor, loser);
+    }
+}
+
+function showWarWinner(winner, color, loser) {
+    playSound(resultSound);
+    const container = document.getElementById('tap-war-container');
+    
+    container.innerHTML = `
+        <div style="text-align:center; padding:20px; background:${color}; border-radius:15px; animation: bounce 0.5s infinite alternate;">
+            <div style="font-size:3rem; margin-bottom:10px;">👑</div>
+            <div style="font-size:1.8rem; font-weight:800; color:#fff;">ทีมสี${winner} ชนะ!</div>
+            <div style="font-size:1.2rem; color:#fff; margin-top:5px;">สี${loser} ดื่ม!</div>
+        </div>
+        ${getSkipButtonHTML()}
+    `;
+    
+    resultDisplay.innerText = `จบศึก! สี${winner} เป็นฝ่ายชนะ`;
     spinBtn.disabled = false;
 }
 
