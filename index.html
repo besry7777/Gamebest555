@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>PARTY GAME: FULL MINI-GAMES (38 GAMES)</title>
+<title>PARTY ไทบ้านห้วยทราย</title>
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;800&display=swap" rel="stylesheet">
 <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 
 <style>
-/* ================= CSS (คงเดิม 100%) ================= */
+/* ================= CSS ================= */
 :root {
     --bg-color: #121212;
     --card-bg: #1e1e1e;
@@ -158,6 +158,7 @@ h1 {
     border-radius: 20px; padding: 4px 10px; font-size: 0.7rem; cursor: pointer;
 }
 
+/* Mini Games Area */
 #special-game-area {
     margin-top: 15px;
     width: 100%;
@@ -202,6 +203,7 @@ h1 {
     margin: 10px 0;
 }
 
+/* Wire Buttons for Bomb Game */
 .wire-container {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -216,6 +218,7 @@ h1 {
     transition: all 0.2s;
 }
 
+/* Modal History */
 .modal-overlay {
     position: fixed; top: 0; left: 0;
     width: 100%; height: 100%;
@@ -250,13 +253,13 @@ h1 {
     margin-right: 8px; color: #000; font-weight: bold; white-space: nowrap; margin-top: 3px;
 }
 
-/* --- Camera Overlay --- */
+/* --- Camera Overlay (หน้าจอเกมห้ามยิ้ม) --- */
 #camera-overlay {
     position: fixed; top: 0; left: 0;
     width: 100%; height: 100%;
     background: #000;
     z-index: 2000;
-    display: none; 
+    display: none; /* ซ่อนไว้ก่อน */
     flex-direction: column;
     align-items: center;
     justify-content: center;
@@ -329,35 +332,34 @@ h1 {
 
 <div id="game-container">
     <header>
-        <h1>PARTY MINI-GAMES</h1>
+        <h1>PARTY GAME</h1>
     </header>
 
     <div class="display-area">
         <button id="sound-toggle">🔊 เปิดเสียง</button>
-        <div id="count-display">38 Games</div>
+        <div id="count-display"></div>
 
-        <div id="category-badge" class="category-badge">GAME</div>
+        <div id="category-badge" class="category-badge">CATEGORY</div>
         
         <div class="big-instruction" id="wheel-result">
-            สุ่มมินิเกมวัดดวง<br>กดปุ่มเริ่มเลย!
+            พร้อมแล้ว<br>กดปุ่มเริ่มเลย!
         </div>
 
         <div id="special-game-area"></div>
 
-        <div class="hint-text">NO DUPLICATE GAMES MODE</div>
+        <div class="hint-text">ไทบ้านห้วยทราย EDITION</div>
     </div>
 
     <div class="controls-area">
-        <button class="btn" id="spin-btn" onclick="startSpin()">🎲 สุ่มมินิเกม!</button>
-        <button class="btn btn-secondary" id="replay-btn" onclick="replayLastGame()" style="display:none; background-color:#424242; border:1px solid #666;">🔄 เล่นเกมเดิมอีกครั้ง</button>
-        <button class="btn btn-secondary" onclick="openHistory()">📜 ประวัติ</button>
+        <button class="btn" id="spin-btn" onclick="startSpin()">🔥 กดเพื่อลุ้น!</button>
+        <button class="btn btn-secondary" onclick="openHistory()">📜 ดูประวัติ</button>
     </div>
 </div>
 
 <div class="modal-overlay" id="historyModal">
     <div class="modal-content">
         <div class="modal-header">
-            <h2>📜 ประวัติการสุ่ม</h2>
+            <h2>📜 ประวัติย้อนหลัง</h2>
             <button class="close-modal" onclick="closeHistory()">✕</button>
         </div>
         <ul class="history-list" id="historyListDisplay"></ul>
@@ -371,58 +373,83 @@ h1 {
 <audio id="bangSound" src="https://www.soundjay.com/mechanical/sounds/explosion-01.mp3"></audio>
 
 <script>
-// =================== 1. รายชื่อเกมทั้งหมด (38 เกม: 28 เดิม + 10 ใหม่) ===================
+// =================== 1. ข้อมูล ===================
 
-const gameList = [
-    // --- Original 28 Games ---
-    { t: "จับเวลา 40 วิ! ใครส่งเสียงก่อนโดน", c: "QUIET GAME", color: "#ffca28", type: "timer", time: 40 },
-    { t: "กดหยุดเวลาให้ได้ 5.00 วิ (±0.10)", c: "SKILL", color: "#42a5f5", type: "stopwatch", target: 5.00, range: 0.10 },
-    { t: "วัดดวงรัสเซียนรูเล็ต!", c: "LUCK", color: "#ef5350", type: "roulette" },
-    { t: "กู้ระเบิด! ตัดสายไฟผิด...ตู้ม", c: "BOMB", color: "#ef5350", type: "bomb" },
-    { t: "จำเลขให้แม่น! ผิดดื่ม", c: "MEMORY", color: "#ab47bc", type: "memory" },
-    { t: "AI ตรวจจับรอยยิ้ม! ห้ามยิ้ม 10 วิ", c: "AI CHALLENGE", color: "#fff", type: "dontsmile" },
-    { t: "นิ้วรัว! กดปุ่มให้ครบ 30 ครั้งใน 5 วิ", c: "SPEED", color: "#ff4081", type: "clicker", target: 30, time: 5 },
-    { t: "วัดดวง! เลขถัดไป สูง หรือ ต่ำ ?", c: "HIGH-LOW", color: "#00e5ff", type: "highlow" },
-    { t: "เป่ายิ้งฉุบวัดดวง! แพ้ AI ดื่ม", c: "BATTLE", color: "#ff9800", type: "rps" },
-    { t: "จั่วไพ่ปีศาจ! 1 ใน 4 ใบคือกับดัก", c: "LUCK", color: "#795548", type: "cards" },
-    { t: "คณิตคิดเร็ว! ตอบถูกใน 3 วิ", c: "BRAIN", color: "#607d8b", type: "math" },
-    { t: "ตาดีได้! จิ้มปุ่มให้ทันใน 1.5 วิ", c: "REFLEX", color: "#cddc39", type: "reflex" },
-    { t: "ทายเลขท้าย! คู่ หรือ คี่ ?", c: "LOTTO", color: "#9c27b0", type: "parity" },
+const normalQuestions = [
+    { t: "คนที่นั่งท่าเหี้ยนที่สุดตอนนี้ ดื่ม", c: "OBSERVE", color: "#00ff88" },
+    { t: "ใครหัวไวสุดในวง เลือกคนดื่ม", c: "SMART", color: "#ffd700" },
+    { t: "คนที่ยิ้มก่อนเพื่อน ดื่ม", c: "MOOD", color: "#ffae00" },
+    { t: "ใครวางโทรศัพท์ไกลตัวที่สุด รอด", c: "DISCIPLINE", color: "#00ccff" },
+    { t: "คนที่เพิ่งหัวเราะเมื่อกี้ ดื่ม", c: "HAPPY", color: "#ffae00" },
+    { t: "ใครพูดคำว่า 'กู' บ่อยสุด ดื่ม", c: "HABIT", color: "#b19cd9" },
+    { t: "คนที่นั่งสบายสุด ดื่มแทนคนกด", c: "LUCK", color: "#ffd700" },
+    { t: "ใครยังไม่ดื่มตั้งแต่เริ่มเกม ดื่ม", c: "BALANCE", color: "#00ff88" },    
+    { t: "คนที่ปรบมือช้าที่สุด ดื่ม", c: "REACTION", color: "#ff3b3b" },
+    { t: "ใครพูดคำหยาบคนล่าสุด ดื่ม", c: "REFLEX", color: "#ffae00" },
+    { t: "นับ 1ถึง5 ในใจ ใครได้เลขเดียวกับคนกด ดื่ม", c: "LUCK", color: "#ffd700" },
+    { t: "ชนแก้วกับคนที่นั่งไกลจากคนกดที่สุด", c: "PARTY", color: "#ffd700" },  
+    { t: "ยิ้มโดยไม่ให้เห็นฟันล่าง 5 วิ (ใครขำดื่ม)", c: "CHALLENGE", color: "#00ff88" },
+    { t: "ใครรู้สึกง่วงสุด ดื่ม", c: "ENERGY", color: "#888" },
+    { t: "ใครอยากกลับบ้านก่อนเพื่อน ดื่ม", c: "THOUGHT", color: "#555" },
+    { t: "คนซ้ายและขวาคนกด ดื่มพร้อมกัน", c: "COLLATERAL", color: "#ff3b3b" },
+    { t: "เลือก 1 คน ถ้าเขายิ้ม ดื่ม", c: "CONTROL", color: "#ff00cc" },
+    { t: "รอบนี้ไม่มีคนรอด ทุกคนดื่ม", c: "END GAME", color: "#ff0000" },
+    { t: "คนที่อ่านการ์ดนี้จบก่อนเพื่อน ดื่ม(อ่านไวไปหน่อยนะ)", c: "TRAP", color: "#ff3b3b" },
+    { t: "ใครกำลังยิ้มอยู่ตอนนี้ ดื่ม(ไม่ต้องยิ้มก็โดน)", c: "TRAP", color: "#ff3b3b" }, 
+    { t: "เปลี่ยนที่นั่งทันที คนงง ดื่ม", c: "CHAOS", color: "#ffae00" },
+    { t: "ทุกคนลุกขึ้น คนสุดท้ายนั่ง ดื่ม", c: "ACTION", color: "#ffae00" },
+    { t: "โยนเหรียญหัวก้อย (ออกหัว=ซ้ายดื่ม, ออกก้อย=ขวาดื่ม)", c: "LUCK", color: "#ffd700" },
+    { t: "เลือก 1 คน ดื่มแทนคุณ 1 แก้ว", c: "VIP", color: "#ffd700" },
+    { t: "หมดแก้ว!", c: "HARDCORE", color: "#ff3b3b" },
+    { t: "คนซ้ายดื่ม 1 ช็อต", c: "ดวงเพื่อน", color: "#00ff88" },
+    { t: "คนขวาดื่ม 1 ช็อต", c: "ดวงเพื่อน", color: "#00ff88" },
+    { t: "สั่งใครก็ได้ดื่ม ครึ่ง ช็อต", c: "POWER", color: "#ffd700" },
+    { t: "คนซ้ายกับขวาเป่ายิ้งฉุบ คนแพ้ดื่ม!", c: "BATTLE", color: "#ff3b3b" },
+    { t: "ดื่มครึ่งแก้ว แล้วอีกครึ่งให้ใครก็ได้", c: "SILENCE", color: "#888" },
+    { t: "คนที่เสียงดังที่สุดตอนนี้ ดื่ม!", c: "LOUD", color: "#ffae00" },
+    { t: "ใครเถียงเก่งที่สุดในวง ดื่ม 2 ช็อต!", c: "ARGUE", color: "#ff3b3b" },
+    { t: "หัวเราะแบบนางร้าย 5 วินาที (ไม่ทำดื่ม)", c: "ACTING", color: "#b19cd9" },
+    { t: "ใครเกิดเดือนนี้ ดื่มฉลอง!", c: "BIRTHDAY", color: "#ffd700" },
+    { t: "ดื่ม 1 แก้ว หรือทำใครก็ได้หัวเราะเพื่อดื่มแทน", c: "ACTING", color: "#b19cd9" },
+    { t: "เลือกดื่มคู่กับคนข้างๆ", c: "BUDDY", color: "#ffae00" },
+    { t: "คนกดรอด! ที่เหลือดื่ม", c: "LUCKY", color: "#ffd700" },
+    { t: "พูดชื่อสัตว์ที่มี 4 ขา ห้ามซ้ำ ใครช้า ดื่ม!", c: "GAME", color: "#42a5f5" },
+    { t: "พูดชื่อยี่ห้อรถ ห้ามซ้ำ ใครช้า ดื่ม!", c: "GAME", color: "#42a5f5" },
+    { t: "คนที่นั่งตรงข้ามคนกด ดื่ม!", c: "TARGET", color: "#ff3b3b" },
+    { t: "คนที่แต่งตัวดูดีที่สุด (เพื่อนตัดสิน) รอด!", c: "VOTE", color: "#00ccff" },
+    { t: "คนที่ดูง่วงที่สุด (เพื่อนตัดสิน) ดื่ม!", c: "VOTE", color: "#888" },
+    { t: "ใครทำกับข้าวอร่อยที่สุด ดื่ม!", c: "CHEF", color: "#ffae00" },
+    { t: "ทำเสียงสัตว์ที่ตัวเองชอบ (ไม่ทำดื่ม)", c: "SOUND", color: "#ffae00" },
+    { t: "ใครชื่อเล่นขึ้นต้นด้วยสระ ดื่ม!", c: "NAME", color: "#00ccff" },
+    { t: "ใครชื่อเล่นมี 2 พยางค์ ดื่ม!", c: "NAME", color: "#00ccff" },
+    { t: "ทำหน้านิ่ง 10 วินาที ใครหลุดขำ ดื่ม!", c: "POKER FACE", color: "#555" },
+    { t: "ดื่มหรือเล่าเรื่องตลก 1 เรื่อง ถ้าไม่มีใครขำ คนเล่าดื่ม!", c: "JOKE", color: "#ffae00" },
+    { t: "คนที่มีรอยแผลเป็นที่เห็นชัดที่สุด ดื่ม!", c: "SCAR", color: "#555" },
+    { t: "คนกดสั่งให้คนทางขวาเต้นท่าไก่ 10 วิ", c: "COMMAND", color: "#ffae00" },
+    { t: "ใครชื่อจริงยาวที่สุดในวง ดื่ม!", c: "LONG NAME", color: "#00ccff" },
+    { t: "ใครชื่อจริงสั้นที่สุดในวง ดื่ม!", c: "SHORT NAME", color: "#00ccff" },
+    { t: "คนกดรอด และเลือกคนดื่มแทนได้ 2 คน!", c: "KING", color: "#ffd700" }
+];
+
+const specialGamesList = [
+    { t: "เริ่มจับเวลา 40 วิ ใครเปล่งเสียงก่อน → จัดการดื่ม 1 ครั้ง", c: "MINI GAME", color: "#ffca28", type: "timer", time: 40 },
+    { t: "หยุดเวลาที่ 5.00 วิ (±0.10) ใครพลาดดื่ม!", c: "SKILL", color: "#42a5f5", type: "stopwatch", target: 5.00, range: 0.10 },
+    { t: "ส่งมือถือวนไป กดเหนี่ยวไก..ใครโดนดื่ม!", c: "LUCK", color: "#ef5350", type: "roulette" },
+    { t: "เลือกตัดสายไฟ 1 เส้น...ใครทำระเบิดดื่ม!", c: "BOMB", color: "#ef5350", type: "bomb" },
+    { t: "เกมความจำ! จำเลขให้ดี ทายผิดดื่ม!", c: "MEMORY", color: "#ab47bc", type: "memory" },
+    { t: "สุ่ม A ถึง Z ใครมีในชื่อจริง ดื่ม!", c: "NAME", color: "#00ccff", type: "alphabet" },
     { t: "จำลำดับสีให้ทัน! (Simon Says)", c: "MEMORY", color: "#e91e63", type: "simon" },
     { t: "หมุนขวดวัดดวง! (ชี้ใครดื่ม)", c: "LUCK", color: "#8bc34a", type: "bottle" },
-    { t: "รอสีเขียวแล้วกด! (ห้ามกดก่อน)", c: "REFLEX", color: "#009688", type: "colorreflex" },
-    { t: "จับจุด! กดจุดที่วิ่งไปมาให้ทัน 5 ครั้ง", c: "SKILL", color: "#3f51b5", type: "catchdot" },
-    { t: "ทายตัวเลข 1-100 (บอกใบ้ สูง/ต่ำ)", c: "LOGIC", color: "#673ab7", type: "guessnum" },
-    { t: "หลับตากด! ปล่อยปุ่มที่ 4 วินาที", c: "SENSE", color: "#607d8b", type: "blindhold" },
-    { t: "เรียงคำปริศนา! (ภาษาอังกฤษง่ายๆ)", c: "BRAIN", color: "#ff5722", type: "scramble" },
-    { t: "นับเร็ว! มีอีโมจิกี่ตัว?", c: "VISION", color: "#ffeb3b", type: "quickcount" },
-    { t: "ซ้าย หรือ ขวา? กดตามคำสั่งให้ทัน", c: "CONFUSION", color: "#795548", type: "leftright" },
-    { t: "ตัวอักษรที่หายไปคือ? (A-Z)", c: "KNOW", color: "#9e9e9e", type: "missingchar" },
-    { t: "หาตัวที่ต่าง! (Odd One Out)", c: "VISION", color: "#00bcd4", type: "oddone" },
-    { t: "สูบลูกโป่งวัดใจ! (อย่าให้แตก)", c: "RISK", color: "#f44336", type: "balloon" },
-    { t: "Truth or Dare? (ความจริง หรือ กล้า)", c: "PARTY", color: "#e040fb", type: "tord" },
-    { t: "ทอยเต๋าประลอง! (แต้มต่ำกว่าดื่ม)", c: "LUCK", color: "#ffc107", type: "diceduel" },
-    { t: "สงครามจิ้มจอ! (2 คนช่วยกันจิ้ม)", c: "BATTLE", color: "#ff1744", type: "tapwar" },
-
-    // --- New 10 Games (Added) ---
-    { t: "เขย่าแชมเปญ! รัวปุ่ม 20 ครั้งใน 3 วิ", c: "SPEED", color: "#ffeb3b", type: "shakechamp", target: 20, time: 3 },
-    { t: "ตาไวสี! กด 'ถูก' ถ้าชื่อสีตรงกับสีตัวอักษร", c: "BRAIN", color: "#9c27b0", type: "stroop" },
-    { t: "จิ้มเฉพาะสีเขียว! (ห้ามโดนสีแดง)", c: "ACCURACY", color: "#4caf50", type: "tapgreen" },
-    { t: "หยุดบาร์ที่โซนเขียว (กะจังหวะ)", c: "TIMING", color: "#00bcd4", type: "barstop" },
-    { t: "จำแพทเทิร์น 3x3 (ตาเหยี่ยว)", c: "MEMORY", color: "#3f51b5", type: "gridmem" },
     { t: "บวกลบเลขไหล! (เช่น 2+3-1=?)", c: "MATH", color: "#607d8b", type: "chainmath" },
-    { t: "พิมพ์รหัสปลดล็อค! (4 หลัก)", c: "TYPING", color: "#ff5722", type: "passcode" },
-    { t: "ABC ไว! กด A -> B -> C ให้ทัน", c: "ORDER", color: "#e91e63", type: "abcorder" },
-    { t: "กล่องวัดดวง! (1 ใน 3 มีกับดัก)", c: "LUCK", color: "#795548", type: "luckybox" },
-    { t: "เลี้ยงปุ่ม! กดค้างให้อยู่โซนกลาง", c: "CONTROL", color: "#8bc34a", type: "balancebar" }
 ];
 
 // =================== 2. ตัวแปรระบบ ===================
+let availableQuestions = [...normalQuestions];
 let history = []; 
-let soundEnabled = true;
-let lastGameObj = null; // Track current game for replay
-let lastPlayedIndices = []; // Track used games to avoid duplicates
+let turnCount = 0;
+let nextGameThreshold = Math.floor(Math.random() * 4) + 7; 
 
+let soundEnabled = true;
 const clickSound = document.getElementById("clickSound");
 const resultSound = document.getElementById("resultSound");
 const alarmSound = document.getElementById("alarmSound");
@@ -432,25 +459,11 @@ const soundToggle = document.getElementById("sound-toggle");
 
 const resultDisplay = document.getElementById('wheel-result');
 const spinBtn = document.getElementById('spin-btn');
-const replayBtn = document.getElementById('replay-btn');
+const countDisplay = document.getElementById('count-display');
 const categoryBadge = document.getElementById('category-badge');
 const specialGameArea = document.getElementById('special-game-area');
 
-// --- Watch for spin button state to show/hide Replay button ---
-const observer = new MutationObserver((mutations) => {
-    mutations.forEach((mutation) => {
-        if (mutation.attributeName === "disabled") {
-            if (!spinBtn.disabled && lastGameObj) {
-                // Game finished, allow replay
-                replayBtn.style.display = 'block';
-            } else {
-                // Game running, hide replay
-                replayBtn.style.display = 'none';
-            }
-        }
-    });
-});
-observer.observe(spinBtn, { attributes: true });
+// =================== 3. ฟังก์ชันหลัก ===================
 
 soundToggle.onclick = () => {
     soundEnabled = !soundEnabled;
@@ -460,153 +473,130 @@ soundToggle.onclick = () => {
 
 function playSound(sound) {
     if (!soundEnabled) return;
-    sound.currentTime = 0;
+    if (!sound.paused) return; // กันเสียงซ้อน
     sound.play().catch(()=>{});
 }
+
+
+function updateCountDisplay() {
+    countDisplay.innerText = `${availableQuestions.length} / ${normalQuestions.length}`;
+}
+
+updateCountDisplay();
 
 function startSpin() {
     specialGameArea.style.display = 'none';
     specialGameArea.innerHTML = ''; 
     categoryBadge.style.opacity = '0';
-    replayBtn.style.display = 'none'; // Hide replay during spin
     
+    if (availableQuestions.length === 0) {
+        alert("🎉 ครบทุกคำถามแล้ว! ระบบจะรีเซ็ตใหม่");
+        availableQuestions = [...normalQuestions];
+        history = [];
+        updateCountDisplay();
+    }
+
     playSound(clickSound); 
     spinBtn.disabled = true;
     resultDisplay.classList.remove("pop-in");
     resultDisplay.classList.add("blur-anim");
 
     let shuffleInterval = setInterval(() => {
-        const randomQ = gameList[Math.floor(Math.random() * gameList.length)];
-        resultDisplay.innerText = randomQ.t;
+        const randomQ = availableQuestions[Math.floor(Math.random() * availableQuestions.length)];
+        resultDisplay.innerText = randomQ ? randomQ.t : "Loading...";
     }, 50);
 
     setTimeout(() => {
         clearInterval(shuffleInterval);
         processResult();
-    }, 1000);
+    }, 1200);
 }
+
+// หรือถ้าประกาศไว้ใน scope เดียวกับ specialGamesList ก็ได้ครับ
+let availableSpecialGames = []; 
 
 function processResult() {
-    // Logic for NO DUPLICATES (Remember last 5 games)
-    let availableGames = gameList.filter((g, index) => !lastPlayedIndices.includes(index));
-    
-    // If we've played almost all, reset history slightly
-    if (availableGames.length === 0) {
-        lastPlayedIndices = [];
-        availableGames = gameList;
-    }
+    turnCount++;
+    let selectedObj;
 
-    const randomIndex = Math.floor(Math.random() * availableGames.length);
-    const selectedObj = availableGames[randomIndex];
-    
-    // Store index for duplicate prevention
-    const originalIndex = gameList.indexOf(selectedObj);
-    lastPlayedIndices.push(originalIndex);
-    if(lastPlayedIndices.length > 8) lastPlayedIndices.shift(); // Keep buffer of 8
+    if (turnCount >= nextGameThreshold) {
+
+        if (availableSpecialGames.length === 0) {
+            availableSpecialGames = [...specialGamesList];
+        }
+
+        const gameIndex = Math.floor(Math.random() * availableSpecialGames.length);
+        selectedObj = availableSpecialGames[gameIndex];
+
+        availableSpecialGames.splice(gameIndex, 1);
+
+        turnCount = 0;
+        nextGameThreshold = Math.floor(Math.random() * 4) + 5;
+
+    } else {
+        if (availableQuestions.length === 0) {
+             console.log("คำถามหมดแล้ว!"); 
+        }
+
+        if (availableQuestions.length > 0) {
+            const index = Math.floor(Math.random() * availableQuestions.length);
+            selectedObj = availableQuestions[index];
+            availableQuestions.splice(index, 1);
+        }
+    }
 
     history.unshift(selectedObj);
-    
     resultDisplay.classList.remove("blur-anim");
-    resultDisplay.innerText = selectedObj.t;
-    categoryBadge.innerText = selectedObj.c;
-    categoryBadge.style.backgroundColor = selectedObj.color;
-    categoryBadge.style.opacity = '1';
+    
+    // ตรวจสอบว่ามี selectedObj หรือไม่ (เผื่อกรณีคำถามหมดแล้วไม่ได้รีเซ็ต)
+    if (selectedObj) {
+        resultDisplay.innerText = selectedObj.t;
+        categoryBadge.innerText = selectedObj.c;
+        categoryBadge.style.backgroundColor = selectedObj.color;
+        categoryBadge.style.color = "#000"; 
+        categoryBadge.style.opacity = '1';
 
-    void resultDisplay.offsetWidth; 
-    resultDisplay.classList.add("pop-in");
-    playSound(resultSound);
+        void resultDisplay.offsetWidth; 
+        resultDisplay.classList.add("pop-in");
+        playSound(resultSound);
 
-    lastGameObj = selectedObj; // Save for replay
-    setupGame(selectedObj);
-}
-
-function replayLastGame() {
-    if (lastGameObj) {
-        replayBtn.style.display = 'none';
-        specialGameArea.style.display = 'none';
-        specialGameArea.innerHTML = '';
-        spinBtn.disabled = true;
-        
-        // Reset display but don't spin
-        resultDisplay.innerText = lastGameObj.t;
-        categoryBadge.innerText = lastGameObj.c;
-        categoryBadge.style.backgroundColor = lastGameObj.color;
-        
-        playSound(clickSound);
-        setTimeout(() => {
-             setupGame(lastGameObj);
-        }, 300);
+        if (selectedObj.type) {
+            setupGame(selectedObj);
+        } else {
+            spinBtn.disabled = false;
+        }
     }
+    
+    updateCountDisplay();
 }
 
-// =================== 3. Logic Manager ===================
+// =================== 4. Logic Games ===================
 
 async function setupGame(gameObj) {
     specialGameArea.style.display = 'flex';
-    
-    // Original 28 Games
     if (gameObj.type === 'timer') setupTimerGame(gameObj.time);
     else if (gameObj.type === 'stopwatch') setupStopwatchGame(gameObj.target, gameObj.range);
     else if (gameObj.type === 'roulette') setupRouletteGame();
     else if (gameObj.type === 'bomb') setupBombGame();
     else if (gameObj.type === 'memory') setupMemoryGame();
-    else if (gameObj.type === 'clicker') setupClickerGame(gameObj.target, gameObj.time);
-    else if (gameObj.type === 'highlow') setupHighLowGame();
-    else if (gameObj.type === 'rps') setupRPSGame();
-    else if (gameObj.type === 'cards') setupCardGame();
-    else if (gameObj.type === 'math') setupMathGame();
-    else if (gameObj.type === 'reflex') setupReflexGame();
-    else if (gameObj.type === 'parity') setupParityGame();
-    else if (gameObj.type === 'dontsmile') {
-        specialGameArea.innerHTML = `<button class="game-btn" onclick="setupSmileGame()">📸 เปิดกล้องจับรอยยิ้ม</button>${getSkipButtonHTML()}`;
-    }
+    else if (gameObj.type === 'alphabet') setupAlphabetGame(); 
     else if (gameObj.type === 'simon') setupSimonGame();
     else if (gameObj.type === 'bottle') setupBottleGame();
-    else if (gameObj.type === 'colorreflex') setupColorReflexGame();
-    else if (gameObj.type === 'catchdot') setupCatchDotGame();
-    else if (gameObj.type === 'guessnum') setupGuessNumGame();
-    else if (gameObj.type === 'blindhold') setupBlindHoldGame();
-    else if (gameObj.type === 'scramble') setupScrambleGame();
-    else if (gameObj.type === 'quickcount') setupQuickCountGame();
-    else if (gameObj.type === 'leftright') setupLeftRightGame();
-    else if (gameObj.type === 'missingchar') setupMissingCharGame();
-    else if (gameObj.type === 'oddone') setupOddOneGame();
-    else if (gameObj.type === 'balloon') setupBalloonGame();
-    else if (gameObj.type === 'tord') setupTorDGame();
-    else if (gameObj.type === 'diceduel') setupDiceDuelGame();
-    else if (gameObj.type === 'tapwar') setupTapWarGame();
-
-    // New 10 Games Logic Dispatcher
-    else if (gameObj.type === 'shakechamp') setupShakeChampGame(gameObj.target, gameObj.time);
-    else if (gameObj.type === 'stroop') setupStroopGame();
-    else if (gameObj.type === 'tapgreen') setupTapGreenGame();
-    else if (gameObj.type === 'barstop') setupBarStopGame();
-    else if (gameObj.type === 'gridmem') setupGridMemGame();
     else if (gameObj.type === 'chainmath') setupChainMathGame();
-    else if (gameObj.type === 'passcode') setupPasscodeGame();
-    else if (gameObj.type === 'abcorder') setupABCOrderGame();
-    else if (gameObj.type === 'luckybox') setupLuckyBoxGame();
-    else if (gameObj.type === 'balancebar') setupBalanceBarGame();
 }
 
 function skipGame() {
     clearInterval(window.currentInterval);
-    if(window.mathTimeout) clearTimeout(window.mathTimeout);
-    if(window.reflexFail) clearTimeout(window.reflexFail);
-    if(window.gameTimeout) clearTimeout(window.gameTimeout); 
-    if(window.animFrame) cancelAnimationFrame(window.animFrame);
     specialGameArea.style.display = 'none';
     spinBtn.disabled = false;
     playSound(clickSound);
 }
 
 function getSkipButtonHTML() {
-    return `<button class="skip-btn" onclick="skipGame()">⏭ ข้าม/ยอมแพ้</button>`;
+    return `<button class="skip-btn" onclick="skipGame()">⏭ ข้ามเกมนี้</button>`;
 }
 
-// =================== 4. มินิเกมเดิม (Logic เดิมทั้งหมด) ===================
-
-// 1. Timer
+// --- Game 1-5 Logic (เดิม) ---
 function setupTimerGame(seconds) {
     specialGameArea.innerHTML = `<button class="game-btn" onclick="runTimer(${seconds})">⏱️ เริ่มจับเวลา (${seconds} วิ)</button>${getSkipButtonHTML()}`;
 }
@@ -626,252 +616,301 @@ function runTimer(seconds) {
     }, 1000);
 }
 
-// 2. Stopwatch
+// --- Stopwatch Blind Game Logic (Fixed & Hardcore-Ready) ---
 function setupStopwatchGame(target, range) {
-    specialGameArea.innerHTML = `<div style="margin-bottom:5px;">หยุดที่: ${target.toFixed(2)}</div><button class="game-btn" onclick="runStopwatch(${target}, ${range})">▶️ เริ่ม!</button>${getSkipButtonHTML()}`;
-}
-function runStopwatch(target, range) {
-    let startTime = Date.now();
-    specialGameArea.innerHTML = `<div class="timer-text" id="sw-display">0.00</div><button class="game-btn" onclick="stopStopwatch(this, ${target}, ${range})">🟥 หยุด!</button>${getSkipButtonHTML()}`;
-    window.currentInterval = setInterval(() => {
-        const elapsed = (Date.now() - startTime) / 1000;
-        document.getElementById('sw-display').innerText = elapsed.toFixed(2);
-    }, 30);
-}
-function stopStopwatch(btn, target, range) {
-    clearInterval(window.currentInterval);
-    const finalTime = parseFloat(document.getElementById('sw-display').innerText);
-    const diff = Math.abs(finalTime - target);
-    if (diff <= range) { btn.innerText = "🎉 รอด!"; btn.style.background = "#00e676"; playSound(resultSound); }
-    else { btn.innerText = "💀 ดื่ม!"; btn.style.background = "#ef5350"; playSound(alarmSound); }
-    btn.disabled = true; spinBtn.disabled = false;
+    specialGameArea.style.display = 'flex';
+    specialGameArea.innerHTML = `
+        <div style="margin-bottom:10px; font-size:1.1rem;">
+            เป้าหมาย: <span style="color:#00e676; font-weight:800;">
+            ${target.toFixed(2)}</span> วินาที
+        </div>
+        <div style="font-size:0.8rem; color:#aaa; margin-bottom:15px;">
+            (หลังจาก 2.00 วิ ตัวเลขจะหายไป!)
+        </div>
+        <button class="game-btn" onclick="runStopwatch(${target}, ${range})">
+            ▶️ เริ่มจับเวลา!
+        </button>
+        ${getSkipButtonHTML()}
+    `;
 }
 
-// 3. Roulette
+function runStopwatch(target, range) {
+    if (window.currentInterval) {
+        clearInterval(window.currentInterval);
+    }
+
+    window.swStart = performance.now();
+
+    specialGameArea.innerHTML = `
+        <div class="timer-text" id="sw-display">0.00</div>
+        <div id="blind-status"
+             style="margin-bottom:15px; height:20px; color:#ffca28; font-weight:bold;">
+        </div>
+        <button class="game-btn" id="stop-btn">🟥 หยุด!</button>
+        ${getSkipButtonHTML()}
+    `;
+
+    // 🔥 ผูกปุ่มหยุดตรงนี้ (สำคัญ)
+    const stopBtn = document.getElementById("stop-btn");
+    stopBtn.addEventListener("click", () => {
+        stopStopwatch(target, range);
+    });
+
+    window.currentInterval = setInterval(() => {
+        const elapsed = (performance.now() - window.swStart) / 1000;
+        const display = document.getElementById("sw-display");
+        const status = document.getElementById("blind-status");
+
+        if (!display) return; // กัน DOM หาย
+
+        if (elapsed <= 2) {
+            display.innerText = elapsed.toFixed(2);
+        } else {
+            display.innerText = "?.??";
+            display.style.color = "#ef5350";
+            status.innerText = "🙈 ใช้สัญชาตญาณล้วน ๆ";
+        }
+    }, 30);
+}
+
+function stopStopwatch(target, range) {
+    if (!window.swStart) return; // กันกดซ้ำ
+
+    clearInterval(window.currentInterval);
+    window.currentInterval = null;
+
+    const finalTime = (performance.now() - window.swStart) / 1000;
+    window.swStart = null;
+
+    const diff = Math.abs(finalTime - target);
+
+    const display = document.getElementById("sw-display");
+    const status = document.getElementById("blind-status");
+    const stopBtn = document.getElementById("stop-btn");
+
+    if (!display || !stopBtn) return;
+
+    display.innerText = finalTime.toFixed(2);
+    display.style.color = "#fff";
+
+    if (diff <= range) {
+        playSound(alarmSound);
+        status.innerText = `🎯 แม่น! พลาด ${diff.toFixed(2)} วิ`;
+        status.style.color = "#00e676";
+        stopBtn.innerText = "รอด! ✅";
+        stopBtn.style.background = "#00e676";
+    } else {
+        playSound(bangSound);
+        status.innerText = `💀 พลาด ${diff.toFixed(2)} วิ`;
+        status.style.color = "#ef5350";
+        stopBtn.innerText = "ดื่ม! 🍺";
+        stopBtn.style.background = "#ef5350";
+    }
+
+    stopBtn.disabled = true;
+    spinBtn.disabled = false;
+}
+
+// --- Roulette Game Logic ---
 function setupRouletteGame() {
     window.bulletChamber = Math.floor(Math.random() * 6);
     window.currentChamber = 0;
-    specialGameArea.innerHTML = `<div id="roulette-status">นัดที่ 1 / 6</div><button class="game-btn" id="trigger-btn" onclick="pullTrigger()">🤞 เหนี่ยวไก</button>${getSkipButtonHTML()}`;
-}
-function pullTrigger() {
-    const btn = document.getElementById('trigger-btn');
-    playSound(gunSound); btn.disabled = true;
-    setTimeout(() => {
-        if (window.currentChamber === window.bulletChamber) {
-            playSound(bangSound);
-            specialGameArea.innerHTML = `<div class="timer-text">💥</div><div style="color:#ef5350;">ปัง! ดื่ม!</div>${getSkipButtonHTML()}`;
-            spinBtn.disabled = false;
-        } else {
-            playSound(clickSound); window.currentChamber++;
-            btn.disabled = false;
-            document.getElementById('roulette-status').innerText = `นัดที่ ${window.currentChamber + 1} / 6 (รอด...)`;
-        }
-    }, 600);
+    specialGameArea.style.display = 'flex';
+    // ลบพวก animation แฝงออกเพื่อให้หน้าจอนิ่งสนิทตอนเริ่ม
+    specialGameArea.style.animation = "none"; 
+    
+    specialGameArea.innerHTML = `
+        <div id="cylinder-container" style="display: flex; gap: 5px; margin-bottom: 20px;">
+            ${Array(6).fill().map((_, i) => `<div id="chamber-${i}" style="width: 30px; height: 30px; border-radius: 50%; border: 2px solid #555; background: #222;"></div>`).join('')}
+        </div>
+        <div id="roulette-status" style="margin-bottom:15px; font-weight: bold; color: var(--warning);">กระสุนอยู่ในรังเพลิง... ใครจะเป็นผู้โชคดี?</div>
+        <button class="game-btn" id="trigger-btn" onclick="pullTrigger()">🤞 เหนี่ยวไก (นัดที่ 1)</button>
+        ${getSkipButtonHTML()}
+    `;
 }
 
-// 4. Bomb
+function pullTrigger() {
+    const btn = document.getElementById('trigger-btn');
+    const currentDot = document.getElementById(`chamber-${window.currentChamber}`);
+    
+    btn.disabled = true;
+    currentDot.style.background = "#fff"; 
+    playSound(gunSound); 
+
+    setTimeout(() => {
+        if (window.currentChamber === window.bulletChamber) {
+            // --- ผลลัพธ์: โดนยิง (เฉพาะจุดนี้ที่อาจจะสั่นได้ถ้าคุณต้องการ แต่ถ้าไม่เอาเลยผมลบออกให้แล้วครับ) ---
+            playSound(bangSound);
+            currentDot.style.background = "#ef5350";
+            currentDot.style.boxShadow = "0 0 15px #ef5350";
+            
+            // ลบบรรทัด shake ออกเรียบร้อย หน้าจะนิ่งแต่เปลี่ยนสีแทน
+            specialGameArea.innerHTML = `
+                <div class="timer-text" style="font-size: 5rem;">💀</div>
+                <div style="color:#ef5350; font-size: 1.5rem; font-weight:bold; margin-bottom: 10px;">ปัง! ตายสนิท</div>
+                <div style="margin-bottom: 15px; color: #ddd;">จัดไปหนึ่งแก้วเต็มๆ!</div>
+                ${getSkipButtonHTML()}
+            `;
+            spinBtn.disabled = false;
+        } else {
+            // --- ผลลัพธ์: รอด ---
+            playSound(clickSound); 
+            currentDot.style.background = "#444"; 
+            currentDot.innerHTML = "✕";
+            currentDot.style.display = "flex";
+            currentDot.style.alignItems = "center";
+            currentDot.style.justifyContent = "center";
+            currentDot.style.fontSize = "12px";
+            currentDot.style.color = "#888";
+            
+            window.currentChamber++;
+            btn.disabled = false;
+            btn.innerText = `🤞 เหนี่ยวไก (นัดที่ ${window.currentChamber + 1})`;
+            
+            const statusLabel = document.getElementById('roulette-status');
+            statusLabel.innerText = `นัดที่ ${window.currentChamber} รอด! ส่งเครื่องต่อ...`;
+            statusLabel.style.color = "#00e676";
+        }
+    }, 800);
+}
+
+// --- Bomb Game Logic ---
 function setupBombGame() {
     const bombWire = Math.floor(Math.random() * 4);
     const colors = ["#ef5350", "#00e676", "#42a5f5", "#ffca28"];
-    let wiresHTML = colors.map((color, i) => `<div class="wire-btn" style="background:${color}" onclick="cutWire(this, ${i === bombWire})"></div>`).join('');
-    specialGameArea.innerHTML = `<div class="wire-container">${wiresHTML}</div>${getSkipButtonHTML()}`;
+    
+    // เริ่มเสียงเตือนเบาๆ (ถ้ามีเสียงบี๊บ)
+    let wiresHTML = colors.map((color, i) => `
+        <div class="wire-btn" 
+             style="background:${color}; position:relative; overflow:hidden; border:none; box-shadow: 0 4px #000, inset 0 -4px rgba(0,0,0,0.2);" 
+             onclick="cutWire(this, ${i === bombWire})">
+             <div style="position:absolute; top:50%; width:100%; height:2px; background:rgba(255,255,255,0.3);"></div>
+        </div>
+    `).join('');
+
+    specialGameArea.style.display = 'flex';
+    specialGameArea.innerHTML = `
+        <div style="margin-bottom:15px; color:var(--danger); font-weight:bold; letter-spacing:2px;" id="bomb-hint">⚠️ ระเบิดทำงาน! ตัดให้ถูกเส้น</div>
+        <div class="wire-container" style="padding: 10px; background: #333; border-radius: 10px; border: 4px solid #444;">
+            ${wiresHTML}
+        </div>
+        ${getSkipButtonHTML()}
+    `;
 }
+
 function cutWire(el, isBomb) {
     if (isBomb) {
-        playSound(bangSound); el.innerText = "💥";
+        playSound(bangSound); 
+        el.style.background = "#000";
+        el.style.transform = "translateY(4px)";
+        el.style.boxShadow = "none";
+        
+        // Effect หน้าจอแดงวาบ
+        document.body.style.background = "#ef5350";
+        setTimeout(() => { document.body.style.background = "var(--bg-color)"; }, 200);
+
+        specialGameArea.innerHTML = `
+            <div class="timer-text">💥</div>
+            <div style="color:#ef5350; font-size: 2rem; font-weight:800; text-shadow: 0 0 10px rgba(0,0,0,0.5);">บึ้มมมมม!</div>
+            <div style="margin-top: 10px;">มือสั่นเหรอ? ดื่มซะ!</div>
+            ${getSkipButtonHTML()}
+        `;
+        specialGameArea.style.animation = "shake 0.5s infinite";
+        setTimeout(() => { specialGameArea.style.animation = ""; }, 500);
+        
+        resultDisplay.innerText = "ภารกิจล้มเหลว! ดื่มมมม";
         spinBtn.disabled = false;
-        document.querySelectorAll('.wire-btn').forEach(b => b.onclick = null);
     } else {
-        playSound(clickSound); el.style.opacity = "0.1"; el.style.pointerEvents = "none";
+        playSound(clickSound); 
+        el.style.opacity = "0.2";
+        el.style.transform = "translateY(2px)";
+        el.style.pointerEvents = "none";
+        document.getElementById('bomb-hint').innerText = "รอดไป... เหลือสายที่อันตรายกว่าเดิม!";
+        document.getElementById('bomb-hint').style.color = "#00e676";
     }
 }
 
-// 5. Memory
+// --- Memory Game Logic ---
 function setupMemoryGame() {
     const num = Math.floor(10000 + Math.random() * 90000);
-    specialGameArea.innerHTML = `<div style="color:#aaa;">จำเลขนี้ใน 5 วิ!</div><div class="timer-text">${num}</div>`;
+    specialGameArea.innerHTML = `<div style="font-size:0.9rem; margin-bottom:10px; color:#aaa;">จดจำตัวเลขนี้ใน 2 วินาที!</div><div class="timer-text" id="mem-num" style="color:#00e676;">${num}</div><div style="width:100%; height:6px; background:#333; border-radius:10px; overflow:hidden; margin-top:10px;"><div id="mem-progress" style="width:100%; height:100%; background:#00e676; transition: width 2s linear;"></div></div>`;
+    setTimeout(() => { const progressBar = document.getElementById('mem-progress'); if(progressBar) progressBar.style.width = '0%'; }, 50);
     setTimeout(() => {
-        specialGameArea.innerHTML = `<input type="number" id="mem-input" placeholder="เลขอะไร?" style="padding:15px; border-radius:12px; width:90%; font-size:1.8rem; background:#000; color:#fff; border:2px solid #00e676; text-align:center; margin-bottom:15px;"><button class="game-btn" onclick="checkMemory(${num})">ส่งคำตอบ</button>${getSkipButtonHTML()}`;
-    }, 5000);
+        const memNumDisplay = document.getElementById('mem-num');
+        if (memNumDisplay) {
+            specialGameArea.innerHTML = `<div style="font-size:1.1rem; margin-bottom:15px; font-weight:bold;">เมื่อกี้เลขอะไร!?</div><input type="number" id="mem-input" autocomplete="off" placeholder="กรอกตัวเลขที่จำได้" style="padding:15px; border-radius:12px; border:2px solid #00e676; width:90%; text-align:center; font-size:1.8rem; background:#000; color:#fff; margin-bottom:15px; outline:none;"><button class="game-btn" onclick="checkMemory(${num})" style="background:#00e676; color:#000;">ส่งคำตอบ</button>${getSkipButtonHTML()}`;
+            document.getElementById('mem-input').focus();
+        }
+    }, 2000);
 }
 function checkMemory(correct) {
-    const val = parseInt(document.getElementById('mem-input').value);
-    if (val === correct) { resultDisplay.innerText = "รอด!"; playSound(resultSound); }
-    else { resultDisplay.innerText = "ผิด! ดื่ม"; playSound(alarmSound); }
-    spinBtn.disabled = false;
+    const inputEl = document.getElementById('mem-input');
+    const val = parseInt(inputEl.value);
+    if (val === correct) { resultDisplay.innerText = "ถูกต้อง! รอดตาย"; playSound(resultSound); }
+    else { resultDisplay.innerText = `ผิด! เลขที่ถูกคือ ${correct}`; playSound(bangSound); }
+    specialGameArea.innerHTML = getSkipButtonHTML(); spinBtn.disabled = false;
 }
 
-// 6. Clicker
-function setupClickerGame(target, time) {
-    specialGameArea.innerHTML = `<button class="game-btn" onclick="startClicker(${target}, ${time})">🚀 เริ่มกดรัว! (${target} ครั้ง)</button>${getSkipButtonHTML()}`;
-}
-function startClicker(target, time) {
-    let count = 0;
-    specialGameArea.innerHTML = `<div class="timer-text" id="cl-count">0</div><button class="game-btn" id="cl-btn" onclick="doClick(${target})">กด!!!</button>`;
-    let timeLeft = time;
-    window.currentInterval = setInterval(() => {
-        timeLeft--;
-        if (timeLeft <= 0) {
-            clearInterval(window.currentInterval);
-            if (count < target) { resultDisplay.innerText = "ไม่ทัน! ดื่ม"; playSound(alarmSound); }
-            spinBtn.disabled = false;
-        }
-    }, 1000);
-    window.doClick = (t) => {
-        count++; document.getElementById('cl-count').innerText = count;
-        if (count >= t) {
-            clearInterval(window.currentInterval);
-            resultDisplay.innerText = "รอด!"; playSound(resultSound);
-            spinBtn.disabled = false;
-        }
-    };
+// --- Alphabet Random Game Logic ---
+function setupAlphabetGame() {
+    specialGameArea.innerHTML = `
+        <div id="alpha-display" class="timer-text" style="color:#00ccff;">?</div>
+        <button class="game-btn" id="alpha-btn" onclick="runAlphabetSpin()">🎰 สุ่มตัวอักษร!</button>
+        ${getSkipButtonHTML()}
+    `;
 }
 
-// 7. High-Low
-function setupHighLowGame() {
-    const cur = Math.floor(Math.random() * 9) + 1;
-    specialGameArea.innerHTML = `<div style="color:#aaa;">เลขปัจจุบัน</div><div class="timer-text">${cur}</div><div style="display:flex; gap:10px; width:100%;"><button class="game-btn" onclick="checkHL('low', ${cur})">⬇️ ต่ำกว่า</button><button class="game-btn" onclick="checkHL('high', ${cur})">⬆️ สูงกว่า</button></div>${getSkipButtonHTML()}`;
-}
-function checkHL(guess, old) {
-    const next = Math.floor(Math.random() * 10) + 1;
-    const win = (guess === 'high' && next > old) || (guess === 'low' && next < old);
-    resultDisplay.innerText = `เลขคือ ${next}: ${win ? 'รอด!' : 'ดื่ม!'}`;
-    playSound(win ? resultSound : alarmSound);
-    spinBtn.disabled = false;
-}
-
-// 8. RPS
-function setupRPSGame() {
-    specialGameArea.innerHTML = `<div style="display:flex; gap:10px; width:100%;"><button class="game-btn" onclick="playRPS('🔨')">🔨</button><button class="game-btn" onclick="playRPS('✌️')">✌️</button><button class="game-btn" onclick="playRPS('📄')">📄</button></div>${getSkipButtonHTML()}`;
-}
-function playRPS(user) {
-    const items = ['🔨', '✌️', '📄'];
-    const ai = items[Math.floor(Math.random() * 3)];
-    let res = '';
-    if (user === ai) { resultDisplay.innerText = `เสมอ (${ai})!`; return setupRPSGame(); }
-    if ((user === '🔨' && ai === '✌️') || (user === '✌️' && ai === '📄') || (user === '📄' && ai === '🔨')) res = 'ชนะ!';
-    else res = 'แพ้ (ดื่ม!)';
-    resultDisplay.innerText = `คุณ ${user} VS AI ${ai}: ${res}`;
-    playSound(res === 'ชนะ!' ? resultSound : alarmSound);
-    spinBtn.disabled = false;
-}
-
-// 9. Cards
-function setupCardGame() {
-    const bomb = Math.floor(Math.random() * 4);
-    let html = '';
-    for(let i=0; i<4; i++) html += `<div onclick="pickCard(this, ${i===bomb})" style="background:#fff; color:#000; height:70px; width:22%; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:1.5rem; font-weight:bold;">?</div>`;
-    specialGameArea.innerHTML = `<div style="display:flex; justify-content:space-between; width:100%;">${html}</div>${getSkipButtonHTML()}`;
-}
-function pickCard(el, isBomb) {
-    if (isBomb) { el.style.background = "#ef5350"; el.innerText = "👹"; playSound(bangSound); resultDisplay.innerText = "ดื่ม!"; }
-    else { el.style.background = "#00e676"; el.innerText = "😇"; playSound(clickSound); resultDisplay.innerText = "รอด!"; }
-    spinBtn.disabled = false;
-}
-
-// 10. Math
-function setupMathGame() {
-    const n1 = Math.floor(Math.random() * 10) + 1, n2 = Math.floor(Math.random() * 10) + 1;
-    const ans = n1 + n2;
-    let choices = [ans, ans+1, ans-1].sort(() => Math.random() - 0.5);
-    specialGameArea.innerHTML = `<div class="timer-text">${n1}+${n2}=?</div><div style="display:flex; gap:10px; width:100%;">${choices.map(c => `<button class="game-btn" onclick="checkMath(${c},${ans})">${c}</button>`).join('')}</div>`;
-    window.mathTimeout = setTimeout(() => { resultDisplay.innerText = "ช้าไป! ดื่ม"; playSound(alarmSound); spinBtn.disabled = false; }, 3000);
-}
-function checkMath(a, c) {
-    clearTimeout(window.mathTimeout);
-    const win = a === c;
-    resultDisplay.innerText = win ? "ถูก! รอด" : "ผิด! ดื่ม";
-    playSound(win ? resultSound : alarmSound);
-    spinBtn.disabled = false;
-}
-
-// 11. Reflex
-function setupReflexGame() {
-    specialGameArea.innerHTML = `<button class="game-btn" onclick="startReflex()">เริ่ม!</button>`;
-}
-function startReflex() {
-    specialGameArea.innerHTML = `<div id="re-box" style="height:150px; width:100%; background:#222; border-radius:12px; position:relative;"></div>`;
-    setTimeout(() => {
-        const box = document.getElementById('re-box');
-        if(!box) return;
-        const btn = document.createElement('button');
-        btn.innerText = "กด!";
-        btn.style.cssText = `position:absolute; top:${Math.random()*70}%; left:${Math.random()*70}%; background:#ff4081; border:none; padding:10px 20px; border-radius:20px; color:#fff; font-weight:bold;`;
-        btn.onclick = () => { clearTimeout(window.reflexFail); resultDisplay.innerText = "รอด!"; playSound(resultSound); spinBtn.disabled = false; };
-        box.appendChild(btn);
-        window.reflexFail = setTimeout(() => { resultDisplay.innerText = "ช้า! ดื่ม"; playSound(alarmSound); spinBtn.disabled = false; }, 1200);
-    }, 1000 + Math.random()*2000);
-}
-
-// 12. Parity
-function setupParityGame() {
-    const num = Math.floor(Math.random() * 100);
-    specialGameArea.innerHTML = `<div style="margin-bottom:10px;">เลขปริศนาคือ คู่ หรือ คี่?</div><div style="display:flex; gap:10px; width:100%;"><button class="game-btn" style="background:#42a5f5;" onclick="checkP('even', ${num})">คู่</button><button class="game-btn" style="background:#9c27b0;" onclick="checkP('odd', ${num})">คี่</button></div>`;
-}
-function checkP(g, n) {
-    const win = (n % 2 === 0 && g === 'even') || (n % 2 !== 0 && g === 'odd');
-    resultDisplay.innerText = `เลขคือ ${n}: ${win ? 'รอด!' : 'ดื่ม!'}`;
-    playSound(win ? resultSound : alarmSound);
-    spinBtn.disabled = false;
-}
-
-// 13. AI Smile (Dont Smile)
-let smileInterval, gameTimerInterval;
-async function setupSmileGame() {
-    const overlay = document.getElementById('camera-overlay'), status = document.getElementById('smile-status'), video = document.getElementById('camera-video');
-    overlay.style.display = 'flex';
-    try {
-        await faceapi.nets.tinyFaceDetector.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models');
-        await faceapi.nets.faceExpressionNet.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models');
-        const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
-        video.srcObject = stream;
-        video.onplay = () => {
-            let timeLeft = 10;
-            smileInterval = setInterval(async () => {
-                const detect = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions()).withFaceExpressions();
-                if (detect.length > 0) {
-                    if (!gameTimerInterval) {
-                        gameTimerInterval = setInterval(() => {
-                            timeLeft--; document.getElementById('smile-timer').innerText = timeLeft;
-                            if(timeLeft <= 0) { clearInterval(smileInterval); clearInterval(gameTimerInterval); status.innerText = "รอด!"; document.querySelector('.back-btn').style.display='block'; playSound(resultSound); }
-                        }, 1000);
-                    }
-                    if (detect[0].expressions.happy > 0.4) { clearInterval(smileInterval); clearInterval(gameTimerInterval); status.innerText = "ยิ้ม! ดื่ม!"; overlay.classList.add("smile-detected"); playSound(alarmSound); document.querySelector('.back-btn').style.display='block'; }
-                }
-            }, 100);
-        };
-    } catch { alert("เปิดกล้องไม่ได้"); closeCameraGame(); }
-}
-function closeCameraGame() {
-    const video = document.getElementById('camera-video');
-    if (video.srcObject) video.srcObject.getTracks().forEach(t => t.stop());
-    clearInterval(smileInterval); clearInterval(gameTimerInterval);
-    document.getElementById('camera-overlay').style.display = 'none';
-    spinBtn.disabled = false;
-}
-
-// History
-function openHistory() {
-    historyModal.classList.add('active');
-    historyListDisplay.innerHTML = history.length ? history.map(h => `<li class="history-item"><span class="history-tag" style="background:${h.color}">${h.c}</span>${h.t}</li>`).join('') : '<li style="padding:20px; text-align:center;">ไม่มีประวัติ</li>';
-}
-function closeHistory() { historyModal.classList.remove('active'); }
-
-// =================== 5. Original 15 Games (Added Previously) ===================
-
-// 14. Simon Says (Memory)
-function setupSimonGame() {
-    specialGameArea.innerHTML = `<button class="game-btn" onclick="startSimon()">🧠 เริ่มจำลำดับ!</button>`;
-}
-function startSimon() {
-    const colors = ['#f44336', '#4caf50', '#2196f3', '#ffeb3b'];
-    const seq = Array.from({length: 4}, () => Math.floor(Math.random() * 4));
-    let userIdx = 0;
+function runAlphabetSpin() {
+    const btn = document.getElementById('alpha-btn');
+    const display = document.getElementById('alpha-display');
+    const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    btn.disabled = true;
     
-    // สร้างปุ่ม
-    let html = `<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; width:100%;">`;
-    colors.forEach((c, i) => html += `<div id="simon-${i}" style="height:80px; background:${c}; opacity:0.3; border-radius:10px;"></div>`);
-    html += `</div>`;
+    let counter = 0;
+    let speed = 50;
+    
+    // เสียงกดรัวๆ ระหว่างสุ่ม
+    let spinInterval = setInterval(() => {
+        const randomChar = letters[Math.floor(Math.random() * letters.length)];
+        display.innerText = randomChar;
+        playSound(clickSound);
+        counter++;
+        
+        if (counter > 20) {
+            clearInterval(spinInterval);
+            const finalLetter = letters[Math.floor(Math.random() * letters.length)];
+            display.innerText = finalLetter;
+            display.style.fontSize = "6rem"; // ขยายตัวอักษรที่สุ่มได้
+            
+            playSound(resultSound);
+            btn.innerText = "ใครมีตัว '" + finalLetter + "' ดื่ม!";
+            btn.style.background = "#444";
+            spinBtn.disabled = false; // ปลดล็อกปุ่มเริ่มเกมหลัก
+        }
+    }, speed);
+}
+
+// --- Simon Says Game Logic (6 Colors Edition) ---
+function setupSimonGame() {
+    specialGameArea.style.display = 'flex';
+    specialGameArea.innerHTML = `
+        <div style="margin-bottom:10px; font-size:0.9rem; color:#aaa;">จำลำดับไฟ 5 ครั้งให้ถูก!</div>
+        <button class="game-btn" id="start-simon-btn" onclick="startSimon()">🧠 เริ่มจำลำดับ!</button>
+        ${getSkipButtonHTML()}
+    `;
+}
+
+function startSimon() {
+    const btn = document.getElementById('start-simon-btn');
+    if(btn) btn.style.display = 'none';
+
+    const colors = ['#f44336', '#4caf50', '#2196f3', '#ffeb3b', '#9c27b0', '#ff9800']; const seq = Array.from({length: 5}, () => Math.floor(Math.random() * 6)); let userIdx = 0;
+    
+    let html = `<div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; width:100%;">`;
+    colors.forEach((c, i) => {
+        html += `<div id="simon-${i}" style="height:70px; background:${c}; opacity:0.2; border-radius:10px; transition:all 0.1s; border: 2px solid rgba(255,255,255,0.1);"></div>`;
+    });
+    html += `</div><div id="simon-status" style="margin-top:10px; color:var(--warning);">ตั้งใจดู...</div>`;
     specialGameArea.innerHTML = html;
 
     // เล่น Sequence
@@ -879,37 +918,66 @@ function startSimon() {
     const interval = setInterval(() => {
         if(i >= seq.length) {
             clearInterval(interval);
-            specialGameArea.innerHTML += `<div style="margin-top:10px;">ตาคุณแล้ว!</div>`;
+            document.getElementById('simon-status').innerText = "ตาคุณแล้ว! กดตามเลย";
+            document.getElementById('simon-status').style.color = "#00e676";
+            
+            // เปิดให้ผู้เล่นกด
             colors.forEach((c, idx) => {
                 const el = document.getElementById(`simon-${idx}`);
                 el.style.opacity = "1";
+                el.style.cursor = "pointer";
+                
                 el.onclick = () => {
-                    playSound(clickSound);
                     el.style.transform = "scale(0.9)";
-                    setTimeout(()=>el.style.transform="scale(1)", 100);
+                    setTimeout(() => el.style.transform = "scale(1)", 100);
+
                     if(idx !== seq[userIdx]) {
-                        resultDisplay.innerText = "ผิด! ดื่ม"; playSound(alarmSound); spinBtn.disabled = false;
-                        document.querySelectorAll('[id^="simon-"]').forEach(d=>d.onclick=null);
+                        // --- กรณีที่ 1: กดผิด (ดื่ม!) ---
+                        playSound(bangSound); // เสียงเตือน
+                        resultDisplay.innerText = "พลาดแล้ว! ดื่มซะดีๆ";
+                        document.getElementById('simon-status').innerText = "❌ ผิดลำดับ!";
+                        document.getElementById('simon-status').style.color = "#ef5350";
+                        spinBtn.disabled = false;
+                        // ปิดปุ่มห้ามกดต่อ
+                        document.querySelectorAll('[id^="simon-"]').forEach(d => d.onclick = null);
                     } else {
+                        // --- กรณีที่ 2: กดถูก (ไปต่อหรือชนะ) ---
+                        playSound(clickSound); 
                         userIdx++;
+                        
                         if(userIdx === seq.length) {
-                            resultDisplay.innerText = "สุดยอด! รอด"; playSound(resultSound); spinBtn.disabled = false;
-                            document.querySelectorAll('[id^="simon-"]').forEach(d=>d.onclick=null);
+                            // ชนะแล้ว
+                            playSound(resultSound); // เสียงชนะ
+                            resultDisplay.innerText = "สมองดีมาก! รอดตาย";
+                            document.getElementById('simon-status').innerText = "✅ ถูกต้องทั้งหมด!";
+                            spinBtn.disabled = false;
+                            document.querySelectorAll('[id^="simon-"]').forEach(d => d.onclick = null);
                         }
                     }
-                }
+                };
             });
             return;
         }
+
+        // แสดงผล Sequence ไฟ
         const active = document.getElementById(`simon-${seq[i]}`);
-        active.style.opacity = "1";
-        playSound(clickSound);
-        setTimeout(() => active.style.opacity = "0.3", 400);
+        if(active) {
+            active.style.opacity = "1";
+            active.style.boxShadow = `0 0 20px ${colors[seq[i]]}`;
+            active.style.transform = "scale(1.05)";
+            playSound(clickSound);
+            
+            setTimeout(() => {
+                active.style.opacity = "0.2";
+                active.style.boxShadow = "none";
+                active.style.transform = "scale(1)";
+            }, 450);
+        }
         i++;
-    }, 600);
+    }, 700); // ความเร็วในการแสดงไฟ
 }
 
-// 15. Spin Bottle (Luck)
+// --- Bottle Game Logic ---
 function setupBottleGame() {
     specialGameArea.innerHTML = `<div id="bottle" style="font-size:4rem; transition: transform 3s ease-out;">🍾</div><button class="game-btn" style="margin-top:20px;" onclick="spinBottle()">หมุน!</button>${getSkipButtonHTML()}`;
 }
@@ -923,515 +991,95 @@ function spinBottle() {
         spinBtn.disabled = false;
     }, 3000);
 }
-
-// 16. Color Reflex
-function setupColorReflexGame() {
-    specialGameArea.innerHTML = `<div id="color-box" style="width:100%; height:100px; background:#ef5350; border-radius:10px; display:flex; align-items:center; justify-content:center; font-weight:bold;">รอสีเขียว...</div><button class="game-btn" id="reflex-btn" onclick="checkReflex()">กด!</button>${getSkipButtonHTML()}`;
-    window.canPress = false;
-    
-    const time = 2000 + Math.random() * 3000;
-    window.gameTimeout = setTimeout(() => {
-        const box = document.getElementById('color-box');
-        if(box) {
-            box.style.background = "#00e676";
-            box.innerText = "กดเลย!!!";
-            window.canPress = true;
-            window.reflexStart = Date.now();
-        }
-    }, time);
-}
-function checkReflex() {
-    if(!window.canPress) {
-        clearTimeout(window.gameTimeout);
-        resultDisplay.innerText = "กดก่อน! ดื่ม"; playSound(alarmSound); spinBtn.disabled = false;
-    } else {
-        const diff = Date.now() - window.reflexStart;
-        if(diff < 500) { resultDisplay.innerText = `ไวมาก! (${diff}ms) รอด`; playSound(resultSound); }
-        else { resultDisplay.innerText = `ช้า! (${diff}ms) ดื่ม`; playSound(alarmSound); }
-        spinBtn.disabled = false;
-    }
-}
-
-// 17. Catch Dot (Skill)
-function setupCatchDotGame() {
-    specialGameArea.innerHTML = `<button class="game-btn" onclick="startGameDot()">เริ่มจับจุด!</button>`;
-}
-function startGameDot() {
-    let score = 0;
-    specialGameArea.innerHTML = `<div id="dot-area" style="height:200px; width:100%; position:relative; background:#222; border-radius:10px; overflow:hidden;"></div>`;
-    
-    function spawnDot() {
-        if(score >= 5) { resultDisplay.innerText = "ครบแล้ว! รอด"; playSound(resultSound); spinBtn.disabled = false; return; }
-        const dot = document.createElement('div');
-        dot.style.cssText = `width:40px; height:40px; background:#00e676; border-radius:50%; position:absolute; top:${Math.random()*160}px; left:${Math.random()*(specialGameArea.offsetWidth-50)}px; cursor:pointer;`;
-        dot.onmousedown = () => { score++; playSound(clickSound); dot.remove(); spawnDot(); };
-        document.getElementById('dot-area').appendChild(dot);
-        
-        // Dot moves automatically if not clicked quickly
-        setTimeout(() => { if(dot.parentNode) { dot.remove(); spawnDot(); } }, 900);
-    }
-    spawnDot();
-    window.gameTimeout = setTimeout(() => { if(score < 5) { resultDisplay.innerText = "ไม่ครบ! ดื่ม"; playSound(alarmSound); spinBtn.disabled = false; document.getElementById('dot-area').innerHTML = ''; } }, 6000);
-}
-
-// 18. Guess Number (Logic)
-function setupGuessNumGame() {
-    window.targetNum = Math.floor(Math.random() * 100) + 1;
-    window.guesses = 0;
-    specialGameArea.innerHTML = `<input type="number" id="g-input" placeholder="1-100" style="padding:10px; width:60%; border-radius:8px; border:none;"><button class="game-btn" style="width:35%; float:right;" onclick="doGuess()">ทาย</button><div id="g-hint" style="margin-top:10px; color:#ffca28;">ทายมา...</div>${getSkipButtonHTML()}`;
-}
-function doGuess() {
-    const val = parseInt(document.getElementById('g-input').value);
-    window.guesses++;
-    if(val === window.targetNum) { resultDisplay.innerText = `ถูกต้อง! (${window.guesses} ครั้ง)`; playSound(resultSound); spinBtn.disabled = false; }
-    else if(val < window.targetNum) document.getElementById('g-hint').innerText = "มากกว่านี้!";
-    else document.getElementById('g-hint').innerText = "น้อยกว่านี้!";
-    
-    if(window.guesses >= 6) { resultDisplay.innerText = `หมดสิทธิ์! เลขคือ ${window.targetNum} ดื่ม`; playSound(alarmSound); spinBtn.disabled = false; }
-}
-
-// 19. Blind Hold (Sense)
-function setupBlindHoldGame() {
-    specialGameArea.innerHTML = `<button class="game-btn" onmousedown="startHold()" ontouchstart="startHold(event)" onmouseup="endHold()" ontouchend="endHold(event)">กดค้างแล้วปล่อยที่ 4 วิ</button>${getSkipButtonHTML()}`;
-}
-function startHold(e) {
-    if(e) e.preventDefault();
-    window.holdStart = Date.now();
-    resultDisplay.innerText = "กำลังจับเวลา...";
-}
-function endHold(e) {
-    if(e) e.preventDefault();
-    const dur = (Date.now() - window.holdStart) / 1000;
-    const diff = Math.abs(dur - 4.0);
-    if(diff < 0.5) { resultDisplay.innerText = `${dur.toFixed(2)} วิ! เทพมาก (รอด)`; playSound(resultSound); }
-    else { resultDisplay.innerText = `${dur.toFixed(2)} วิ... ห่างไกล (ดื่ม)`; playSound(alarmSound); }
-    spinBtn.disabled = false;
-}
-
-// 20. Word Scramble
-function setupScrambleGame() {
-    const words = ["PARTY", "DRINK", "SHOTS", "BEER", "WINE", "VODKA", "MUSIC", "DANCE"];
-    const word = words[Math.floor(Math.random() * words.length)];
-    const scrambled = word.split('').sort(() => 0.5 - Math.random()).join('');
-    specialGameArea.innerHTML = `<div class="timer-text" style="letter-spacing:5px;">${scrambled}</div><input type="text" id="s-input" placeholder="ศัพท์ภาษาอังกฤษ?" style="padding:10px; width:100%; margin-bottom:10px;"><button class="game-btn" onclick="checkScramble('${word}')">ตอบ</button>${getSkipButtonHTML()}`;
-}
-function checkScramble(ans) {
-    const val = document.getElementById('s-input').value.toUpperCase();
-    if(val === ans) { resultDisplay.innerText = "ถูกต้อง! รอด"; playSound(resultSound); }
-    else { resultDisplay.innerText = `ผิด! เฉลย ${ans} (ดื่ม)`; playSound(alarmSound); }
-    spinBtn.disabled = false;
-}
-
-// 21. Quick Count
-function setupQuickCountGame() {
-    const count = Math.floor(Math.random() * 8) + 3;
-    const emojis = "🍎🍊🍋🍉🍇🍓🍒🍑".split('');
-    let html = '';
-    for(let i=0; i<count; i++) html += `<span style="font-size:1.5rem;">${emojis[Math.floor(Math.random()*emojis.length)]}</span> `;
-    specialGameArea.innerHTML = `<div style="margin-bottom:10px;">${html}</div><div style="display:flex; gap:5px; flex-wrap:wrap; justify-content:center;">${[3,4,5,6,7,8,9,10].map(n=>`<button class="game-btn" style="width:45px;" onclick="checkCount(${n}, ${count})">${n}</button>`).join('')}</div>`;
-    
-    // Auto hide
-    setTimeout(() => { specialGameArea.innerHTML = `<div style="margin-bottom:10px;">(ซ่อนแล้ว) มีกี่ลูก?</div><div style="display:flex; gap:5px; flex-wrap:wrap; justify-content:center;">${[3,4,5,6,7,8,9,10].map(n=>`<button class="game-btn" style="width:45px;" onclick="checkCount(${n}, ${count})">${n}</button>`).join('')}</div>`; }, 1500);
-}
-function checkCount(ans, correct) {
-    if(ans === correct) { resultDisplay.innerText = "ตาดี! รอด"; playSound(resultSound); }
-    else { resultDisplay.innerText = `ผิด! มี ${correct} (ดื่ม)`; playSound(alarmSound); }
-    spinBtn.disabled = false;
-}
-
-// 22. Left Right
-function setupLeftRightGame() {
-    specialGameArea.innerHTML = `<button class="game-btn" onclick="runLR()">เริ่มทดสอบ!</button>`;
-}
-function runLR() {
-    const dir = Math.random() > 0.5 ? "ซ้าย" : "ขวา";
-    const isTrick = Math.random() > 0.7; // 30% trick (text says Left, arrow points Right)
-    const arrow = dir === "ซ้าย" ? (isTrick ? "➡️" : "⬅️") : (isTrick ? "⬅️" : "➡️");
-    
-    specialGameArea.innerHTML = `<div class="timer-text">${dir}</div><div style="font-size:3rem; margin-bottom:10px;">${arrow}</div><div style="display:flex; gap:10px; width:100%;"><button class="game-btn" onclick="checkLR('ซ้าย', '${dir}')">ซ้าย</button><button class="game-btn" onclick="checkLR('ขวา', '${dir}')">ขวา</button></div>`;
-    
-    window.gameTimeout = setTimeout(() => { resultDisplay.innerText = "ช้าไป! ดื่ม"; playSound(alarmSound); spinBtn.disabled = false; }, 1500);
-}
-function checkLR(ans, correct) {
-    clearTimeout(window.gameTimeout);
-    if(ans === correct) { resultDisplay.innerText = "สติดี! รอด"; playSound(resultSound); }
-    else { resultDisplay.innerText = "สับสน! ดื่ม"; playSound(alarmSound); }
-    spinBtn.disabled = false;
-}
-
-// 23. Missing Char
-function setupMissingCharGame() {
-    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    const start = Math.floor(Math.random() * 22);
-    const sub = chars.substring(start, start+4);
-    const hiddenIdx = Math.floor(Math.random() * 4);
-    const ans = sub[hiddenIdx];
-    const display = sub.split('').map((c,i) => i===hiddenIdx ? "_" : c).join(' ');
-    
-    let choices = [ans];
-    while(choices.length < 3) {
-        let r = chars[Math.floor(Math.random() * 26)];
-        if(!choices.includes(r)) choices.push(r);
-    }
-    choices.sort(()=>Math.random()-0.5);
-
-    specialGameArea.innerHTML = `<div class="timer-text">${display}</div><div style="display:flex; gap:10px; width:100%;">${choices.map(c => `<button class="game-btn" onclick="checkChar('${c}','${ans}')">${c}</button>`).join('')}</div>`;
-}
-function checkChar(ans, correct) {
-    if(ans === correct) { resultDisplay.innerText = "เก่งมาก! รอด"; playSound(resultSound); }
-    else { resultDisplay.innerText = "ท่อง A-Z ใหม่นะ (ดื่ม)"; playSound(alarmSound); }
-    spinBtn.disabled = false;
-}
-
-// 24. Odd One Out
-function setupOddOneGame() {
-    const emojis = ['😀','😂','😍','😎','😡','👻'];
-    const main = emojis[Math.floor(Math.random()*emojis.length)];
-    const odd = ['🤔','😅','😘','🤓','🤬','👽'][Math.floor(Math.random()*6)];
-    
-    let grid = Array(9).fill(main);
-    const oddIdx = Math.floor(Math.random() * 9);
-    grid[oddIdx] = odd;
-    
-    let html = `<div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:5px; width:100%;">`;
-    grid.forEach((e, i) => html += `<div onclick="checkOdd(${i === oddIdx})" style="background:#333; height:60px; display:flex; align-items:center; justify-content:center; font-size:1.5rem; border-radius:5px; cursor:pointer;">${e}</div>`);
-    html += `</div>`;
-    specialGameArea.innerHTML = html;
-    
-    window.gameTimeout = setTimeout(() => { resultDisplay.innerText = "หมดเวลา! ดื่ม"; playSound(alarmSound); spinBtn.disabled = false; }, 3000);
-}
-function checkOdd(isCorrect) {
-    clearTimeout(window.gameTimeout);
-    if(isCorrect) { resultDisplay.innerText = "ตาเหยี่ยว! รอด"; playSound(resultSound); }
-    else { resultDisplay.innerText = "ผิดตัว! ดื่ม"; playSound(alarmSound); }
-    spinBtn.disabled = false;
-}
-
-// 25. Balloon Pop
-function setupBalloonGame() {
-    window.balloonSize = 1;
-    window.balloonLimit = 5 + Math.floor(Math.random() * 10); // Random limit 5-15 clicks
-    window.clicks = 0;
-    specialGameArea.innerHTML = `<div id="balloon" style="font-size:3rem; transition:transform 0.1s;">🎈</div><button class="game-btn" style="margin-top:20px;" onclick="pumpBalloon()">สูบ!</button><button class="skip-btn" onclick="stopBalloon()">พอแค่นี้ (รอด)</button>`;
-}
-function pumpBalloon() {
-    window.clicks++;
-    window.balloonSize += 0.2;
-    const b = document.getElementById('balloon');
-    b.style.transform = `scale(${window.balloonSize})`;
-    playSound(clickSound);
-    
-    if(window.clicks > window.balloonLimit) {
-        b.innerText = "💥";
-        resultDisplay.innerText = "แตก! ดื่มหมดแก้ว";
-        playSound(bangSound);
-        spinBtn.disabled = false;
-        specialGameArea.innerHTML = `<div class="timer-text">💥</div>`;
-    }
-}
-function stopBalloon() {
-    resultDisplay.innerText = `ใจเสาะแต่รอด (${window.clicks} ครั้ง)`;
-    playSound(resultSound);
-    spinBtn.disabled = false;
-    specialGameArea.innerHTML = '';
-}
-
-// 26. Truth or Dare
-function setupTorDGame() {
-    const t = ["แฟนเก่าคนล่าสุดชื่อ?", "เรื่องน่าอายที่สุด?", "เคยแอบชอบใครในวง?", "โกหกครั้งล่าสุดคือ?"];
-    const d = ["เต้นไก่ย่าง", "โทรหาคนล่าสุดในมือถือ", "กินน้ำผสมทุกอย่าง", "ตะโกนว่ารักนะ 3 ครั้ง"];
-    specialGameArea.innerHTML = `<div style="display:flex; gap:10px; width:100%;"><button class="game-btn" style="background:#e91e63;" onclick="pickTD('${t[Math.floor(Math.random()*t.length)]}')">TRUTH</button><button class="game-btn" style="background:#ff9800;" onclick="pickTD('${d[Math.floor(Math.random()*d.length)]}')">DARE</button></div>${getSkipButtonHTML()}`;
-}
-function pickTD(msg) {
-    resultDisplay.innerText = msg;
-    playSound(resultSound);
-    spinBtn.disabled = false;
-    specialGameArea.innerHTML = '';
-}
-
-// 27. Dice Duel
-function setupDiceDuelGame() {
-    specialGameArea.innerHTML = `<button class="game-btn" onclick="rollDice()">🎲 ทอยลูกเต๋า</button>${getSkipButtonHTML()}`;
-}
-function rollDice() {
-    const d1 = Math.floor(Math.random() * 6) + 1;
-    const d2 = Math.floor(Math.random() * 6) + 1;
-    specialGameArea.innerHTML = `<div style="font-size:3rem;">🎲 ${d1} VS ${d2} 🎲</div>`;
-    
-    setTimeout(() => {
-        if(d1 === d2) resultDisplay.innerText = "เสมอ! รอดทั้งคู่";
-        else if(d1 < d2) resultDisplay.innerText = "เต๋าซ้ายแต้มน้อย (ดื่ม!)";
-        else resultDisplay.innerText = "เต๋าขวาแต้มน้อย (ดื่ม!)";
-        playSound(resultSound);
-        spinBtn.disabled = false;
-        specialGameArea.innerHTML += getSkipButtonHTML();
-    }, 1000);
-}
-
-// 28. Tap War (2 Player)
-function setupTapWarGame() {
-    specialGameArea.innerHTML = `<div style="text-align:center; color:#aaa; margin-bottom:10px;">วางมือถือตรงกลาง แข่งกันจิ้ม!</div><div style="display:flex; height:150px; width:100%; border-radius:10px; overflow:hidden;"><div id="p1-area" onclick="tapWar(1)" style="flex:1; background:#2196f3; display:flex; align-items:center; justify-content:center;">🔵</div><div id="p2-area" onclick="tapWar(2)" style="flex:1; background:#f44336; display:flex; align-items:center; justify-content:center;">🔴</div></div>`;
-    window.warScore = 50; // 50%
-}
-function tapWar(player) {
-    if(player === 1) window.warScore += 5;
-    else window.warScore -= 5;
-    
-    document.getElementById('p1-area').style.flex = `${window.warScore}%`;
-    document.getElementById('p2-area').style.flex = `${100 - window.warScore}%`;
-    
-    if(window.warScore >= 100) { resultDisplay.innerText = "สีฟ้าชนะ! สีแดงดื่ม"; playSound(resultSound); spinBtn.disabled = false; }
-    if(window.warScore <= 0) { resultDisplay.innerText = "สีแดงชนะ! สีฟ้าดื่ม"; playSound(resultSound); spinBtn.disabled = false; }
-}
-
-// =================== 6. New 10 Games (เพิ่มใหม่) ===================
-
-// 29. Shake Champagne
-function setupShakeChampGame(target, time) {
-    specialGameArea.innerHTML = `<button class="game-btn" onclick="startShake(${target}, ${time})">🍾 เขย่าเลย!</button>${getSkipButtonHTML()}`;
-}
-function startShake(target, time) {
-    let shakes = 0;
-    specialGameArea.innerHTML = `<div class="timer-text" id="sh-count">0</div><button class="game-btn" style="height:100px; font-size:2rem;" onclick="doShake()">กดรัวๆ!!!</button>`;
-    
-    let timeLeft = time;
-    window.currentInterval = setInterval(() => {
-        timeLeft -= 0.1;
-        if(timeLeft <= 0) {
-            clearInterval(window.currentInterval);
-            if(shakes < target) { resultDisplay.innerText = `ไม่ทัน! (${shakes}) ดื่ม`; playSound(alarmSound); }
-            else { resultDisplay.innerText = "ฟู่! รอด"; playSound(resultSound); }
-            spinBtn.disabled = false;
-        }
-    }, 100);
-
-    window.doShake = () => {
-        shakes++;
-        document.getElementById('sh-count').innerText = shakes;
-        playSound(clickSound);
-    };
-}
-
-// 30. Stroop Test (ตาไวสี)
-function setupStroopGame() {
-    specialGameArea.innerHTML = `<button class="game-btn" onclick="startStroop()">เริ่มทดสอบ!</button>`;
-}
-function startStroop() {
-    const colors = ["RED", "BLUE", "GREEN", "YELLOW"];
-    const cssColors = ["#f44336", "#2196f3", "#4caf50", "#ffeb3b"];
-    const txtIdx = Math.floor(Math.random() * 4);
-    const colIdx = Math.floor(Math.random() * 4);
-    const isMatch = txtIdx === colIdx; // จริงๆ แล้ว Stroop คือถามสี ไม่ใช่ถามคำ แต่นี่เอาแบบง่าย "คำตรงสีไหม"
-    
-    specialGameArea.innerHTML = `<div class="timer-text" style="color:${cssColors[colIdx]}; font-size:4rem;">${colors[txtIdx]}</div><div style="display:flex; gap:10px; width:100%;"><button class="game-btn" style="background:#4caf50;" onclick="checkStroop(true, ${isMatch})">ถูก</button><button class="game-btn" style="background:#f44336;" onclick="checkStroop(false, ${isMatch})">ผิด</button></div>`;
-    
-    window.gameTimeout = setTimeout(() => { resultDisplay.innerText = "ช้า! ดื่ม"; playSound(alarmSound); spinBtn.disabled = false; }, 2000);
-}
-function checkStroop(ans, correct) {
-    clearTimeout(window.gameTimeout);
-    if(ans === correct) { resultDisplay.innerText = "แม่นยำ! รอด"; playSound(resultSound); }
-    else { resultDisplay.innerText = "มึนสี! ดื่ม"; playSound(alarmSound); }
-    spinBtn.disabled = false;
-}
-
-// 31. Tap Green Only
-function setupTapGreenGame() {
-    let html = `<div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; width:100%;">`;
-    let greens = 0;
-    for(let i=0; i<9; i++) {
-        const isGreen = Math.random() > 0.6;
-        if(isGreen) greens++;
-        const color = isGreen ? '#4caf50' : '#f44336';
-        html += `<div onclick="tapColor(this, ${isGreen})" style="background:${color}; height:60px; border-radius:8px;"></div>`;
-    }
-    html += `</div>`;
-    if(greens === 0) return setupTapGreenGame(); // Retry if no greens
-    
-    specialGameArea.innerHTML = `<div style="margin-bottom:10px;">จิ้มสีเขียวให้หมด!</div>${html}`;
-    window.greenCount = greens;
-}
-function tapColor(el, isGreen) {
-    if(!isGreen) {
-        resultDisplay.innerText = "โดนสีแดง! ดื่ม"; playSound(alarmSound); spinBtn.disabled = false;
-        specialGameArea.innerHTML = '';
-    } else {
-        el.style.opacity = "0"; el.onclick = null;
-        playSound(clickSound);
-        window.greenCount--;
-        if(window.greenCount <= 0) {
-            resultDisplay.innerText = "ตาดีมาก! รอด"; playSound(resultSound); spinBtn.disabled = false;
-            specialGameArea.innerHTML = '';
-        }
-    }
-}
-
-// 32. Bar Stop (Timing)
-function setupBarStopGame() {
-    specialGameArea.innerHTML = `<div style="width:100%; height:30px; background:#333; border-radius:15px; position:relative; overflow:hidden;"><div style="position:absolute; left:40%; width:20%; height:100%; background:#4caf50;"></div><div id="bar-cursor" style="position:absolute; left:0; width:5px; height:100%; background:#fff;"></div></div><button class="game-btn" style="margin-top:20px;" onclick="stopBar()">หยุด!</button>`;
-    
-    let pos = 0, dir = 2;
-    window.animFrame = requestAnimationFrame(function loop() {
-        pos += dir;
-        if(pos > 98 || pos < 0) dir *= -1;
-        document.getElementById('bar-cursor').style.left = pos + '%';
-        window.animFrame = requestAnimationFrame(loop);
-    });
-}
-function stopBar() {
-    cancelAnimationFrame(window.animFrame);
-    const cursor = parseFloat(document.getElementById('bar-cursor').style.left);
-    if(cursor >= 40 && cursor <= 60) { resultDisplay.innerText = "แม่น! รอด"; playSound(resultSound); }
-    else { resultDisplay.innerText = "ว่าว! ดื่ม"; playSound(alarmSound); }
-    spinBtn.disabled = false;
-}
-
-// 33. Grid Memory
-function setupGridMemGame() {
-    const pattern = Array(9).fill(0).map(()=>Math.random()>0.5);
-    let html = `<div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:5px; width:150px; margin:0 auto;">`;
-    pattern.forEach((p,i) => html += `<div id="gm-${i}" style="width:45px; height:45px; background:${p?'#fff':'#333'}; border-radius:4px;"></div>`);
-    html += `</div>`;
-    
-    specialGameArea.innerHTML = `<div style="margin-bottom:10px;">จำภาพนี้!</div>${html}`;
-    
-    setTimeout(() => {
-        specialGameArea.innerHTML = `<div style="margin-bottom:10px;">วาดภาพเมื่อกี้!</div>` + html.replace(/background:#fff/g, 'background:#333').replace(/id="gm-(\d+)"/g, 'id="gm-$1" onclick="toggleGrid($1)"');
-        window.userPattern = Array(9).fill(false);
-        window.correctPattern = pattern;
-        specialGameArea.innerHTML += `<button class="game-btn" style="margin-top:10px;" onclick="checkGrid()">ส่ง</button>`;
-    }, 2000);
-}
-function toggleGrid(i) {
-    const el = document.getElementById(`gm-${i}`);
-    window.userPattern[i] = !window.userPattern[i];
-    el.style.background = window.userPattern[i] ? '#fff' : '#333';
-    playSound(clickSound);
-}
-function checkGrid() {
-    const correct = JSON.stringify(window.correctPattern) === JSON.stringify(window.userPattern);
-    if(correct) { resultDisplay.innerText = "ความจำเทพ! รอด"; playSound(resultSound); }
-    else { resultDisplay.innerText = "มั่ว! ดื่ม"; playSound(alarmSound); }
-    spinBtn.disabled = false;
-}
-
-// 34. Chain Math
+// --- Chain Math Game Logic ---
 function setupChainMathGame() {
-    const ops = ['+','-'];
-    const n1 = Math.floor(Math.random()*9)+1;
-    const n2 = Math.floor(Math.random()*9)+1;
-    const n3 = Math.floor(Math.random()*9)+1;
-    const op1 = ops[Math.floor(Math.random()*2)];
-    const op2 = ops[Math.floor(Math.random()*2)];
+    const ops = ['+', '-'];
+    const n1 = Math.floor(Math.random() * 15) + 5; // เพิ่มตัวเลขให้ยากขึ้นนิดนึง
+    const n2 = Math.floor(Math.random() * 9) + 1;
+    const n3 = Math.floor(Math.random() * 9) + 1;
+    const op1 = ops[Math.floor(Math.random() * 2)];
+    const op2 = ops[Math.floor(Math.random() * 2)];
     const eq = `${n1}${op1}${n2}${op2}${n3}`;
     const ans = eval(eq);
     
-    specialGameArea.innerHTML = `<div class="timer-text">${eq}=?</div><input type="number" id="math-ans" style="width:50%; padding:10px; text-align:center;"><button class="game-btn" onclick="solveChain(${ans})">ตอบ</button>${getSkipButtonHTML()}`;
+    specialGameArea.style.display = 'flex';
+    specialGameArea.innerHTML = `
+        <div style="margin-bottom:10px; color:#ffca28;">คิดให้ไว! ก่อนระเบิดทำงาน</div>
+        <div class="timer-text" style="font-size: 3rem; margin-bottom:10px;">${eq} = ?</div>
+        
+        <div style="width:100%; height:10px; background:#444; border-radius:5px; margin-bottom:20px; overflow:hidden;">
+            <div id="math-progress" style="width:100%; height:100%; background:#ef5350; transition: width 0.1s linear;"></div>
+        </div>
+
+        <input type="number" id="math-ans" pattern="[0-9]*" inputmode="numeric" 
+               style="width:60%; padding:15px; text-align:center; font-size:1.5rem; border-radius:10px; border:none; margin-bottom:15px;" 
+               placeholder="คำตอบ...">
+        
+        <button class="game-btn" id="math-submit" onclick="solveChain(${ans})">ส่งคำตอบ!</button>
+        ${getSkipButtonHTML()}
+    `;
+
+    // โฟกัสไปที่ช่องพิมพ์ทันที
+    setTimeout(() => document.getElementById('math-ans').focus(), 100);
+
+    // ระบบจับเวลา 7 วินาที
+    let timeLeft = 7.0;
+    const totalTime = 7.0;
+    
+    window.mathTimer = setInterval(() => {
+        timeLeft -= 0.1;
+        const progressBar = document.getElementById('math-progress');
+        if(progressBar) {
+            const percent = (timeLeft / totalTime) * 100;
+            progressBar.style.width = percent + "%";
+        }
+
+        if (timeLeft <= 0) {
+            clearInterval(window.mathTimer);
+            failMathGame(ans); // หมดเวลา = แพ้
+        }
+    }, 100);
 }
+
 function solveChain(ans) {
-    const user = parseInt(document.getElementById('math-ans').value);
-    if(user === ans) { resultDisplay.innerText = "สมองไว! รอด"; playSound(resultSound); }
-    else { resultDisplay.innerText = `ผิด! ตอบ ${ans} (ดื่ม)`; playSound(alarmSound); }
+    clearInterval(window.mathTimer); // หยุดเวลาทันทีที่กดตอบ
+    const input = document.getElementById('math-ans');
+    const user = parseInt(input.value);
+    
+    if (user === ans) {
+        resultDisplay.innerText = "สมองไว! รอดตาย";
+        resultDisplay.style.color = "#00e676";
+        playSound(resultSound);
+        specialGameArea.innerHTML = `<div class="timer-text" style="color:#00e676;">✅ ${ans}</div><div style="margin-top:10px;">ถูกต้อง! รอดไป...</div>`;
+    } else {
+        failMathGame(ans);
+    }
     spinBtn.disabled = false;
 }
 
-// 35. Passcode (Typing)
-function setupPasscodeGame() {
-    const code = Math.floor(1000 + Math.random() * 9000);
-    specialGameArea.innerHTML = `<div style="color:#aaa;">พิมพ์รหัสนี้ด่วน!</div><div class="timer-text">${code}</div><input type="number" id="pass-in" style="width:80%; padding:10px; font-size:1.5rem; text-align:center; background:#000; color:#00e676; border:1px solid #333;">`;
+function failMathGame(correctAns) {
+    clearInterval(window.mathTimer);
+    playSound(bangSound); // เสียงระเบิดเพิ่มความสะดุ้ง
+    specialGameArea.style.animation = "shake 0.5s";
     
-    const input = document.getElementById('pass-in');
-    input.focus();
-    input.oninput = () => {
-        if(input.value.length === 4) {
-            if(parseInt(input.value) === code) { resultDisplay.innerText = "แฮกเกอร์! รอด"; playSound(resultSound); }
-            else { resultDisplay.innerText = "รหัสผิด! ดื่ม"; playSound(alarmSound); }
-            spinBtn.disabled = false;
-            input.disabled = true;
-            clearTimeout(window.gameTimeout);
-        }
-    };
-    window.gameTimeout = setTimeout(() => { if(!spinBtn.disabled) return; resultDisplay.innerText = "ช้าไป! ดื่ม"; playSound(alarmSound); spinBtn.disabled = false; }, 4000);
+    specialGameArea.innerHTML = `
+        <div class="timer-text" style="color:#ef5350;">💥 บึ้ม!</div>
+        <div style="color:#ef5350; font-weight:bold; font-size:1.2rem;">เฉลยคือ: ${correctAns}</div>
+        <div style="margin-top:10px;">คิดช้า/ตอบผิด จัดไป 1 แก้ว!</div>
+    `;
+    resultDisplay.innerText = "ภารกิจล้มเหลว! ดื่มมมม";
+    spinBtn.disabled = false;
 }
 
-// 36. ABC Order
-function setupABCOrderGame() {
-    specialGameArea.innerHTML = `<div style="display:flex; gap:10px; width:100%;"><button class="game-btn" onclick="clickABC('B')">B</button><button class="game-btn" onclick="clickABC('A')">A</button><button class="game-btn" onclick="clickABC('C')">C</button></div>`;
-    window.abcStep = 0; // 0=A, 1=B, 2=C
+// =================== History ===================
+function openHistory() {
+    playSound(clickSound); historyModal.classList.add('active');
+    if (history.length === 0) { historyListDisplay.innerHTML = '<li style="text-align:center; padding:20px;">ยังไม่มีประวัติ</li>'; return; }
+    historyListDisplay.innerHTML = history.map(h => `<li class="history-item"><span class="history-tag" style="background:${h.color}">${h.c}</span><span style="flex:1;">${h.t}</span></li>`).join("");
 }
-function clickABC(char) {
-    const target = ['A','B','C'][window.abcStep];
-    if(char === target) {
-        window.abcStep++;
-        playSound(clickSound);
-        if(window.abcStep === 3) { resultDisplay.innerText = "เรียงถูก! รอด"; playSound(resultSound); spinBtn.disabled = false; }
-    } else {
-        resultDisplay.innerText = "เรียงผิด! ดื่ม"; playSound(alarmSound); spinBtn.disabled = false;
-    }
-}
-
-// 37. Lucky Box
-function setupLuckyBoxGame() {
-    specialGameArea.innerHTML = `<div style="display:flex; gap:10px; width:100%; justify-content:center;">
-        <div onclick="openBox(this)" style="width:80px; height:80px; background:#795548; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:2rem; border-radius:10px;">📦</div>
-        <div onclick="openBox(this)" style="width:80px; height:80px; background:#795548; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:2rem; border-radius:10px;">📦</div>
-        <div onclick="openBox(this)" style="width:80px; height:80px; background:#795548; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:2rem; border-radius:10px;">📦</div>
-    </div>${getSkipButtonHTML()}`;
-    window.poopBox = Math.floor(Math.random() * 3);
-    window.boxIdx = 0;
-}
-function openBox(el) {
-    const isPoop = window.boxIdx === window.poopBox;
-    window.boxIdx++; // Hacky check based on order in DOM? No, pass index better but this works for random
-    // Actually, let's just random result on click for simplicity since user doesn't know
-    const badLuck = Math.random() < 0.33; 
-    
-    if(badLuck) {
-        el.innerText = "💩"; el.style.background = "#5d4037";
-        resultDisplay.innerText = "ดวงซวย! ดื่ม"; playSound(alarmSound);
-        spinBtn.disabled = false;
-    } else {
-        el.innerText = "💎"; el.style.background = "#ffd700";
-        resultDisplay.innerText = "รอด!"; playSound(resultSound);
-        spinBtn.disabled = false;
-    }
-    // Disable all
-    const boxes = specialGameArea.querySelectorAll('div[onclick]');
-    boxes.forEach(b => b.onclick = null);
-}
-
-// 38. Balance Bar (Control)
-function setupBalanceBarGame() {
-    specialGameArea.innerHTML = `<div style="width:100%; height:20px; background:#333; border-radius:10px; position:relative;"><div id="bal-ball" style="width:20px; height:20px; background:#fff; border-radius:50%; position:absolute; left:50%; transition:left 0.1s linear;"></div></div><button class="game-btn" style="margin-top:20px;" onmousedown="pushLeft()" onmouseup="releasePush()" ontouchstart="pushLeft()" ontouchend="releasePush()">กดค้างเลี้ยงลูกบอล</button>`;
-    
-    let ballPos = 50;
-    let velocity = -1; // always moving left
-    window.pushing = false;
-    
-    window.animFrame = requestAnimationFrame(function loop() {
-        if(window.pushing) velocity += 0.15; // Push right
-        else velocity -= 0.1; // Gravity left
-        
-        ballPos += velocity;
-        if(ballPos < 0 || ballPos > 95) {
-            cancelAnimationFrame(window.animFrame);
-            resultDisplay.innerText = "ร่วง! ดื่ม"; playSound(alarmSound); spinBtn.disabled = false;
-        } else {
-            document.getElementById('bal-ball').style.left = ballPos + '%';
-            window.animFrame = requestAnimationFrame(loop);
-        }
-    });
-    
-    // Win condition check
-    setTimeout(() => {
-        if(spinBtn.disabled) { // still playing
-            cancelAnimationFrame(window.animFrame);
-            resultDisplay.innerText = "เทพ! รอด"; playSound(resultSound); spinBtn.disabled = false;
-        }
-    }, 5000);
-}
-function pushLeft() { window.pushing = true; }
-function releasePush() { window.pushing = false; }
-
+function closeHistory() { historyModal.classList.remove('active'); }
+historyModal.addEventListener('click', (e) => { if (e.target === historyModal) closeHistory(); });
 </script>
+    
 </body>
 </html>
