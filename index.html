@@ -1097,6 +1097,33 @@ function showWarWinner(winner, color, loser) {
     resultDisplay.innerText = `จบศึก! สี${winner} เป็นฝ่ายชนะ`;
     spinBtn.disabled = false;
 }
+// =================== Unlock Audio for iOS ===================
+// ฟังก์ชันนี้จะเล่นเสียงทุกไฟล์แบบเงียบๆ 1 ครั้ง เมื่อแตะหน้าจอครั้งแรก
+// เพื่อหลอก iOS ว่าผู้ใช้กดเล่นแล้ว ครั้งต่อไปจะสั่งผ่าน Code ได้
+let audioUnlocked = false;
+
+function unlockIOSAudio() {
+    if (audioUnlocked) return;
+    
+    const allSounds = [clickSound, resultSound, alarmSound, gunSound, bangSound];
+    
+    allSounds.forEach(sound => {
+        sound.muted = true; // ปิดเสียงก่อน
+        sound.play().catch(e => {}); // สั่งเล่น
+        sound.pause(); // หยุดทันที
+        sound.currentTime = 0; // รีเซ็ต
+        sound.muted = false; // เปิดเสียงกลับ
+    });
+    
+    audioUnlocked = true;
+    // ลบ Event Listener ออกเพื่อไม่ให้ทำซ้ำ
+    document.body.removeEventListener('touchstart', unlockIOSAudio);
+    document.body.removeEventListener('click', unlockIOSAudio);
+}
+
+// ดักจับการแตะหน้าจอครั้งแรก
+document.body.addEventListener('touchstart', unlockIOSAudio, { passive: true });
+document.body.addEventListener('click', unlockIOSAudio);
 
 // =================== History ===================
 function openHistory() {
