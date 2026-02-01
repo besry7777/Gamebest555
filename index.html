@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>PARTY ไทบ้านห้วยทราย</title>
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;800&display=swap" rel="stylesheet">
-<script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 
 <style>
 /* ================= CSS ================= */
@@ -252,83 +251,10 @@ h1 {
     font-size: 0.65rem; padding: 2px 6px; border-radius: 4px;
     margin-right: 8px; color: #000; font-weight: bold; white-space: nowrap; margin-top: 3px;
 }
-
-/* --- Camera Overlay (หน้าจอเกมห้ามยิ้ม) --- */
-#camera-overlay {
-    position: fixed; top: 0; left: 0;
-    width: 100%; height: 100%;
-    background: #000;
-    z-index: 2000;
-    display: none; /* ซ่อนไว้ก่อน */
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-}
-#camera-video {
-    position: absolute;
-    width: 100%; height: 100%;
-    object-fit: cover;
-    opacity: 0.7;
-}
-#smile-ui-layer {
-    position: relative; z-index: 2005;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    width: 100%; height: 100%;
-    padding: 20px;
-    text-align: center;
-}
-#smile-status {
-    font-size: 1.5rem; font-weight: 800;
-    color: #fff; text-shadow: 0 0 10px #000;
-    margin-bottom: 20px;
-}
-#smile-timer {
-    font-size: 5rem; font-weight: 800;
-    color: #00e676;
-    text-shadow: 0 0 20px #000;
-    font-variant-numeric: tabular-nums;
-}
-.scanning-line {
-    position: absolute; top: 0; left: 0; width: 100%; height: 5px;
-    background: #00e676; box-shadow: 0 0 15px #00e676;
-    z-index: 2001; animation: scan 2s infinite linear;
-}
-@keyframes scan { 0% { top: 0%; } 50% { top: 100%; } 100% { top: 0%; } }
-.smile-detected {
-    border: 10px solid #ef5350;
-    box-shadow: inset 0 0 100px #ef5350;
-}
-@keyframes shake {
-    0% { transform: translate(1px, 1px) rotate(0deg); }
-    10% { transform: translate(-1px, -2px) rotate(-1deg); }
-    30% { transform: translate(3px, 2px) rotate(0deg); }
-    50% { transform: translate(-1px, 2px) rotate(1deg); }
-    70% { transform: translate(3px, 1px) rotate(-1deg); }
-    100% { transform: translate(1px, -2px) rotate(0deg); }
-}
-.back-btn {
-    background: #fff; color: #000;
-    border: none; padding: 15px 30px;
-    border-radius: 50px; font-size: 1.2rem;
-    font-weight: bold; margin-top: 30px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-    display: none; cursor: pointer;
-}
 </style>
 </head>
 
 <body>
-
-<div id="camera-overlay">
-    <video id="camera-video" autoplay muted playsinline></video>
-    <div class="scanning-line"></div>
-    <div id="smile-ui-layer">
-        <div id="smile-status">กำลังโหลด AI...</div>
-        <div id="smile-timer">--</div>
-        <button class="back-btn" onclick="closeCameraGame()">🔙 กลับหน้าหลัก</button>
-    </div>
-</div>
 
 <div id="game-container">
     <header>
