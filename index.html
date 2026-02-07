@@ -3,17 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pro EXIF - Full Location</title>
+<title>Pro EXIF - Landscape Mode</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&family=Roboto+Mono:wght@400;700&display=swap');
 
     :root {
-        --bg-color: #020617;
+        --bg-color: #0f172a;
         --card-bg: #1e293b;
         --accent: #38bdf8;
-        --text-main: #f1f5f9;
+        --text-main: #f8fafc;
         --text-dim: #94a3b8;
+        --border: rgba(255,255,255,0.1);
     }
 
     * { box-sizing: border-box; }
@@ -21,115 +22,175 @@
         font-family: 'Sarabun', sans-serif;
         background: var(--bg-color);
         color: var(--text-main);
-        margin: 0; padding: 15px;
-        display: flex; flex-direction: column; align-items: center;
+        margin: 0; padding: 20px;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        min-height: 100vh;
     }
 
     .btn {
         border: 1px solid var(--accent); color: var(--accent);
-        background: transparent; padding: 10px 24px; border-radius: 50px;
-        font-size: 14px; font-weight: bold; cursor: pointer; margin-bottom: 15px;
+        background: rgba(56, 189, 248, 0.1); padding: 12px 30px; border-radius: 50px;
+        font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 25px;
+        transition: all 0.3s ease;
     }
+    .btn:hover { background: var(--accent); color: #000; }
 
     input[type=file] { display: none; }
 
+    /* --- Landscape Card Design --- */
     .capture-card {
         background: var(--card-bg);
-        width: 100%; max-width: 380px; 
-        border-radius: 20px; padding: 18px;
-        box-shadow: 0 25px 50px rgba(0,0,0,0.8);
-        display: none; border: 1px solid rgba(255,255,255,0.1);
+        width: 100%; max-width: 900px; /* กว้างขึ้นสำหรับแนวนอน */
+        border-radius: 24px; padding: 25px;
+        box-shadow: 0 30px 60px rgba(0,0,0,0.5);
+        display: none; border: 1px solid var(--border);
+        
+        /* Grid Layout: 2 Columns */
+        grid-template-columns: 1.2fr 1fr; 
+        gap: 25px;
     }
-    .capture-card.active { display: block; }
+    .capture-card.active { display: grid; }
 
-    /* Model & Lens */
-    .header { text-align: center; margin-bottom: 12px; }
-    .cam-model { font-size: 16px; font-weight: 600; color: #fff; }
-    .cam-lens { font-size: 11px; color: var(--accent); font-family: 'Roboto Mono'; }
-
-    /* Visual Content */
-    .visual-stack { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+    /* Left Column: Visuals */
+    .col-visual { display: flex; flex-direction: column; gap: 15px; }
+    
     .img-box { 
-        width: 100%; height: 200px; background: #000; 
-        border-radius: 12px; overflow: hidden; border: 1px solid #333;
+        width: 100%; height: 280px; background: #000; 
+        border-radius: 16px; overflow: hidden; border: 1px solid #333;
         display: flex; justify-content: center; align-items: center;
+        position: relative;
     }
     .img-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
-    #map { width: 100%; height: 100px; border-radius: 12px; display: none; }
-
-    /* Detailed Location & Time */
-    .detail-panel {
-        background: rgba(0, 0, 0, 0.3);
-        border-radius: 12px; padding: 12px; margin-bottom: 12px;
-        border-left: 4px solid var(--accent);
-    }
-    .loc-label { font-size: 10px; color: var(--accent); font-weight: bold; text-transform: uppercase; margin-bottom: 4px; }
-    .loc-full-text { font-size: 13px; color: #fff; line-height: 1.4; margin-bottom: 8px; }
     
-    .time-grid { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid #334155; padding-top: 8px; }
-    .time-val { font-family: 'Roboto Mono'; font-size: 14px; color: #fff; }
-
-    /* Technical Stats */
-    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
-    .stat-box {
-        background: rgba(255,255,255,0.03); padding: 8px 4px;
-        border-radius: 8px; text-align: center;
+    #map { 
+        width: 100%; height: 140px; border-radius: 16px; 
+        border: 1px solid #333; z-index: 1;
     }
-    .stat-label { font-size: 8px; color: var(--text-dim); text-transform: uppercase; }
-    .stat-value { font-family: 'Roboto Mono'; font-size: 11px; color: #fff; margin-top: 2px; }
 
-    .footer { text-align: center; font-size: 9px; color: #475569; margin-top: 12px; letter-spacing: 1px; }
+    /* Right Column: Info */
+    .col-info { display: flex; flex-direction: column; justify-content: space-between; }
+
+    .header-group { border-bottom: 1px solid var(--border); padding-bottom: 15px; margin-bottom: 15px; }
+    .cam-model { font-size: 24px; font-weight: 700; color: #fff; line-height: 1.2; }
+    .cam-lens { font-size: 13px; color: var(--accent); font-family: 'Roboto Mono'; margin-top: 4px; }
+
+    .location-group { margin-bottom: 15px; }
+    .label { font-size: 11px; color: var(--text-dim); text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; margin-bottom: 5px; }
+    .full-address { 
+        font-size: 16px; color: #fff; line-height: 1.5; 
+        background: rgba(255,255,255,0.03); padding: 12px; border-radius: 12px;
+        min-height: 60px;
+    }
+
+    .time-group { 
+        display: flex; gap: 20px; margin-bottom: 20px; 
+        background: rgba(0,0,0,0.2); padding: 10px; border-radius: 10px;
+    }
+    .time-box { flex: 1; }
+    .time-val { font-family: 'Roboto Mono'; font-size: 18px; color: var(--accent); font-weight: bold; }
+    .date-val { font-family: 'Roboto Mono'; font-size: 16px; color: #fff; }
+
+    /* Stats Grid */
+    .stats-grid { 
+        display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; 
+    }
+    .stat-box {
+        background: rgba(255,255,255,0.05); padding: 10px 5px;
+        border-radius: 10px; text-align: center;
+        border: 1px solid rgba(255,255,255,0.05);
+    }
+    .stat-label { font-size: 9px; color: var(--text-dim); text-transform: uppercase; }
+    .stat-value { font-family: 'Roboto Mono'; font-size: 13px; color: #fff; margin-top: 4px; font-weight: 600; }
+
+    .gps-coords {
+        grid-column: span 3; /* ให้ GPS ยาวเต็มแถว */
+        background: transparent; border: 1px dashed var(--border);
+        color: var(--text-dim); font-size: 10px;
+    }
+
+    .footer-credit {
+        position: fixed; bottom: 10px; right: 10px; 
+        font-size: 10px; color: #334155; opacity: 0.5;
+    }
 </style>
 </head>
 <body>
 
-    <label for="upload" class="btn">📸 เลือกรูปเพื่อแสดงพิกัดแบบละเอียด</label>
+    <label for="upload" class="btn">📸 เลือกรูปภาพ (Landscape)</label>
     <input type="file" accept="image/*" id="upload">
 
     <div class="capture-card" id="card">
-        <div class="header">
-            <div class="cam-model" id="camModel">-</div>
-            <div class="cam-lens" id="camLens">-</div>
-        </div>
-
-        <div class="visual-stack">
-            <div class="img-box"><img id="preview"></div>
+        <div class="col-visual">
+            <div class="img-box"><img id="preview" src=""></div>
             <div id="map"></div>
         </div>
 
-        <div class="detail-panel">
-            <div class="loc-label">📍 Location Details</div>
-            <div class="loc-full-text" id="fullAddress">กำลังดึงข้อมูล บ้าน, ตำบล, อำเภอ, จังหวัด...</div>
-            
-            <div class="time-grid">
-                <div>
-                    <div class="loc-label">📅 Date</div>
-                    <div class="time-val" id="valDate">--/--/----</div>
+        <div class="col-info">
+            <div>
+                <div class="header-group">
+                    <div class="cam-model" id="camModel">Loading...</div>
+                    <div class="cam-lens" id="camLens">...</div>
                 </div>
-                <div style="text-align: right;">
-                    <div class="loc-label">⏰ Time</div>
-                    <div class="time-val" id="valTime" style="color: var(--accent);">--:--:--</div>
+
+                <div class="location-group">
+                    <div class="label">📍 LOCATION</div>
+                    <div class="full-address" id="fullAddress">รอโหลดข้อมูล...</div>
+                </div>
+
+                <div class="time-group">
+                    <div class="time-box">
+                        <div class="label">📅 DATE</div>
+                        <div class="date-val" id="valDate">--/--/----</div>
+                    </div>
+                    <div class="time-box" style="text-align: right;">
+                        <div class="label">⏰ TIME</div>
+                        <div class="time-val" id="valTime">--:--</div>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div class="stats-grid">
-            <div class="stat-box"><div class="stat-label">Aperture</div><div class="stat-value" id="valF">-</div></div>
-            <div class="stat-box"><div class="stat-label">Shutter</div><div class="stat-value" id="valS">-</div></div>
-            <div class="stat-box"><div class="stat-label">ISO</div><div class="stat-value" id="valISO">-</div></div>
-            <div class="stat-box"><div class="stat-label">Focal</div><div class="stat-value" id="valFL">-</div></div>
-            <div class="stat-box"><div class="stat-label">Res</div><div class="stat-value" id="valRes">-</div></div>
-            <div class="stat-box"><div class="stat-label">GPS</div><div class="stat-value" id="valGPS" style="font-size: 9px;">-</div></div>
+            <div class="stats-grid">
+                <div class="stat-box"><div class="stat-label">Aperture</div><div class="stat-value" id="valF">-</div></div>
+                <div class="stat-box"><div class="stat-label">Shutter</div><div class="stat-value" id="valS">-</div></div>
+                <div class="stat-box"><div class="stat-label">ISO</div><div class="stat-value" id="valISO">-</div></div>
+                <div class="stat-box"><div class="stat-label">Focal Length</div><div class="stat-value" id="valFL">-</div></div>
+                <div class="stat-box"><div class="stat-label">Resolution</div><div class="stat-value" id="valRes">-</div></div>
+                <div class="stat-box"><div class="stat-label">Flash</div><div class="stat-value" id="valFlash">-</div></div>
+                <div class="stat-box gps-coords"><div class="stat-value" id="valGPS" style="font-size: 10px; margin:0;">NO GPS DATA</div></div>
+            </div>
         </div>
-
-        <div class="footer">FULL LOCATION METADATA CARD</div>
     </div>
+    
+    <div class="footer-credit">Exif Viewer Pro</div>
 
 <script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
     let map = null;
+    let marker = null;
+
+    // ฟังก์ชันรีเซ็ตค่าทั้งหมดให้เป็นค่าว่างก่อนโหลดรูปใหม่
+    function resetData() {
+        document.getElementById('camModel').textContent = "Analyzing...";
+        document.getElementById('camLens').textContent = "...";
+        document.getElementById('fullAddress').textContent = "กำลังค้นหาพิกัด...";
+        document.getElementById('valDate').textContent = "--/--/----";
+        document.getElementById('valTime').textContent = "--:--";
+        document.getElementById('valF').textContent = "-";
+        document.getElementById('valS').textContent = "-";
+        document.getElementById('valISO').textContent = "-";
+        document.getElementById('valFL').textContent = "-";
+        document.getElementById('valRes').textContent = "-";
+        document.getElementById('valFlash').textContent = "-";
+        document.getElementById('valGPS').textContent = "NO GPS DATA";
+        
+        // ซ่อนแผนที่ชั่วคราว หรือรีเซ็ต marker
+        if (map && marker) {
+            map.removeLayer(marker);
+            marker = null;
+        }
+    }
 
     function convertDMSToDD(d, m, s, ref) {
         let dd = d + m/60 + s/3600;
@@ -140,74 +201,110 @@
         const file = e.target.files[0];
         if (!file) return;
 
+        resetData(); // เรียกใช้ฟังก์ชันล้างข้อมูลเก่า
+
         const img = document.getElementById('preview');
         const card = document.getElementById('card');
-        img.src = URL.createObjectURL(file);
+        
+        // สร้าง URL รูปใหม่
+        const objectUrl = URL.createObjectURL(file);
+        img.src = objectUrl;
+        
         card.classList.add('active');
 
         img.onload = function () {
+            // คืน memory ของ url เก่า (ถ้ามี)
+            // URL.revokeObjectURL(objectUrl); 
+
             EXIF.getData(img, function () {
-                // ดึงข้อมูลพื้นฐานกล้อง
-                document.getElementById('camModel').textContent = EXIF.getTag(this, "Model") || "Unknown Device";
-                document.getElementById('camLens').textContent = EXIF.getTag(this, "LensModel") || "";
+                // ข้อมูลกล้อง
+                let make = EXIF.getTag(this, "Make") || "";
+                let model = EXIF.getTag(this, "Model") || "Unknown Camera";
+                // ตัดคำซ้ำ เช่น "Apple iPhone 13" -> "iPhone 13" ถ้าต้องการ
+                if(model.includes(make)) make = "";
+                document.getElementById('camModel').textContent = `${make} ${model}`.trim();
+                
+                document.getElementById('camLens').textContent = EXIF.getTag(this, "LensModel") || "Lens info not found";
+
+                // ค่าทางเทคนิค
                 document.getElementById('valF').textContent = EXIF.getTag(this, "FNumber") ? "f/" + EXIF.getTag(this, "FNumber") : "-";
                 
                 let s = EXIF.getTag(this, "ExposureTime");
                 document.getElementById('valS').textContent = s ? (s < 1 ? `1/${Math.round(1/s)}` : s) + "s" : "-";
+                
                 document.getElementById('valISO').textContent = EXIF.getTag(this, "ISOSpeedRatings") || "-";
                 document.getElementById('valFL').textContent = (EXIF.getTag(this, "FocalLength") || "-") + "mm";
                 document.getElementById('valRes').textContent = `${EXIF.getTag(this, "PixelXDimension") || 0}x${EXIF.getTag(this, "PixelYDimension") || 0}`;
                 
-                // จัดการวันเวลา
+                let flash = EXIF.getTag(this, "Flash");
+                document.getElementById('valFlash').textContent = flash ? "On" : "Off"; // แบบย่อ
+
+                // วันที่และเวลา
                 const dateTime = EXIF.getTag(this, "DateTimeOriginal");
                 if (dateTime) {
                     const parts = dateTime.split(" ");
                     document.getElementById('valDate').textContent = parts[0].replace(/:/g, "/");
-                    document.getElementById('valTime').textContent = parts[1];
+                    document.getElementById('valTime').textContent = parts[1].substring(0, 5); // เอาแค่ HH:mm
                 }
 
-                // จัดการพิกัดและที่อยู่ละเอียด
-                const lat = EXIF.getTag(this, "GPSLatitude");
-                const lng = EXIF.getTag(this, "GPSLongitude");
+                // พิกัด GPS
+                const latTag = EXIF.getTag(this, "GPSLatitude");
+                const lngTag = EXIF.getTag(this, "GPSLongitude");
                 
-                if (lat && lng) {
-                    const latDec = convertDMSToDD(lat[0], lat[1], lat[2], EXIF.getTag(this, "GPSLatitudeRef"));
-                    const lngDec = convertDMSToDD(lng[0], lng[1], lng[2], EXIF.getTag(this, "GPSLongitudeRef"));
+                if (latTag && lngTag) {
+                    const latDec = convertDMSToDD(latTag[0], latTag[1], latTag[2], EXIF.getTag(this, "GPSLatitudeRef"));
+                    const lngDec = convertDMSToDD(lngTag[0], lngTag[1], lngTag[2], EXIF.getTag(this, "GPSLongitudeRef"));
                     
-                    document.getElementById('valGPS').textContent = `${latDec.toFixed(4)}, ${lngDec.toFixed(4)}`;
-                    document.getElementById('map').style.display = 'block';
-
+                    document.getElementById('valGPS').textContent = `${latDec.toFixed(5)}, ${lngDec.toFixed(5)}`;
+                    
+                    // ตั้งค่าแผนที่
                     if (!map) {
-                        map = L.map('map', {zoomControl:false, attributionControl:false}).setView([latDec, lngDec], 15);
-                        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
-                    } else {
-                        map.setView([latDec, lngDec], 15);
+                        map = L.map('map', {zoomControl:false, attributionControl:false});
+                        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                            maxZoom: 19
+                        }).addTo(map);
                     }
-                    L.marker([latDec, lngDec]).addTo(map);
-                    setTimeout(() => map.invalidateSize(), 400);
+                    
+                    // อัปเดตมุมมองแผนที่
+                    map.setView([latDec, lngDec], 15);
+                    
+                    // ปักหมุดใหม่
+                    if(marker) map.removeLayer(marker); // ลบอันเก่าชัวร์ๆ อีกรอบ
+                    marker = L.marker([latDec, lngDec]).addTo(map);
 
-                    // ดึงที่อยู่ละเอียด: บ้าน, ตำบล, อำเภอ, จังหวัด
+                    // แก้บั๊กแผนที่โหลดไม่เต็ม
+                    setTimeout(() => { map.invalidateSize(); }, 300);
+
+                    // แปลงพิกัดเป็นชื่อที่อยู่
                     fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latDec}&lon=${lngDec}&accept-language=th`)
                         .then(res => res.json())
                         .then(data => {
                             const a = data.address;
-                            let fullAddr = [];
+                            let parts = [];
                             
-                            // จัดลำดับ: บ้าน/ซอย -> ตำบล/แขวง -> อำเภอ/เขต -> จังหวัด
-                            if (a.village || a.house_number || a.road) fullAddr.push(a.village || a.road || a.house_number);
-                            if (a.suburb || a.subdistrict) fullAddr.push("ต." + (a.suburb || a.subdistrict));
-                            if (a.city_district || a.district || a.town) fullAddr.push("อ." + (a.city_district || a.district || a.town));
-                            if (a.province || a.state || a.city) fullAddr.push("จ." + (a.province || a.state || a.city));
-
-                            document.getElementById('fullAddress').textContent = fullAddr.join(' ') || "ไม่พบชื่อสถานที่ชัดเจน";
+                            // เรียงลำดับที่อยู่ให้อ่านง่าย
+                            if (a.village) parts.push("หมู่บ้าน" + a.village);
+                            if (a.road) parts.push("ถ." + a.road);
+                            if (a.suburb || a.subdistrict || a.neighbourhood) parts.push(a.suburb || a.subdistrict || a.neighbourhood);
+                            if (a.city_district || a.district) parts.push(a.city_district || a.district);
+                            if (a.province || a.state) parts.push("จ." + (a.province || a.state));
+                            
+                            // ถ้าหาแบบละเอียดไม่ได้ ให้ใช้ display_name แทน
+                            let finalAddr = parts.length > 0 ? parts.join(", ") : (data.display_name || "พบพิกัดแต่ไม่ทราบชื่อสถานที่");
+                            document.getElementById('fullAddress').textContent = finalAddr;
                         })
-                        .catch(() => {
-                            document.getElementById('fullAddress').textContent = "โหลดที่อยู่ไม่สำเร็จ (Check Internet)";
+                        .catch(err => {
+                            document.getElementById('fullAddress').textContent = "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์แผนที่ได้";
                         });
+
                 } else {
-                    document.getElementById('map').style.display = 'none';
-                    document.getElementById('fullAddress').textContent = "ไม่พบข้อมูลพิกัด (GPS) ในรูปภาพนี้";
-                    document.getElementById('valGPS').textContent = "No Signal";
+                    // กรณีไม่มี GPS
+                    document.getElementById('fullAddress').textContent = "ภาพนี้ไม่มีข้อมูลพิกัด GPS ฝังอยู่";
+                    document.getElementById('valGPS').textContent = "NO GPS DATA";
+                    if(map) {
+                         map.setView([13.7563, 100.5018], 5); // Default Bangkok
+                         if(marker) map.removeLayer(marker);
+                    }
                 }
             });
         };
