@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Evidence Verification Report (Enhanced)</title>
+<title>Verification Report (Editable)</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&family=Roboto+Mono:wght@500;700&display=swap');
@@ -39,33 +39,31 @@
     .upload-btn:hover { background: #1d4ed8; transform: translateY(-1px); }
     input[type=file] { display: none; }
 
-    /* --- Main Card --- */
     .report-card {
         background: var(--card-bg);
         width: 100%; max-width: 850px;
         border-radius: 12px;
         box-shadow: 0 10px 25px rgba(0,0,0,0.08);
         border: 1px solid var(--border);
-        padding: 0; /* Remove padding here, control inside */
+        padding: 0;
         display: none;
         overflow: hidden;
     }
     .report-card.active { display: block; animation: fadeIn 0.5s ease; }
 
     .card-header {
-        padding: 20px 24px;
+        padding: 15px 24px;
         border-bottom: 1px solid var(--border);
         background: #f8fafc;
         display: flex; justify-content: space-between; align-items: center;
     }
-    .doc-title { font-weight: 700; color: var(--primary); font-size: 18px; letter-spacing: -0.5px; }
+    .doc-title { font-weight: 700; color: var(--primary); font-size: 18px; }
     .doc-ref { font-size: 12px; color: var(--text-sub); font-family: 'Roboto Mono'; background: #e2e8f0; padding: 4px 8px; border-radius: 4px; }
 
-    /* --- Screenshot Zone --- */
     .visual-row {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        height: 320px;
+        height: 350px; /* เพิ่มความสูงรูป */
         border-bottom: 1px solid var(--border);
     }
     .img-container {
@@ -73,13 +71,10 @@
         display: flex; justify-content: center; align-items: center;
         overflow: hidden;
         border-right: 1px solid var(--border);
-        position: relative;
     }
     .img-container img { max-width: 100%; max-height: 100%; object-fit: contain; }
-    
     #map { width: 100%; height: 100%; z-index: 1; background: #eee; }
 
-    /* --- Context Row --- */
     .context-row {
         display: grid;
         grid-template-columns: 65% 35%;
@@ -93,52 +88,52 @@
 
     .c-label {
         font-size: 11px; font-weight: 700; color: var(--accent);
-        text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;
-        display: flex; align-items: center; gap: 6px;
+        text-transform: uppercase; margin-bottom: 8px;
     }
     .c-value-address {
         font-size: 16px; font-weight: 600; color: var(--primary);
-        line-height: 1.5; word-wrap: break-word;
+        line-height: 1.5;
     }
-    .c-value-sub {
-        font-size: 13px; color: var(--text-sub); margin-top: 4px;
-    }
+    .c-value-sub { font-size: 13px; color: var(--text-sub); margin-top: 4px; }
     .c-value-time {
         font-family: 'Roboto Mono', monospace;
         font-size: 24px; font-weight: 700; color: var(--primary);
     }
-    .c-value-date {
-        font-family: 'Roboto Mono', monospace;
-        font-size: 14px; color: var(--text-sub);
-    }
+    .c-value-date { font-family: 'Roboto Mono', monospace; font-size: 14px; color: var(--text-sub); }
 
-    /* --- Technical Footer --- */
-    .tech-footer {
-        padding: 20px 24px;
-        background: #ffffff;
-    }
-    .model-badge {
-        font-size: 14px; font-weight: 600; color: var(--primary);
-        margin-bottom: 15px; display: flex; align-items: center; gap: 8px;
-    }
+    .tech-footer { padding: 20px 24px; background: #ffffff; }
+    .model-badge { font-size: 14px; font-weight: 600; color: var(--primary); margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
     .model-badge::before { content: '📱'; }
 
     .tech-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-        gap: 12px;
+        display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 12px;
     }
     .tech-item {
-        background: #f8fafc; padding: 10px; border-radius: 6px;
-        border: 1px solid var(--border);
+        background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid var(--border);
     }
     .t-label { font-size: 10px; color: var(--text-sub); text-transform: uppercase; margin-bottom: 4px; }
-    .t-val { font-family: 'Roboto Mono'; font-size: 12px; color: var(--primary); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .t-val { font-family: 'Roboto Mono'; font-size: 12px; color: var(--primary); font-weight: 600; }
+
+    /* --- ส่วนปุ่มแก้ไข (ซ่อนอยู่ล่างสุด) --- */
+    .hidden-actions {
+        padding: 10px;
+        text-align: center;
+        border-top: 1px dashed #e2e8f0;
+        background: #fafafa;
+    }
+    .edit-link {
+        color: #cbd5e1; /* สีจางๆ */
+        font-size: 11px;
+        text-decoration: none;
+        cursor: pointer;
+        transition: 0.3s;
+    }
+    .edit-link:hover { color: var(--accent); text-decoration: underline; }
+
+    /* Highlight เมื่อมีการแก้ไข */
+    .edited { color: #d97706 !important; }
 
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-    /* Loading State */
-    .loading-text { color: var(--text-sub); font-style: italic; font-size: 14px; }
 </style>
 </head>
 <body>
@@ -184,6 +179,10 @@
                 <div class="tech-item"><div class="t-label">Resolution</div><div class="t-val" id="valRes">-</div></div>
             </div>
         </div>
+
+        <div class="hidden-actions">
+            <span class="edit-link" id="manualEditBtn">✏️ แก้ไขข้อมูลพิกัด (Manual Override)</span>
+        </div>
     </div>
 
 <script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
@@ -191,18 +190,16 @@
 <script>
     let map = null, marker = null;
 
-    // Helper: Convert DMS to Decimal properly
     function convertDMSToDD(degrees, direction) {
         var dd = degrees[0] + degrees[1]/60 + degrees[2]/(3600);
-        if (direction == "S" || direction == "W") {
-            dd = dd * -1;
-        }
+        if (direction == "S" || direction == "W") dd = dd * -1;
         return dd;
     }
 
+    // ฟังก์ชัน Reset
     function resetData() {
-        document.getElementById('mainPlace').textContent = "กำลังวิเคราะห์พิกัดดาวเทียม...";
-        document.getElementById('mainPlace').classList.add('loading-text');
+        document.getElementById('mainPlace').textContent = "กำลังวิเคราะห์...";
+        document.getElementById('mainPlace').classList.remove('edited');
         document.getElementById('fullAddr').textContent = "-";
         document.getElementById('gpsCoords').textContent = "GPS: -";
         document.getElementById('valTime').textContent = "--:--";
@@ -210,6 +207,26 @@
         document.getElementById('reportRef').textContent = "ID: " + Math.random().toString(36).substr(2, 9).toUpperCase();
         if(map && marker) { map.removeLayer(marker); marker = null; }
     }
+
+    // ฟังก์ชันแก้ไขข้อมูล (Manual Edit)
+    document.getElementById('manualEditBtn').addEventListener('click', function() {
+        const currentMain = document.getElementById('mainPlace').textContent;
+        const currentSub = document.getElementById('fullAddr').textContent;
+
+        // ถามชื่อสถานที่หลัก
+        const newMain = prompt("แก้ไขชื่อสถานที่ (เช่น ชื่อบ้าน, ชื่อตึก):", currentMain);
+        if (newMain !== null && newMain.trim() !== "") {
+            const el = document.getElementById('mainPlace');
+            el.textContent = newMain;
+            el.classList.add('edited'); // เปลี่ยนสีให้รู้ว่าแก้
+        }
+
+        // ถามที่อยู่รอง
+        const newSub = prompt("แก้ไขรายละเอียดที่อยู่ (ถนน, แขวง, เขต):", currentSub);
+        if (newSub !== null && newSub.trim() !== "") {
+            document.getElementById('fullAddr').textContent = newSub;
+        }
+    });
 
     document.getElementById('upload').addEventListener('change', function (e) {
         const file = e.target.files[0];
@@ -219,33 +236,28 @@
         const card = document.getElementById('card');
         const img = document.getElementById('preview');
         
-        // Revoke old URL to free memory
         if(img.src) URL.revokeObjectURL(img.src);
         img.src = URL.createObjectURL(file);
-        
         card.classList.add('active');
 
         img.onload = function () {
             EXIF.getData(img, function () {
-                // --- 1. Device & Tech Info ---
+                // ข้อมูลกล้อง
                 let make = EXIF.getTag(this, "Make") || "";
                 let model = EXIF.getTag(this, "Model") || "Unknown Device";
                 if(model.toLowerCase().includes(make.toLowerCase())) make = "";
                 document.getElementById('camModel').textContent = `${make} ${model}`.trim();
 
                 document.getElementById('valLens').textContent = (EXIF.getTag(this, "LensModel") || "Unknown").substring(0, 15);
-                
                 let fNum = EXIF.getTag(this, "FNumber");
                 document.getElementById('valF').textContent = fNum ? "f/" + parseFloat(fNum).toFixed(1) : "-";
-                
                 let s = EXIF.getTag(this, "ExposureTime");
                 document.getElementById('valS').textContent = s ? (s < 1 ? `1/${Math.round(1/s)}` : s) + "s" : "-";
-                
                 document.getElementById('valISO').textContent = EXIF.getTag(this, "ISOSpeedRatings") || "-";
                 document.getElementById('valFL').textContent = (EXIF.getTag(this, "FocalLength") || "-") + "mm";
                 document.getElementById('valRes').textContent = `${EXIF.getTag(this, "PixelXDimension")||0}x${EXIF.getTag(this, "PixelYDimension")||0}`;
 
-                // --- 2. Date Time ---
+                // วันที่เวลา
                 const dateTime = EXIF.getTag(this, "DateTimeOriginal");
                 if (dateTime) {
                     const parts = dateTime.split(" ");
@@ -255,7 +267,7 @@
                     }
                 }
 
-                // --- 3. GPS Logic (Updated) ---
+                // GPS
                 const latTag = EXIF.getTag(this, "GPSLatitude");
                 const lngTag = EXIF.getTag(this, "GPSLongitude");
                 const latRef = EXIF.getTag(this, "GPSLatitudeRef");
@@ -267,7 +279,6 @@
 
                     document.getElementById('gpsCoords').textContent = `GPS: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
 
-                    // Setup Map
                     if (!map) {
                         map = L.map('map', {zoomControl:false, attributionControl:false});
                         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
@@ -275,85 +286,44 @@
                     map.setView([lat, lng], 16);
                     if(marker) map.removeLayer(marker);
                     marker = L.marker([lat, lng]).addTo(map);
-                    
-                    // Force map redraw after card is visible
                     setTimeout(() => map.invalidateSize(), 300);
 
-                    // --- 4. Reverse Geocoding (Improved) ---
-                    // ใช้ zoom=18 เพื่อเอาความละเอียดสูงสุด และ addressdetails=1 เพื่อแยกฟิลด์
+                    // Reverse Geocode
                     fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=th`)
                         .then(res => res.json())
                         .then(data => {
-                            document.getElementById('mainPlace').classList.remove('loading-text');
-                            
                             const a = data.address || {};
-                            
-                            // 1. หาชื่อสถานที่เฉพาะ (POI)
-                            let specificPlace = 
-                                a.amenity || a.building || a.shop || a.tourism || 
-                                a.historic || a.leisure || a.office || a.emergency ||
-                                a.healthcare || a.natural || "";
-                            
-                            // ถ้าไม่มีชื่อสถานที่ ให้ใช้ Village หรือ House Number แทน
+                            let specificPlace = a.amenity || a.building || a.shop || a.tourism || a.office || "";
                             if(!specificPlace) {
                                 if(a.village) specificPlace = "หมู่บ้าน " + a.village;
                                 else if(a.house_number) specificPlace = "บ้านเลขที่ " + a.house_number;
                             }
 
-                            // 2. สร้างที่อยู่รอง (ถนน/ตำบล/อำเภอ/จังหวัด)
                             let secondaryParts = [];
-                            
-                            // ถนน/ซอย
-                            let roadInfo = [];
-                            if(a.soi) roadInfo.push("ซอย " + a.soi.replace('Soi ',''));
-                            if(a.road) roadInfo.push("ถนน " + a.road.replace('Thanon ',''));
-                            if(roadInfo.length > 0) secondaryParts.push(roadInfo.join(" "));
-
-                            // แขวง/ตำบล
+                            if(a.soi) secondaryParts.push("ซอย " + a.soi.replace('Soi ',''));
+                            if(a.road) secondaryParts.push("ถนน " + a.road.replace('Thanon ',''));
                             if(a.subdistrict || a.tambon) secondaryParts.push("ต." + (a.subdistrict || a.tambon));
-                            else if(a.suburb) secondaryParts.push(a.suburb);
-                            
-                            // เขต/อำเภอ
                             if(a.city_district || a.district || a.amphoe) secondaryParts.push("อ." + (a.city_district || a.district || a.amphoe));
-                            
-                            // จังหวัด & ไปรษณีย์
-                            let provinceStr = "";
-                            if(a.province || a.state) provinceStr = "จ." + (a.province || a.state);
-                            if(a.postcode) provinceStr += " " + a.postcode;
-                            if(provinceStr) secondaryParts.push(provinceStr);
+                            if(a.province) secondaryParts.push("จ." + a.province);
 
-                            // --- Display Logic ---
                             if (specificPlace) {
-                                // กรณีเจอสถานที่ชัดเจน
                                 document.getElementById('mainPlace').textContent = specificPlace;
                                 document.getElementById('fullAddr').textContent = secondaryParts.join(", ");
                             } else {
-                                // กรณีไม่เจอสถานที่ชัดเจน (อยู่กลางถนน หรือ ทุ่งนา)
-                                // ให้เอาถนนหรือตำบลขึ้นมาเป็นหัวข้อใหญ่แทน
-                                let fallbackMain = secondaryParts.shift(); // ดึงส่วนแรกมาเป็นหัวข้อ
-                                document.getElementById('mainPlace').textContent = fallbackMain || "พิกัดไม่ระบุสถานที่ชัดเจน";
-                                document.getElementById('fullAddr').textContent = secondaryParts.join(", ");
+                                let fallback = secondaryParts.shift();
+                                document.getElementById('mainPlace').textContent = fallback || "พิกัดระบุตำแหน่ง";
+                                document.getElementById('fullAddr').textContent = secondaryParts.join(", ") || data.display_name;
                             }
-                            
-                            // ถ้าข้อมูลน้อยเกินไป ให้ใช้ display_name แต่ตัดให้สั้นลง
-                            if (!specificPlace && secondaryParts.length === 0) {
-                                document.getElementById('mainPlace').textContent = data.display_name.split(",")[0];
-                                document.getElementById('fullAddr').textContent = data.display_name;
-                            }
-
                         })
                         .catch(err => {
-                            console.error(err);
-                            document.getElementById('mainPlace').textContent = "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์แผนที่";
-                            document.getElementById('fullAddr').textContent = "กรุณาตรวจสอบอินเทอร์เน็ต";
+                            document.getElementById('mainPlace').textContent = "Connection Error";
                         });
 
                 } else {
-                    document.getElementById('mainPlace').textContent = "ไม่พบข้อมูล GPS ในไฟล์ภาพ";
-                    document.getElementById('mainPlace').classList.remove('loading-text');
-                    document.getElementById('fullAddr').textContent = "อาจเป็นภาพที่ถูกลบ Meta Data หรือไม่ได้เปิด Location";
+                    document.getElementById('mainPlace').textContent = "ไม่พบ GPS";
+                    document.getElementById('fullAddr').textContent = "รูปภาพนี้ไม่มีข้อมูลพิกัด";
                     if(map) map.remove();
-                    document.getElementById('map').innerHTML = '<div style="display:flex;justify-content:center;align-items:center;height:100%;color:#999;font-size:12px;">NO GPS DATA</div>';
+                    document.getElementById('map').innerHTML = '<div style="display:flex;justify-content:center;align-items:center;height:100%;color:#999;">NO DATA</div>';
                 }
             });
         };
