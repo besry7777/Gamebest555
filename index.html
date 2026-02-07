@@ -2,67 +2,299 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<title>EXIF Viewer</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pro EXIF Card</title>
 <style>
+    @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&family=Roboto+Mono:wght@400;700&display=swap');
+
+    :root {
+        --bg-color: #0f172a;
+        --card-bg: rgba(30, 41, 59, 0.95);
+        --accent: #38bdf8;
+        --text-main: #f1f5f9;
+        --text-dim: #94a3b8;
+    }
+
+    * { box-sizing: border-box; }
+
     body {
-        font-family: system-ui, sans-serif;
-        background: #111;
-        color: #fff;
+        font-family: 'Sarabun', sans-serif;
+        background: var(--bg-color);
+        color: var(--text-main);
+        margin: 0;
         padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-height: 100vh;
     }
-    img {
-        max-width: 100%;
-        margin-top: 15px;
-        border-radius: 10px;
+
+    /* ปุ่ม Upload */
+    .upload-btn-wrapper {
+        position: relative;
+        overflow: hidden;
+        display: inline-block;
+        margin-bottom: 20px;
     }
-    .box {
-        background: #1c1c1c;
-        padding: 15px;
-        border-radius: 10px;
-        margin-top: 15px;
-        white-space: pre-wrap;
+
+    .btn {
+        border: 1px solid var(--accent);
+        color: var(--accent);
+        background-color: transparent;
+        padding: 8px 20px;
+        border-radius: 50px;
         font-size: 14px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: 0.3s;
     }
-    input {
-        margin-top: 10px;
+
+    .btn:hover { background: var(--accent); color: #000; }
+
+    .upload-btn-wrapper input[type=file] {
+        font-size: 100px;
+        position: absolute;
+        left: 0;
+        top: 0;
+        opacity: 0;
+        cursor: pointer;
     }
+
+    /* การ์ดหลักสำหรับแคปหน้าจอ */
+    .capture-card {
+        background: var(--card-bg);
+        border: 1px solid rgba(255,255,255,0.1);
+        width: 100%;
+        max-width: 400px; /* ขนาดกำลังดีสำหรับมือถือ */
+        border-radius: 16px;
+        padding: 16px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        display: none; /* ซ่อนก่อนเลือกรูป */
+    }
+    
+    .capture-card.active { display: block; }
+
+    /* ส่วนแสดงรูปภาพ */
+    .img-container {
+        width: 100%;
+        height: 200px; /* ฟิกความสูงไม่ให้กินที่ */
+        background: #000;
+        border-radius: 12px;
+        overflow: hidden;
+        margin-bottom: 15px;
+        border: 1px solid #333;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .img-container img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+    }
+
+    /* Grid ข้อมูลสำคัญ (Highlight) */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        margin-bottom: 15px;
+    }
+
+    .stat-box {
+        background: rgba(255,255,255,0.05);
+        padding: 8px;
+        border-radius: 8px;
+        text-align: center;
+    }
+
+    .stat-label {
+        font-size: 10px;
+        color: var(--text-dim);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .stat-value {
+        font-family: 'Roboto Mono', monospace;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--accent);
+        margin-top: 2px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* รายละเอียดกล้องและเลนส์ */
+    .gear-info {
+        text-align: center;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 1px dashed rgba(255,255,255,0.2);
+    }
+    .gear-model { font-weight: 600; font-size: 16px; color: #fff; }
+    .gear-lens { font-size: 12px; color: var(--text-dim); margin-top: 4px;}
+
+    /* ตารางข้อมูลดิบ (ย่อขนาดให้แคปได้หมด) */
+    .full-data {
+        font-size: 11px;
+        color: #ccc;
+        display: grid;
+        grid-template-columns: 1fr 1fr; /* แบ่ง 2 คอลัมน์ */
+        gap: 5px 15px;
+    }
+
+    .data-row {
+        display: flex;
+        justify-content: space-between;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        padding: 2px 0;
+    }
+    .data-key { opacity: 0.6; }
+    .data-val { text-align: right; font-family: 'Roboto Mono'; color: #fff;}
+
+    .footer-note {
+        text-align: center;
+        font-size: 10px;
+        color: #555;
+        margin-top: 15px;
+    }
+
 </style>
 </head>
 <body>
 
-<h2>📸 EXIF Viewer (Read Only)</h2>
-<input type="file" accept="image/*" id="upload">
+    <div class="upload-btn-wrapper">
+        <button class="btn">📸 เลือกรูปภาพเพื่ออ่านค่า</button>
+        <input type="file" accept="image/*" id="upload">
+    </div>
 
-<img id="preview">
-<div class="box" id="exif">ยังไม่ได้เลือกรูป</div>
+    <div class="capture-card" id="card">
+        
+        <div class="img-container">
+            <img id="preview" src="" alt="Preview">
+        </div>
 
-<!-- EXIF Library -->
+        <div class="gear-info">
+            <div class="gear-model" id="camModel">-</div>
+            <div class="gear-lens" id="camLens">ไม่ระบุเลนส์</div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-box">
+                <div class="stat-label">Aperture</div>
+                <div class="stat-value" id="valF">-</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Shutter</div>
+                <div class="stat-value" id="valS">-</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">ISO</div>
+                <div class="stat-value" id="valISO">-</div>
+            </div>
+             <div class="stat-box">
+                <div class="stat-label">Focal</div>
+                <div class="stat-value" id="valFL">-</div>
+            </div>
+             <div class="stat-box">
+                <div class="stat-label">Date</div>
+                <div class="stat-value" id="valDate" style="font-size:10px;">-</div>
+            </div>
+             <div class="stat-box">
+                <div class="stat-label">Size</div>
+                <div class="stat-value" id="valSize">-</div>
+            </div>
+        </div>
+
+        <div class="full-data" id="exifList">
+            </div>
+
+        <div class="footer-note">EXIF DATA VIEWER</div>
+    </div>
+
 <script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
 
 <script>
-document.getElementById('upload').addEventListener('change', function (e) {
-    const file = e.target.files[0];
-    if (!file) return;
+    // ฟังก์ชันแปลงเศษส่วนให้สวยงาม
+    function formatFraction(n) {
+        if (!n) return '-';
+        if (n >= 1) return n; // เช่น 1/125 -> 0.008... แต่บางที library ส่งมาเป็น number
+        // ถ้า library ส่งมาเป็น number แล้วเราอยากแปลงกลับเป็น 1/x อาจจะยากหน่อยใน JS ธรรมดา
+        // แต่ exif-js มักส่งคืนค่าดิบ ถ้าเป็น String ก็ใช้ได้เลย
+        return n;
+    }
 
-    const img = document.getElementById('preview');
-    img.src = URL.createObjectURL(file);
+    document.getElementById('upload').addEventListener('change', function (e) {
+        const file = e.target.files[0];
+        if (!file) return;
 
-    img.onload = function () {
-        EXIF.getData(img, function () {
-            let output = '';
-            const tags = EXIF.getAllTags(this);
+        const img = document.getElementById('preview');
+        const card = document.getElementById('card');
+        
+        img.src = URL.createObjectURL(file);
+        
+        // แสดงการ์ดเมื่อเลือกรูป
+        card.classList.add('active'); 
 
-            if (Object.keys(tags).length === 0) {
-                output = '❌ ไม่พบข้อมูล EXIF ในรูปนี้';
-            } else {
-                for (let key in tags) {
-                    output += `${key}: ${tags[key]}\n`;
+        img.onload = function () {
+            EXIF.getData(img, function () {
+                const allTags = EXIF.getAllTags(this);
+                const list = document.getElementById('exifList');
+                list.innerHTML = '';
+
+                // 1. ดึงค่า Highlight มาใส่ด้านบน
+                const make = EXIF.getTag(this, "Make") || "";
+                const model = EXIF.getTag(this, "Model") || "Unknown Camera";
+                document.getElementById('camModel').textContent = `${make} ${model}`.trim();
+                document.getElementById('camLens').textContent = EXIF.getTag(this, "Undefined") || ""; // LensModel มักหาเจอยากใน js-exif พื้นฐานอาจต้องดู key อื่น
+
+                document.getElementById('valF').textContent = "f/" + (EXIF.getTag(this, "FNumber") || "-");
+                
+                let shutter = EXIF.getTag(this, "ExposureTime");
+                if(shutter && shutter < 1) {
+                    // พยายามแปลงเป็นเศษส่วนอย่างง่าย (คร่าวๆ)
+                     shutter = "1/" + Math.round(1/shutter);
                 }
-            }
-            document.getElementById('exif').textContent = output;
-        });
-    };
-});
+                document.getElementById('valS').textContent = shutter ? (typeof shutter === 'number' ? shutter : shutter.toString()) : "-";
+                
+                document.getElementById('valISO').textContent = EXIF.getTag(this, "ISOSpeedRatings") || "-";
+                document.getElementById('valFL').textContent = (EXIF.getTag(this, "FocalLength") || "-") + "mm";
+                
+                const dateTaken = EXIF.getTag(this, "DateTimeOriginal");
+                document.getElementById('valDate').textContent = dateTaken ? dateTaken.split(' ')[0].replace(/:/g, '/') : "-";
+
+                const w = EXIF.getTag(this, "PixelXDimension");
+                const h = EXIF.getTag(this, "PixelYDimension");
+                document.getElementById('valSize').textContent = (w && h) ? `${w}x${h}` : "-";
+
+                // 2. วนลูปค่าที่เหลือใส่ข้างล่าง (ตัดค่า Highlight ออกเพื่อไม่ให้ซ้ำ)
+                const skipKeys = ['Make', 'Model', 'FNumber', 'ExposureTime', 'ISOSpeedRatings', 'FocalLength', 'DateTimeOriginal', 'PixelXDimension', 'PixelYDimension', 'MakerNote', 'UserComment', 'ExifVersion', 'FlashpixVersion', 'ComponentsConfiguration'];
+
+                if (Object.keys(allTags).length === 0) {
+                    list.innerHTML = '<div style="grid-column: span 2; text-align: center;">❌ ไม่พบข้อมูล EXIF</div>';
+                } else {
+                    for (let key in allTags) {
+                        if (!skipKeys.includes(key) && typeof allTags[key] !== 'object') { // กรอง object ใหญ่ๆ ออก
+                            let val = allTags[key];
+                            // ตัดข้อความยาวเกินไป
+                            if(typeof val === 'string' && val.length > 15) val = val.substring(0, 15) + '...';
+                            
+                            const row = `
+                                <div class="data-row">
+                                    <span class="data-key">${key}</span>
+                                    <span class="data-val">${val}</span>
+                                </div>
+                            `;
+                            list.innerHTML += row;
+                        }
+                    }
+                }
+            });
+        };
+    });
 </script>
 
 </body>
