@@ -3,202 +3,181 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Full Metadata Report</title>
+<title>Evidence Verification Report</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&family=Roboto+Mono:wght@400;500&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&family=Roboto+Mono:wght@500;700&display=swap');
 
     :root {
-        /* White Theme & Professional Look */
-        --bg-color: #f5f7fa;
+        --bg-body: #f0f2f5;
         --card-bg: #ffffff;
-        --accent: #0056b3; /* น้ำเงินเข้ม ดูเป็นทางการ */
-        --text-main: #2c3e50;
-        --text-label: #546e7a;
-        --border-color: #dce4ec;
-        --success: #28a745;
+        --primary: #0f172a; /* สีเข้มทางการ */
+        --accent: #2563eb; /* น้ำเงินราชการ */
+        --border: #e2e8f0;
+        --text-main: #334155;
+        --text-sub: #64748b;
     }
 
     * { box-sizing: border-box; }
     body {
         font-family: 'Sarabun', sans-serif;
-        background: var(--bg-color);
+        background: var(--bg-body);
         color: var(--text-main);
-        margin: 0; padding: 30px;
+        margin: 0; padding: 20px;
         display: flex; flex-direction: column; align-items: center;
         min-height: 100vh;
     }
 
-    h1 { margin: 0 0 20px 0; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; }
-
-    .btn-upload {
+    .upload-btn {
         background: var(--accent); color: white;
-        padding: 12px 30px; border-radius: 5px;
-        font-size: 16px; font-weight: 600; cursor: pointer;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        transition: all 0.2s; border: none;
-        display: inline-flex; align-items: center; gap: 10px;
+        padding: 10px 24px; border-radius: 6px;
+        font-weight: 600; cursor: pointer; margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        display: inline-flex; align-items: center; gap: 8px;
+        transition: 0.2s;
     }
-    .btn-upload:hover { background: #004494; box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+    .upload-btn:hover { background: #1d4ed8; }
     input[type=file] { display: none; }
 
-    /* --- Report Card Style --- */
+    /* --- Main Card --- */
     .report-card {
         background: var(--card-bg);
-        width: 100%; max-width: 1000px;
-        border-radius: 8px; /* ขอบมนน้อยลง ดูเป็นทางการ */
-        box-shadow: 0 5px 20px rgba(0,0,0,0.08);
-        border: 1px solid var(--border-color);
-        padding: 30px; margin-top: 30px;
+        width: 100%; max-width: 850px;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        border: 1px solid var(--border);
+        padding: 24px;
         display: none;
-        grid-template-columns: 400px 1fr; /* Fixed width for left col */
-        gap: 30px;
     }
-    .report-card.active { display: grid; }
+    .report-card.active { display: block; }
 
-    /* Left Column */
-    .visual-evidence { display: flex; flex-direction: column; gap: 20px; }
-    .evidence-box {
-        border: 1px solid var(--border-color); padding: 10px;
-        background: #fcfdfd; border-radius: 4px;
+    /* --- Screenshot Zone (The Important Part) --- */
+    .screenshot-zone {
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        overflow: hidden;
+        margin-bottom: 20px;
+        background: #fff;
     }
-    .evidence-label { font-weight: 700; color: var(--accent); margin-bottom: 8px; display: block; }
-    .img-preview { 
-        width: 100%; height: 250px; background: #eee; 
+
+    /* Row 1: Visuals (Image + Map) */
+    .visual-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr; /* แบ่งครึ่ง */
+        height: 300px;
+        border-bottom: 1px solid var(--border);
+    }
+    .img-container {
+        background: #000;
         display: flex; justify-content: center; align-items: center;
         overflow: hidden;
+        border-right: 1px solid var(--border);
     }
-    .img-preview img { max-width: 100%; max-height: 100%; object-fit: contain; }
-    #map { width: 100%; height: 200px; background: #eee; border: 1px solid var(--border-color); }
-
-    /* Right Column: Data Items */
-    .data-section { }
-    .section-title {
-        font-size: 18px; font-weight: 700; color: var(--text-main);
-        border-bottom: 2px solid var(--border-color);
-        padding-bottom: 10px; margin-bottom: 20px;
-        margin-top: 30px; /* Add top margin for subsequent sections */
-    }
-    .data-section:first-child .section-title { margin-top: 0; }
-
-    .data-grid {
-        display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-        gap: 15px;
-    }
-    .data-item {
-        background: #f8f9fa; border: 1px solid var(--border-color);
-        padding: 12px; border-radius: 4px;
-    }
-    .data-label {
-        font-size: 12px; color: var(--text-label); font-weight: 600;
-        text-transform: uppercase; margin-bottom: 5px;
-    }
-    .data-value {
-        font-family: 'Roboto Mono', monospace; font-size: 14px;
-        color: var(--text-main); word-break: break-word;
-    }
-    .data-value.highlight { color: var(--accent); font-weight: 600; }
-
-    .full-width { grid-column: 1 / -1; }
+    .img-container img { max-width: 100%; max-height: 100%; object-fit: contain; }
     
-    .raw-address-list {
-        list-style: none; padding: 0; margin: 0;
-        font-family: 'Roboto Mono', monospace; font-size: 13px;
-    }
-    .raw-address-list li {
-        padding: 4px 0; border-bottom: 1px dashed var(--border-color);
-        display: flex;
-    }
-    .raw-key { font-weight: 600; color: var(--text-label); min-width: 120px; }
-    .raw-val { flex: 1; }
+    #map { width: 100%; height: 100%; z-index: 1; }
 
-    .footer-note {
-        grid-column: 1 / -1;
-        text-align: center; margin-top: 30px; padding-top: 20px;
-        border-top: 1px solid var(--border-color);
-        font-size: 12px; color: var(--text-label);
+    /* Row 2: Context (Address + Time) */
+    .context-row {
+        display: grid;
+        grid-template-columns: 2fr 1fr; /* ที่อยู่กว้างกว่าเวลา */
+        background: #f8fafc;
     }
+    .context-box {
+        padding: 15px 20px;
+        border-right: 1px solid var(--border);
+        display: flex; flex-direction: column; justify-content: center;
+    }
+    .context-box:last-child { border-right: none; background: #fff; }
+
+    .c-label {
+        font-size: 11px; font-weight: 700; color: var(--accent);
+        text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;
+        display: flex; align-items: center; gap: 5px;
+    }
+    .c-value-address {
+        font-size: 16px; font-weight: 600; color: var(--primary);
+        line-height: 1.4;
+    }
+    .c-value-time {
+        font-family: 'Roboto Mono', monospace;
+        font-size: 22px; font-weight: 700; color: var(--primary);
+    }
+    .c-value-date {
+        font-family: 'Roboto Mono', monospace;
+        font-size: 14px; color: var(--text-sub);
+    }
+
+    /* --- Technical Footer (Less Important) --- */
+    .tech-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 10px;
+    }
+    .tech-item {
+        background: #f1f5f9; padding: 8px 12px; border-radius: 6px;
+    }
+    .t-label { font-size: 10px; color: var(--text-sub); text-transform: uppercase; }
+    .t-val { font-family: 'Roboto Mono'; font-size: 12px; color: var(--text-main); font-weight: 600; margin-top: 2px;}
+
+    .model-badge {
+        text-align: center; margin-bottom: 15px;
+        font-size: 18px; font-weight: 700; color: var(--primary);
+    }
+    
+    /* Decoration to look like a document */
+    .doc-header {
+        display: flex; justify-content: space-between; align-items: center;
+        border-bottom: 2px solid var(--primary); padding-bottom: 10px; margin-bottom: 20px;
+    }
+    .doc-title { font-weight: 700; color: var(--primary); text-transform: uppercase; }
+    .doc-ref { font-size: 12px; color: var(--text-sub); font-family: 'Roboto Mono'; }
+
 </style>
 </head>
 <body>
 
-    <h1>📄 Digital Image Metadata Report</h1>
-    <label for="upload" class="btn-upload">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-        Select Image File for Analysis
+    <label for="upload" class="upload-btn">
+        📷 เลือกรูปภาพเพื่อตรวจสอบ
     </label>
     <input type="file" accept="image/*" id="upload">
 
-    <div class="report-card" id="reportCard">
-        
-        <div class="visual-evidence">
-            <div class="evidence-box">
-                <span class="evidence-label">Source Image Preview</span>
-                <div class="img-preview"><img id="preview" src=""></div>
-            </div>
-            <div class="evidence-box">
-                <span class="evidence-label">Location Context (GPS)</span>
+    <div class="report-card" id="card">
+        <div class="doc-header">
+            <div class="doc-title">Digital Verification Report</div>
+            <div class="doc-ref">REF: GENERATED-CLIENT-SIDE</div>
+        </div>
+
+        <div class="model-badge" id="camModel">Loading Device...</div>
+
+        <div class="screenshot-zone">
+            <div class="visual-row">
+                <div class="img-container"><img id="preview" src=""></div>
                 <div id="map"></div>
             </div>
-        </div>
-
-        <div class="data-section">
             
-            <div class="section-title">1. Device & Origin Information</div>
-            <div class="data-grid">
-                <div class="data-item full-width">
-                    <div class="data-label">Make & Model</div>
-                    <div class="data-value highlight" id="valModel" style="font-size: 18px;">-</div>
+            <div class="context-row">
+                <div class="context-box">
+                    <div class="c-label">📍 Location Details</div>
+                    <div class="c-value-address" id="fullAddr">รอผลการวิเคราะห์พิกัด...</div>
+                    <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;" id="gpsCoords">-</div>
                 </div>
-                 <div class="data-item full-width">
-                    <div class="data-label">Lens Model</div>
-                    <div class="data-value" id="valLens">-</div>
-                </div>
-                <div class="data-item">
-                    <div class="data-label">Software / OS</div>
-                    <div class="data-value" id="valSoftware">-</div>
-                </div>
-                <div class="data-item">
-                    <div class="data-label">Original Date/Time</div>
-                    <div class="data-value highlight" id="valDateTime">-</div>
+                <div class="context-box" style="align-items: flex-end; text-align: right;">
+                    <div class="c-label">⏰ Time Stamp</div>
+                    <div class="c-value-time" id="valTime">--:--</div>
+                    <div class="c-value-date" id="valDate">--/--/----</div>
                 </div>
             </div>
-
-            <div class="section-title">2. Geographic Location Data</div>
-            <div class="data-grid">
-                <div class="data-item full-width">
-                    <div class="data-label">Derived Address (Readable)</div>
-                    <div class="data-value highlight" id="valAddress">-</div>
-                </div>
-                <div class="data-item">
-                    <div class="data-label">GPS Coordinates (Decimal)</div>
-                    <div class="data-value highlight" id="valGPS_DD">-</div>
-                </div>
-                 <div class="data-item">
-                    <div class="data-label">GPS Coordinates (DMS)</div>
-                    <div class="data-value" id="valGPS_DMS" style="font-size: 12px;">-</div>
-                </div>
-                <div class="data-item full-width">
-                    <div class="data-label">Raw Location Data Structure (Nominatim API)</div>
-                    <div class="data-value" id="valRawAddress">-</div>
-                </div>
-            </div>
-
-            <div class="section-title">3. Technical Capture Parameters</div>
-             <div class="data-grid" style="grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));">
-                <div class="data-item"><div class="data-label">Aperture (F-Stop)</div><div class="data-value" id="valF">-</div></div>
-                <div class="data-item"><div class="data-label">Exposure Time</div><div class="data-value" id="valS">-</div></div>
-                <div class="data-item"><div class="data-label">ISO Speed</div><div class="data-value" id="valISO">-</div></div>
-                <div class="data-item"><div class="data-label">Focal Length</div><div class="data-value" id="valFL">-</div></div>
-                <div class="data-item"><div class="data-label">Focal Length (35mm Eq.)</div><div class="data-value" id="valFL35">-</div></div>
-                <div class="data-item"><div class="data-label">Flash Status</div><div class="data-value" id="valFlash">-</div></div>
-                <div class="data-item"><div class="data-label">Metering Mode</div><div class="data-value" id="valMetering">-</div></div>
-                <div class="data-item"><div class="data-label">White Balance</div><div class="data-value" id="valWB">-</div></div>
-                 <div class="data-item"><div class="data-label">Image Resolution</div><div class="data-value" id="valRes">-</div></div>
-            </div>
-
         </div>
-         <div class="footer-note">End of Report. Generated via Client-Side EXIF Analysis.</div>
+
+        <div class="tech-grid">
+            <div class="tech-item"><div class="t-label">Aperture</div><div class="t-val" id="valF">-</div></div>
+            <div class="tech-item"><div class="t-label">Shutter</div><div class="t-val" id="valS">-</div></div>
+            <div class="tech-item"><div class="t-label">ISO</div><div class="t-val" id="valISO">-</div></div>
+            <div class="tech-item"><div class="t-label">Focal Length</div><div class="t-val" id="valFL">-</div></div>
+            <div class="tech-item"><div class="t-label">Lens</div><div class="t-val" id="valLens">-</div></div>
+            <div class="tech-item"><div class="t-label">Resolution</div><div class="t-val" id="valRes">-</div></div>
+        </div>
     </div>
 
 <script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
@@ -206,20 +185,11 @@
 <script>
     let map = null, marker = null;
 
-    // Helper: Convert Decimal Deg to Degrees Minutes Seconds
-    function toDMS(deg) {
-        var d = Math.floor(deg);
-        var minfloat = (deg - d) * 60;
-        var m = Math.floor(minfloat);
-        var s = ((minfloat - m) * 60).toFixed(2);
-        return `${d}° ${m}' ${s}"`;
-    }
-
-    function resetReport() {
-        const ids = ['valModel', 'valLens', 'valSoftware', 'valDateTime', 'valAddress', 'valGPS_DD', 'valGPS_DMS', 'valRawAddress', 'valF', 'valS', 'valISO', 'valFL', 'valFL35', 'valFlash', 'valMetering', 'valWB', 'valRes'];
-        ids.forEach(id => document.getElementById(id).textContent = '-');
-        document.getElementById('valModel').textContent = "Analyzing Image File...";
-        document.getElementById('valAddress').textContent = "Pending GPS Analysis...";
+    function resetData() {
+        document.getElementById('fullAddr').textContent = "กำลังค้นหาตำแหน่ง...";
+        document.getElementById('gpsCoords').textContent = "-";
+        document.getElementById('valTime').textContent = "--:--";
+        document.getElementById('valDate').textContent = "--/--/----";
         if(map && marker) { map.removeLayer(marker); marker = null; }
     }
 
@@ -227,88 +197,80 @@
         const file = e.target.files[0];
         if (!file) return;
 
-        resetReport();
-        document.getElementById('reportCard').classList.add('active');
+        resetData();
+        const card = document.getElementById('card');
         const img = document.getElementById('preview');
         img.src = URL.createObjectURL(file);
+        card.classList.add('active');
 
         img.onload = function () {
             EXIF.getData(img, function () {
-                const allTags = EXIF.getAllTags(this);
-                // console.log(allTags); // Debug ดู tags ทั้งหมดใน console
-
-                // 1. Device Info
+                // Device Info
                 let make = EXIF.getTag(this, "Make") || "";
                 let model = EXIF.getTag(this, "Model") || "Unknown Device";
                 if(model.toLowerCase().includes(make.toLowerCase())) make = "";
-                document.getElementById('valModel').textContent = `${make} ${model}`.trim();
-                document.getElementById('valLens').textContent = EXIF.getTag(this, "LensModel") || "Not Recorded";
-                document.getElementById('valSoftware').textContent = EXIF.getTag(this, "Software") || "Not Recorded";
-                document.getElementById('valDateTime').textContent = (EXIF.getTag(this, "DateTimeOriginal") || "-").replace(/:/g, "/");
+                document.getElementById('camModel').textContent = `${make} ${model}`.trim();
 
-                // 3. Technical Params
+                // Tech Specs
+                document.getElementById('valLens').textContent = (EXIF.getTag(this, "LensModel") || "-").substring(0, 15);
                 document.getElementById('valF').textContent = EXIF.getTag(this, "FNumber") ? "f/" + EXIF.getTag(this, "FNumber") : "-";
                 let s = EXIF.getTag(this, "ExposureTime");
                 document.getElementById('valS').textContent = s ? (s < 1 ? `1/${Math.round(1/s)}` : s) + "s" : "-";
                 document.getElementById('valISO').textContent = EXIF.getTag(this, "ISOSpeedRatings") || "-";
                 document.getElementById('valFL').textContent = (EXIF.getTag(this, "FocalLength") || "-") + "mm";
-                document.getElementById('valFL35').textContent = (EXIF.getTag(this, "FocalLengthIn35mmFilm") || "-") + "mm";
-                document.getElementById('valFlash').textContent = EXIF.getTag(this, "Flash") || "-";
-                document.getElementById('valMetering').textContent = EXIF.getTag(this, "MeteringMode") || "-";
-                document.getElementById('valWB').textContent = EXIF.getTag(this, "WhiteBalance") || "-";
-                document.getElementById('valRes').textContent = `${EXIF.getTag(this, "PixelXDimension")||0} x ${EXIF.getTag(this, "PixelYDimension")||0} px`;
+                document.getElementById('valRes').textContent = `${EXIF.getTag(this, "PixelXDimension")||0}x${EXIF.getTag(this, "PixelYDimension")||0}`;
 
-                // 2. GPS & Location Data
+                // Date Time
+                const dateTime = EXIF.getTag(this, "DateTimeOriginal");
+                if (dateTime) {
+                    const parts = dateTime.split(" ");
+                    document.getElementById('valDate').textContent = parts[0].replace(/:/g, "/");
+                    document.getElementById('valTime').textContent = parts[1].substring(0, 5);
+                }
+
+                // GPS & Map
                 const latTag = EXIF.getTag(this, "GPSLatitude");
                 const lngTag = EXIF.getTag(this, "GPSLongitude");
-                
+
                 if (latTag && lngTag) {
                     const latRef = EXIF.getTag(this, "GPSLatitudeRef") || "N";
                     const lngRef = EXIF.getTag(this, "GPSLongitudeRef") || "E";
-                    const latDec = (latTag[0] + latTag[1]/60 + latTag[2]/3600) * (latRef === "S" ? -1 : 1);
-                    const lngDec = (lngTag[0] + lngTag[1]/60 + lngTag[2]/3600) * (lngRef === "W" ? -1 : 1);
-                    
-                    document.getElementById('valGPS_DD').textContent = `${latDec.toFixed(6)}, ${lngDec.toFixed(6)}`;
-                    document.getElementById('valGPS_DMS').textContent = `${toDMS(Math.abs(latDec))}${latRef}, ${toDMS(Math.abs(lngDec))}${lngRef}`;
+                    const lat = (latTag[0] + latTag[1]/60 + latTag[2]/3600) * (latRef === "S" ? -1 : 1);
+                    const lng = (lngTag[0] + lngTag[1]/60 + lngTag[2]/3600) * (lngRef === "W" ? -1 : 1);
 
-                    // Map Setup
+                    document.getElementById('gpsCoords').textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+
                     if (!map) {
                         map = L.map('map', {zoomControl:false, attributionControl:false});
-                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map); // ใช้ map สีสว่าง
+                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
                     }
-                    map.setView([latDec, lngDec], 15);
+                    map.setView([lat, lng], 15);
                     if(marker) map.removeLayer(marker);
-                    marker = L.marker([latDec, lngDec]).addTo(map);
+                    marker = L.marker([lat, lng]).addTo(map);
                     setTimeout(() => map.invalidateSize(), 300);
 
-                    // Fetch Reverse Geocoding
-                    document.getElementById('valAddress').textContent = "Fetching detailed address...";
-                    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latDec}&lon=${lngDec}&accept-language=th`)
+                    // Reverse Geocoding
+                    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=th`)
                         .then(res => res.json())
                         .then(data => {
-                            document.getElementById('valAddress').textContent = data.display_name || "Address not found";
+                            const a = data.address;
+                            // สร้าง format ที่อยู่ให้อ่านง่าย
+                            let place = [];
+                            if(a.village) place.push(a.village);
+                            if(a.road) place.push(a.road);
+                            if(a.suburb || a.subdistrict) place.push(a.suburb || a.subdistrict);
+                            if(a.city_district || a.district) place.push(a.city_district || a.district);
+                            if(a.province) place.push("จ." + a.province);
                             
-                            // แสดงข้อมูลดิบของที่อยู่ทั้งหมด
-                            if(data.address) {
-                                let rawHtml = '<ul class="raw-address-list">';
-                                for(const key in data.address) {
-                                    rawHtml += `<li><span class="raw-key">${key}:</span><span class="raw-val">${data.address[key]}</span></li>`;
-                                }
-                                rawHtml += '</ul>';
-                                document.getElementById('valRawAddress').innerHTML = rawHtml;
-                            }
+                            document.getElementById('fullAddr').textContent = place.length ? place.join(", ") : data.display_name;
                         })
-                        .catch(err => {
-                            document.getElementById('valAddress').textContent = "Error fetching address data.";
-                            document.getElementById('valRawAddress').textContent = "Connection failed.";
+                        .catch(() => {
+                            document.getElementById('fullAddr').textContent = "Connection Error (Map API)";
                         });
-
                 } else {
-                    document.getElementById('valAddress').textContent = "No GPS Metadata found in this image.";
-                    document.getElementById('valGPS_DD').textContent = "N/A";
-                    document.getElementById('valGPS_DMS').textContent = "N/A";
-                    document.getElementById('valRawAddress').textContent = "-";
-                    if(map) map.setView([0,0], 1);
+                    document.getElementById('fullAddr').textContent = "ไม่พบข้อมูล GPS ในรูปภาพ";
+                    if(map) map.remove();
+                    document.getElementById('map').innerHTML = '<div style="display:flex;justify-content:center;align-items:center;height:100%;color:#999;font-size:12px;">NO GPS DATA</div>';
                 }
             });
         };
