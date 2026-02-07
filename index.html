@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Evidence Verification Report</title>
+<title>Evidence Verification Report (Enhanced)</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&family=Roboto+Mono:wght@500;700&display=swap');
@@ -11,8 +11,8 @@
     :root {
         --bg-body: #f0f2f5;
         --card-bg: #ffffff;
-        --primary: #0f172a; /* สีเข้มทางการ */
-        --accent: #2563eb; /* น้ำเงินราชการ */
+        --primary: #0f172a;
+        --accent: #2563eb;
         --border: #e2e8f0;
         --text-main: #334155;
         --text-sub: #64748b;
@@ -30,13 +30,13 @@
 
     .upload-btn {
         background: var(--accent); color: white;
-        padding: 10px 24px; border-radius: 6px;
+        padding: 12px 28px; border-radius: 8px;
         font-weight: 600; cursor: pointer; margin-bottom: 20px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);
         display: inline-flex; align-items: center; gap: 8px;
-        transition: 0.2s;
+        transition: 0.2s; border: 1px solid transparent;
     }
-    .upload-btn:hover { background: #1d4ed8; }
+    .upload-btn:hover { background: #1d4ed8; transform: translateY(-1px); }
     input[type=file] { display: none; }
 
     /* --- Main Card --- */
@@ -44,139 +44,145 @@
         background: var(--card-bg);
         width: 100%; max-width: 850px;
         border-radius: 12px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.08);
         border: 1px solid var(--border);
-        padding: 24px;
+        padding: 0; /* Remove padding here, control inside */
         display: none;
-    }
-    .report-card.active { display: block; }
-
-    /* --- Screenshot Zone (The Important Part) --- */
-    .screenshot-zone {
-        border: 1px solid var(--border);
-        border-radius: 8px;
         overflow: hidden;
-        margin-bottom: 20px;
-        background: #fff;
     }
+    .report-card.active { display: block; animation: fadeIn 0.5s ease; }
 
-    /* Row 1: Visuals (Image + Map) */
+    .card-header {
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--border);
+        background: #f8fafc;
+        display: flex; justify-content: space-between; align-items: center;
+    }
+    .doc-title { font-weight: 700; color: var(--primary); font-size: 18px; letter-spacing: -0.5px; }
+    .doc-ref { font-size: 12px; color: var(--text-sub); font-family: 'Roboto Mono'; background: #e2e8f0; padding: 4px 8px; border-radius: 4px; }
+
+    /* --- Screenshot Zone --- */
     .visual-row {
         display: grid;
-        grid-template-columns: 1fr 1fr; /* แบ่งครึ่ง */
-        height: 300px;
+        grid-template-columns: 1fr 1fr;
+        height: 320px;
         border-bottom: 1px solid var(--border);
     }
     .img-container {
-        background: #000;
+        background: #0f172a;
         display: flex; justify-content: center; align-items: center;
         overflow: hidden;
         border-right: 1px solid var(--border);
+        position: relative;
     }
     .img-container img { max-width: 100%; max-height: 100%; object-fit: contain; }
     
-    #map { width: 100%; height: 100%; z-index: 1; }
+    #map { width: 100%; height: 100%; z-index: 1; background: #eee; }
 
-    /* Row 2: Context (Address + Time) */
+    /* --- Context Row --- */
     .context-row {
         display: grid;
-        grid-template-columns: 2fr 1fr; /* ที่อยู่กว้างกว่าเวลา */
-        background: #f8fafc;
+        grid-template-columns: 65% 35%;
+        border-bottom: 1px solid var(--border);
     }
     .context-box {
-        padding: 15px 20px;
-        border-right: 1px solid var(--border);
+        padding: 20px 24px;
         display: flex; flex-direction: column; justify-content: center;
     }
-    .context-box:last-child { border-right: none; background: #fff; }
+    .context-box:first-child { border-right: 1px solid var(--border); }
 
     .c-label {
         font-size: 11px; font-weight: 700; color: var(--accent);
-        text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;
-        display: flex; align-items: center; gap: 5px;
+        text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;
+        display: flex; align-items: center; gap: 6px;
     }
     .c-value-address {
         font-size: 16px; font-weight: 600; color: var(--primary);
-        line-height: 1.4;
+        line-height: 1.5; word-wrap: break-word;
+    }
+    .c-value-sub {
+        font-size: 13px; color: var(--text-sub); margin-top: 4px;
     }
     .c-value-time {
         font-family: 'Roboto Mono', monospace;
-        font-size: 22px; font-weight: 700; color: var(--primary);
+        font-size: 24px; font-weight: 700; color: var(--primary);
     }
     .c-value-date {
         font-family: 'Roboto Mono', monospace;
         font-size: 14px; color: var(--text-sub);
     }
 
-    /* --- Technical Footer (Less Important) --- */
+    /* --- Technical Footer --- */
+    .tech-footer {
+        padding: 20px 24px;
+        background: #ffffff;
+    }
+    .model-badge {
+        font-size: 14px; font-weight: 600; color: var(--primary);
+        margin-bottom: 15px; display: flex; align-items: center; gap: 8px;
+    }
+    .model-badge::before { content: '📱'; }
+
     .tech-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-        gap: 10px;
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 12px;
     }
     .tech-item {
-        background: #f1f5f9; padding: 8px 12px; border-radius: 6px;
+        background: #f8fafc; padding: 10px; border-radius: 6px;
+        border: 1px solid var(--border);
     }
-    .t-label { font-size: 10px; color: var(--text-sub); text-transform: uppercase; }
-    .t-val { font-family: 'Roboto Mono'; font-size: 12px; color: var(--text-main); font-weight: 600; margin-top: 2px;}
+    .t-label { font-size: 10px; color: var(--text-sub); text-transform: uppercase; margin-bottom: 4px; }
+    .t-val { font-family: 'Roboto Mono'; font-size: 12px; color: var(--primary); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-    .model-badge {
-        text-align: center; margin-bottom: 15px;
-        font-size: 18px; font-weight: 700; color: var(--primary);
-    }
-    
-    /* Decoration to look like a document */
-    .doc-header {
-        display: flex; justify-content: space-between; align-items: center;
-        border-bottom: 2px solid var(--primary); padding-bottom: 10px; margin-bottom: 20px;
-    }
-    .doc-title { font-weight: 700; color: var(--primary); text-transform: uppercase; }
-    .doc-ref { font-size: 12px; color: var(--text-sub); font-family: 'Roboto Mono'; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
+    /* Loading State */
+    .loading-text { color: var(--text-sub); font-style: italic; font-size: 14px; }
 </style>
 </head>
 <body>
 
     <label for="upload" class="upload-btn">
-        📷 เลือกรูปภาพเพื่อตรวจสอบ
+        <span>📷</span> อัปโหลดรูปภาพตรวจสอบ
     </label>
     <input type="file" accept="image/*" id="upload">
 
     <div class="report-card" id="card">
-        <div class="doc-header">
-            <div class="doc-title">Digital Verification Report</div>
-            <div class="doc-ref">REF: GENERATED-CLIENT-SIDE</div>
+        <div class="card-header">
+            <div class="doc-title">Verification Report</div>
+            <div class="doc-ref" id="reportRef">ID: GEN-001</div>
         </div>
 
-        <div class="model-badge" id="camModel">Loading Device...</div>
-
-        <div class="screenshot-zone">
-            <div class="visual-row">
-                <div class="img-container"><img id="preview" src=""></div>
-                <div id="map"></div>
+        <div class="visual-row">
+            <div class="img-container"><img id="preview" src=""></div>
+            <div id="map"></div>
+        </div>
+        
+        <div class="context-row">
+            <div class="context-box">
+                <div class="c-label">📍 Location Analysis</div>
+                <div class="c-value-address" id="mainPlace">รอผลการวิเคราะห์...</div>
+                <div class="c-value-sub" id="fullAddr">-</div>
+                <div class="c-value-sub" style="font-family: 'Roboto Mono'; font-size: 11px; margin-top:8px;" id="gpsCoords">GPS: -</div>
             </div>
-            
-            <div class="context-row">
-                <div class="context-box">
-                    <div class="c-label">📍 Location Details</div>
-                    <div class="c-value-address" id="fullAddr">รอผลการวิเคราะห์พิกัด...</div>
-                    <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;" id="gpsCoords">-</div>
-                </div>
-                <div class="context-box" style="align-items: flex-end; text-align: right;">
-                    <div class="c-label">⏰ Time Stamp</div>
-                    <div class="c-value-time" id="valTime">--:--</div>
-                    <div class="c-value-date" id="valDate">--/--/----</div>
-                </div>
+            <div class="context-box" style="align-items: flex-end; text-align: right; background: #f8fafc;">
+                <div class="c-label">⏰ Timestamp</div>
+                <div class="c-value-time" id="valTime">--:--</div>
+                <div class="c-value-date" id="valDate">--/--/----</div>
             </div>
         </div>
 
-        <div class="tech-grid">
-            <div class="tech-item"><div class="t-label">Aperture</div><div class="t-val" id="valF">-</div></div>
-            <div class="tech-item"><div class="t-label">Shutter</div><div class="t-val" id="valS">-</div></div>
-            <div class="tech-item"><div class="t-label">ISO</div><div class="t-val" id="valISO">-</div></div>
-            <div class="tech-item"><div class="t-label">Focal Length</div><div class="t-val" id="valFL">-</div></div>
-            <div class="tech-item"><div class="t-label">Lens</div><div class="t-val" id="valLens">-</div></div>
-            <div class="tech-item"><div class="t-label">Resolution</div><div class="t-val" id="valRes">-</div></div>
+        <div class="tech-footer">
+            <div class="model-badge" id="camModel">Unknown Device</div>
+            <div class="tech-grid">
+                <div class="tech-item"><div class="t-label">Aperture</div><div class="t-val" id="valF">-</div></div>
+                <div class="tech-item"><div class="t-label">Shutter</div><div class="t-val" id="valS">-</div></div>
+                <div class="tech-item"><div class="t-label">ISO</div><div class="t-val" id="valISO">-</div></div>
+                <div class="tech-item"><div class="t-label">Focal Length</div><div class="t-val" id="valFL">-</div></div>
+                <div class="tech-item"><div class="t-label">Lens</div><div class="t-val" id="valLens">-</div></div>
+                <div class="tech-item"><div class="t-label">Resolution</div><div class="t-val" id="valRes">-</div></div>
+            </div>
         </div>
     </div>
 
@@ -185,11 +191,23 @@
 <script>
     let map = null, marker = null;
 
+    // Helper: Convert DMS to Decimal properly
+    function convertDMSToDD(degrees, direction) {
+        var dd = degrees[0] + degrees[1]/60 + degrees[2]/(3600);
+        if (direction == "S" || direction == "W") {
+            dd = dd * -1;
+        }
+        return dd;
+    }
+
     function resetData() {
-        document.getElementById('fullAddr').textContent = "กำลังค้นหาตำแหน่ง...";
-        document.getElementById('gpsCoords').textContent = "-";
+        document.getElementById('mainPlace').textContent = "กำลังวิเคราะห์พิกัดดาวเทียม...";
+        document.getElementById('mainPlace').classList.add('loading-text');
+        document.getElementById('fullAddr').textContent = "-";
+        document.getElementById('gpsCoords').textContent = "GPS: -";
         document.getElementById('valTime').textContent = "--:--";
         document.getElementById('valDate').textContent = "--/--/----";
+        document.getElementById('reportRef').textContent = "ID: " + Math.random().toString(36).substr(2, 9).toUpperCase();
         if(map && marker) { map.removeLayer(marker); marker = null; }
     }
 
@@ -200,75 +218,140 @@
         resetData();
         const card = document.getElementById('card');
         const img = document.getElementById('preview');
+        
+        // Revoke old URL to free memory
+        if(img.src) URL.revokeObjectURL(img.src);
         img.src = URL.createObjectURL(file);
+        
         card.classList.add('active');
 
         img.onload = function () {
             EXIF.getData(img, function () {
-                // Device Info
+                // --- 1. Device & Tech Info ---
                 let make = EXIF.getTag(this, "Make") || "";
                 let model = EXIF.getTag(this, "Model") || "Unknown Device";
                 if(model.toLowerCase().includes(make.toLowerCase())) make = "";
                 document.getElementById('camModel').textContent = `${make} ${model}`.trim();
 
-                // Tech Specs
-                document.getElementById('valLens').textContent = (EXIF.getTag(this, "LensModel") || "-").substring(0, 15);
-                document.getElementById('valF').textContent = EXIF.getTag(this, "FNumber") ? "f/" + EXIF.getTag(this, "FNumber") : "-";
+                document.getElementById('valLens').textContent = (EXIF.getTag(this, "LensModel") || "Unknown").substring(0, 15);
+                
+                let fNum = EXIF.getTag(this, "FNumber");
+                document.getElementById('valF').textContent = fNum ? "f/" + parseFloat(fNum).toFixed(1) : "-";
+                
                 let s = EXIF.getTag(this, "ExposureTime");
                 document.getElementById('valS').textContent = s ? (s < 1 ? `1/${Math.round(1/s)}` : s) + "s" : "-";
+                
                 document.getElementById('valISO').textContent = EXIF.getTag(this, "ISOSpeedRatings") || "-";
                 document.getElementById('valFL').textContent = (EXIF.getTag(this, "FocalLength") || "-") + "mm";
                 document.getElementById('valRes').textContent = `${EXIF.getTag(this, "PixelXDimension")||0}x${EXIF.getTag(this, "PixelYDimension")||0}`;
 
-                // Date Time
+                // --- 2. Date Time ---
                 const dateTime = EXIF.getTag(this, "DateTimeOriginal");
                 if (dateTime) {
                     const parts = dateTime.split(" ");
-                    document.getElementById('valDate').textContent = parts[0].replace(/:/g, "/");
-                    document.getElementById('valTime').textContent = parts[1].substring(0, 5);
+                    if(parts.length >= 2) {
+                        document.getElementById('valDate').textContent = parts[0].replace(/:/g, "/");
+                        document.getElementById('valTime').textContent = parts[1].substring(0, 5);
+                    }
                 }
 
-                // GPS & Map
+                // --- 3. GPS Logic (Updated) ---
                 const latTag = EXIF.getTag(this, "GPSLatitude");
                 const lngTag = EXIF.getTag(this, "GPSLongitude");
+                const latRef = EXIF.getTag(this, "GPSLatitudeRef");
+                const lngRef = EXIF.getTag(this, "GPSLongitudeRef");
 
-                if (latTag && lngTag) {
-                    const latRef = EXIF.getTag(this, "GPSLatitudeRef") || "N";
-                    const lngRef = EXIF.getTag(this, "GPSLongitudeRef") || "E";
-                    const lat = (latTag[0] + latTag[1]/60 + latTag[2]/3600) * (latRef === "S" ? -1 : 1);
-                    const lng = (lngTag[0] + lngTag[1]/60 + lngTag[2]/3600) * (lngRef === "W" ? -1 : 1);
+                if (latTag && lngTag && latRef && lngRef) {
+                    const lat = convertDMSToDD(latTag, latRef);
+                    const lng = convertDMSToDD(lngTag, lngRef);
 
-                    document.getElementById('gpsCoords').textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+                    document.getElementById('gpsCoords').textContent = `GPS: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
 
+                    // Setup Map
                     if (!map) {
                         map = L.map('map', {zoomControl:false, attributionControl:false});
                         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
                     }
-                    map.setView([lat, lng], 15);
+                    map.setView([lat, lng], 16);
                     if(marker) map.removeLayer(marker);
                     marker = L.marker([lat, lng]).addTo(map);
+                    
+                    // Force map redraw after card is visible
                     setTimeout(() => map.invalidateSize(), 300);
 
-                    // Reverse Geocoding
-                    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=th`)
+                    // --- 4. Reverse Geocoding (Improved) ---
+                    // ใช้ zoom=18 เพื่อเอาความละเอียดสูงสุด และ addressdetails=1 เพื่อแยกฟิลด์
+                    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=th`)
                         .then(res => res.json())
                         .then(data => {
-                            const a = data.address;
-                            // สร้าง format ที่อยู่ให้อ่านง่าย
-                            let place = [];
-                            if(a.village) place.push(a.village);
-                            if(a.road) place.push(a.road);
-                            if(a.suburb || a.subdistrict) place.push(a.suburb || a.subdistrict);
-                            if(a.city_district || a.district) place.push(a.city_district || a.district);
-                            if(a.province) place.push("จ." + a.province);
+                            document.getElementById('mainPlace').classList.remove('loading-text');
                             
-                            document.getElementById('fullAddr').textContent = place.length ? place.join(", ") : data.display_name;
+                            const a = data.address || {};
+                            
+                            // 1. หาชื่อสถานที่เฉพาะ (POI)
+                            let specificPlace = 
+                                a.amenity || a.building || a.shop || a.tourism || 
+                                a.historic || a.leisure || a.office || a.emergency ||
+                                a.healthcare || a.natural || "";
+                            
+                            // ถ้าไม่มีชื่อสถานที่ ให้ใช้ Village หรือ House Number แทน
+                            if(!specificPlace) {
+                                if(a.village) specificPlace = "หมู่บ้าน " + a.village;
+                                else if(a.house_number) specificPlace = "บ้านเลขที่ " + a.house_number;
+                            }
+
+                            // 2. สร้างที่อยู่รอง (ถนน/ตำบล/อำเภอ/จังหวัด)
+                            let secondaryParts = [];
+                            
+                            // ถนน/ซอย
+                            let roadInfo = [];
+                            if(a.soi) roadInfo.push("ซอย " + a.soi.replace('Soi ',''));
+                            if(a.road) roadInfo.push("ถนน " + a.road.replace('Thanon ',''));
+                            if(roadInfo.length > 0) secondaryParts.push(roadInfo.join(" "));
+
+                            // แขวง/ตำบล
+                            if(a.subdistrict || a.tambon) secondaryParts.push("ต." + (a.subdistrict || a.tambon));
+                            else if(a.suburb) secondaryParts.push(a.suburb);
+                            
+                            // เขต/อำเภอ
+                            if(a.city_district || a.district || a.amphoe) secondaryParts.push("อ." + (a.city_district || a.district || a.amphoe));
+                            
+                            // จังหวัด & ไปรษณีย์
+                            let provinceStr = "";
+                            if(a.province || a.state) provinceStr = "จ." + (a.province || a.state);
+                            if(a.postcode) provinceStr += " " + a.postcode;
+                            if(provinceStr) secondaryParts.push(provinceStr);
+
+                            // --- Display Logic ---
+                            if (specificPlace) {
+                                // กรณีเจอสถานที่ชัดเจน
+                                document.getElementById('mainPlace').textContent = specificPlace;
+                                document.getElementById('fullAddr').textContent = secondaryParts.join(", ");
+                            } else {
+                                // กรณีไม่เจอสถานที่ชัดเจน (อยู่กลางถนน หรือ ทุ่งนา)
+                                // ให้เอาถนนหรือตำบลขึ้นมาเป็นหัวข้อใหญ่แทน
+                                let fallbackMain = secondaryParts.shift(); // ดึงส่วนแรกมาเป็นหัวข้อ
+                                document.getElementById('mainPlace').textContent = fallbackMain || "พิกัดไม่ระบุสถานที่ชัดเจน";
+                                document.getElementById('fullAddr').textContent = secondaryParts.join(", ");
+                            }
+                            
+                            // ถ้าข้อมูลน้อยเกินไป ให้ใช้ display_name แต่ตัดให้สั้นลง
+                            if (!specificPlace && secondaryParts.length === 0) {
+                                document.getElementById('mainPlace').textContent = data.display_name.split(",")[0];
+                                document.getElementById('fullAddr').textContent = data.display_name;
+                            }
+
                         })
-                        .catch(() => {
-                            document.getElementById('fullAddr').textContent = "Connection Error (Map API)";
+                        .catch(err => {
+                            console.error(err);
+                            document.getElementById('mainPlace').textContent = "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์แผนที่";
+                            document.getElementById('fullAddr').textContent = "กรุณาตรวจสอบอินเทอร์เน็ต";
                         });
+
                 } else {
-                    document.getElementById('fullAddr').textContent = "ไม่พบข้อมูล GPS ในรูปภาพ";
+                    document.getElementById('mainPlace').textContent = "ไม่พบข้อมูล GPS ในไฟล์ภาพ";
+                    document.getElementById('mainPlace').classList.remove('loading-text');
+                    document.getElementById('fullAddr').textContent = "อาจเป็นภาพที่ถูกลบ Meta Data หรือไม่ได้เปิด Location";
                     if(map) map.remove();
                     document.getElementById('map').innerHTML = '<div style="display:flex;justify-content:center;align-items:center;height:100%;color:#999;font-size:12px;">NO GPS DATA</div>';
                 }
