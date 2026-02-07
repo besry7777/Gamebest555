@@ -3,13 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pro EXIF Card</title>
+<title>Pro EXIF Card + Map</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&family=Roboto+Mono:wght@400;700&display=swap');
 
     :root {
         --bg-color: #0f172a;
-        --card-bg: rgba(30, 41, 59, 0.95);
+        --card-bg: #1e293b;
         --accent: #38bdf8;
         --text-main: #f1f5f9;
         --text-dim: #94a3b8;
@@ -30,156 +31,150 @@
     }
 
     /* ปุ่ม Upload */
-    .upload-btn-wrapper {
-        position: relative;
-        overflow: hidden;
-        display: inline-block;
-        margin-bottom: 20px;
-    }
-
+    .upload-section { margin-bottom: 20px; text-align: center; }
     .btn {
         border: 1px solid var(--accent);
         color: var(--accent);
-        background-color: transparent;
-        padding: 8px 20px;
+        background: transparent;
+        padding: 10px 24px;
         border-radius: 50px;
         font-size: 14px;
         font-weight: bold;
         cursor: pointer;
         transition: 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
     }
+    .btn:hover { background: var(--accent); color: #0f172a; box-shadow: 0 0 15px rgba(56, 189, 248, 0.4); }
+    input[type=file] { display: none; }
 
-    .btn:hover { background: var(--accent); color: #000; }
-
-    .upload-btn-wrapper input[type=file] {
-        font-size: 100px;
-        position: absolute;
-        left: 0;
-        top: 0;
-        opacity: 0;
-        cursor: pointer;
-    }
-
-    /* การ์ดหลักสำหรับแคปหน้าจอ */
+    /* การ์ดหลัก */
     .capture-card {
         background: var(--card-bg);
         border: 1px solid rgba(255,255,255,0.1);
         width: 100%;
-        max-width: 400px; /* ขนาดกำลังดีสำหรับมือถือ */
-        border-radius: 16px;
-        padding: 16px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        display: none; /* ซ่อนก่อนเลือกรูป */
+        max-width: 400px; 
+        border-radius: 20px;
+        padding: 20px;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+        display: none;
+        position: relative;
+        overflow: hidden;
+    }
+    .capture-card.active { display: block; animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+
+    @keyframes popIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+
+    /* ส่วนหัว (รุ่นกล้อง) */
+    .header-info {
+        text-align: center;
+        margin-bottom: 15px;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        padding-bottom: 10px;
+    }
+    .cam-model { font-size: 18px; font-weight: 600; color: #fff; letter-spacing: 0.5px; }
+    .cam-lens { font-size: 12px; color: var(--accent); margin-top: 4px; font-family: 'Roboto Mono'; }
+
+    /* Layout รูป + แผนที่ */
+    .visual-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 10px;
+        margin-bottom: 15px;
     }
     
-    .capture-card.active { display: block; }
-
-    /* ส่วนแสดงรูปภาพ */
-    .img-container {
+    .img-box {
         width: 100%;
-        height: 200px; /* ฟิกความสูงไม่ให้กินที่ */
+        height: 180px;
         background: #000;
         border-radius: 12px;
         overflow: hidden;
-        margin-bottom: 15px;
         border: 1px solid #333;
         display: flex;
         justify-content: center;
         align-items: center;
     }
+    .img-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
 
-    .img-container img {
-        max-width: 100%;
-        max-height: 100%;
-        object-fit: contain;
+    /* แผนที่ */
+    #map {
+        width: 100%;
+        height: 150px; /* ความสูงของแผนที่ */
+        border-radius: 12px;
+        border: 1px solid rgba(255,255,255,0.1);
+        z-index: 1;
+        display: none; /* ซ่อนไว้ก่อน */
     }
 
-    /* Grid ข้อมูลสำคัญ (Highlight) */
+    /* กล่องที่อยู่ */
+    .location-text {
+        text-align: center;
+        font-size: 12px;
+        color: #fff;
+        margin-bottom: 15px;
+        display: none; /* ซ่อนไว้ก่อน */
+        background: rgba(56, 189, 248, 0.1);
+        padding: 8px;
+        border-radius: 8px;
+        border: 1px dashed rgba(56, 189, 248, 0.3);
+    }
+    .location-icon { margin-right: 5px; }
+
+    /* Grid ข้อมูล */
     .stats-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
         gap: 8px;
         margin-bottom: 15px;
     }
-
     .stat-box {
-        background: rgba(255,255,255,0.05);
+        background: rgba(255,255,255,0.03);
         padding: 8px;
         border-radius: 8px;
         text-align: center;
     }
+    .stat-label { font-size: 9px; color: var(--text-dim); text-transform: uppercase; }
+    .stat-value { font-family: 'Roboto Mono'; font-size: 12px; font-weight: 700; color: var(--accent); margin-top: 4px; }
 
-    .stat-label {
-        font-size: 10px;
-        color: var(--text-dim);
+    /* Footer */
+    .footer-credit {
+        text-align: center;
+        font-size: 9px;
+        color: #444;
+        margin-top: 10px;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        letter-spacing: 1px;
     }
 
-    .stat-value {
-        font-family: 'Roboto Mono', monospace;
-        font-size: 13px;
-        font-weight: 700;
-        color: var(--accent);
-        margin-top: 2px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    /* รายละเอียดกล้องและเลนส์ */
-    .gear-info {
-        text-align: center;
-        margin-bottom: 15px;
-        padding-bottom: 10px;
-        border-bottom: 1px dashed rgba(255,255,255,0.2);
-    }
-    .gear-model { font-weight: 600; font-size: 16px; color: #fff; }
-    .gear-lens { font-size: 12px; color: var(--text-dim); margin-top: 4px;}
-
-    /* ตารางข้อมูลดิบ (ย่อขนาดให้แคปได้หมด) */
-    .full-data {
-        font-size: 11px;
-        color: #ccc;
-        display: grid;
-        grid-template-columns: 1fr 1fr; /* แบ่ง 2 คอลัมน์ */
-        gap: 5px 15px;
-    }
-
-    .data-row {
-        display: flex;
-        justify-content: space-between;
-        border-bottom: 1px solid rgba(255,255,255,0.05);
-        padding: 2px 0;
-    }
-    .data-key { opacity: 0.6; }
-    .data-val { text-align: right; font-family: 'Roboto Mono'; color: #fff;}
-
-    .footer-note {
-        text-align: center;
-        font-size: 10px;
-        color: #555;
-        margin-top: 15px;
-    }
-
+    /* ปรับแต่ง Marker ของ Leaflet ให้เข้ากับธีม */
+    .leaflet-bar a { background-color: #1e293b !important; color: #fff !important; border-bottom: 1px solid #333 !important; }
 </style>
 </head>
 <body>
 
-    <div class="upload-btn-wrapper">
-        <button class="btn">📸 เลือกรูปภาพเพื่ออ่านค่า</button>
+    <div class="upload-section">
+        <label for="upload" class="btn">
+            <span>📷 เลือกรูปภาพ</span>
+        </label>
         <input type="file" accept="image/*" id="upload">
     </div>
 
     <div class="capture-card" id="card">
-        
-        <div class="img-container">
-            <img id="preview" src="" alt="Preview">
+        <div class="header-info">
+            <div class="cam-model" id="camModel">Unknown Camera</div>
+            <div class="cam-lens" id="camLens">-</div>
         </div>
 
-        <div class="gear-info">
-            <div class="gear-model" id="camModel">-</div>
-            <div class="gear-lens" id="camLens">ไม่ระบุเลนส์</div>
+        <div class="visual-grid">
+            <div class="img-box">
+                <img id="preview" src="" alt="">
+            </div>
+            <div id="map"></div>
+        </div>
+
+        <div class="location-text" id="locText">
+            <span class="location-icon">📍</span> <span id="addressVal">กำลังค้นหาตำแหน่ง...</span>
         </div>
 
         <div class="stats-grid">
@@ -195,36 +190,36 @@
                 <div class="stat-label">ISO</div>
                 <div class="stat-value" id="valISO">-</div>
             </div>
-             <div class="stat-box">
-                <div class="stat-label">Focal</div>
+            <div class="stat-box">
+                <div class="stat-label">Focal Length</div>
                 <div class="stat-value" id="valFL">-</div>
             </div>
-             <div class="stat-box">
+            <div class="stat-box">
                 <div class="stat-label">Date</div>
-                <div class="stat-value" id="valDate" style="font-size:10px;">-</div>
+                <div class="stat-value" id="valDate">-</div>
             </div>
-             <div class="stat-box">
-                <div class="stat-label">Size</div>
-                <div class="stat-value" id="valSize">-</div>
+            <div class="stat-box">
+                <div class="stat-label">Resolution</div>
+                <div class="stat-value" id="valRes">-</div>
             </div>
         </div>
 
-        <div class="full-data" id="exifList">
-            </div>
-
-        <div class="footer-note">EXIF DATA VIEWER</div>
+        <div class="footer-credit">EXIF & LOCATION VIEWER</div>
     </div>
 
 <script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-    // ฟังก์ชันแปลงเศษส่วนให้สวยงาม
-    function formatFraction(n) {
-        if (!n) return '-';
-        if (n >= 1) return n; // เช่น 1/125 -> 0.008... แต่บางที library ส่งมาเป็น number
-        // ถ้า library ส่งมาเป็น number แล้วเราอยากแปลงกลับเป็น 1/x อาจจะยากหน่อยใน JS ธรรมดา
-        // แต่ exif-js มักส่งคืนค่าดิบ ถ้าเป็น String ก็ใช้ได้เลย
-        return n;
+    let map = null;
+
+    // Helper: แปลง DMS (Degree Minute Second) เป็น Decimal
+    function convertDMSToDD(degrees, minutes, seconds, direction) {
+        let dd = degrees + minutes/60 + seconds/(60*60);
+        if (direction == "S" || direction == "W") {
+            dd = dd * -1;
+        } 
+        return dd;
     }
 
     document.getElementById('upload').addEventListener('change', function (e) {
@@ -233,64 +228,99 @@
 
         const img = document.getElementById('preview');
         const card = document.getElementById('card');
+        const mapDiv = document.getElementById('map');
+        const locText = document.getElementById('locText');
         
         img.src = URL.createObjectURL(file);
-        
-        // แสดงการ์ดเมื่อเลือกรูป
-        card.classList.add('active'); 
+        card.classList.add('active');
+
+        // รีเซ็ตค่าเก่า
+        mapDiv.style.display = 'none';
+        locText.style.display = 'none';
+        document.getElementById('addressVal').textContent = "กำลังค้นหาตำแหน่ง...";
 
         img.onload = function () {
             EXIF.getData(img, function () {
-                const allTags = EXIF.getAllTags(this);
-                const list = document.getElementById('exifList');
-                list.innerHTML = '';
-
-                // 1. ดึงค่า Highlight มาใส่ด้านบน
+                // 1. Basic Stats
                 const make = EXIF.getTag(this, "Make") || "";
-                const model = EXIF.getTag(this, "Model") || "Unknown Camera";
+                const model = EXIF.getTag(this, "Model") || "Unknown Device";
                 document.getElementById('camModel').textContent = `${make} ${model}`.trim();
-                document.getElementById('camLens').textContent = EXIF.getTag(this, "Undefined") || ""; // LensModel มักหาเจอยากใน js-exif พื้นฐานอาจต้องดู key อื่น
+                document.getElementById('camLens').textContent = EXIF.getTag(this, "LensModel") || EXIF.getTag(this, "Undefined") || "Standard Lens";
 
                 document.getElementById('valF').textContent = "f/" + (EXIF.getTag(this, "FNumber") || "-");
-                
                 let shutter = EXIF.getTag(this, "ExposureTime");
-                if(shutter && shutter < 1) {
-                    // พยายามแปลงเป็นเศษส่วนอย่างง่าย (คร่าวๆ)
-                     shutter = "1/" + Math.round(1/shutter);
-                }
-                document.getElementById('valS').textContent = shutter ? (typeof shutter === 'number' ? shutter : shutter.toString()) : "-";
-                
+                if(shutter && shutter < 1) shutter = "1/" + Math.round(1/shutter);
+                document.getElementById('valS').textContent = shutter || "-";
                 document.getElementById('valISO').textContent = EXIF.getTag(this, "ISOSpeedRatings") || "-";
                 document.getElementById('valFL').textContent = (EXIF.getTag(this, "FocalLength") || "-") + "mm";
                 
-                const dateTaken = EXIF.getTag(this, "DateTimeOriginal");
-                document.getElementById('valDate').textContent = dateTaken ? dateTaken.split(' ')[0].replace(/:/g, '/') : "-";
-
+                const date = EXIF.getTag(this, "DateTimeOriginal");
+                document.getElementById('valDate').textContent = date ? date.split(' ')[0].replace(/:/g, '/') : "-";
+                
                 const w = EXIF.getTag(this, "PixelXDimension");
                 const h = EXIF.getTag(this, "PixelYDimension");
-                document.getElementById('valSize').textContent = (w && h) ? `${w}x${h}` : "-";
+                document.getElementById('valRes').textContent = (w && h) ? `${w}x${h}` : "-";
 
-                // 2. วนลูปค่าที่เหลือใส่ข้างล่าง (ตัดค่า Highlight ออกเพื่อไม่ให้ซ้ำ)
-                const skipKeys = ['Make', 'Model', 'FNumber', 'ExposureTime', 'ISOSpeedRatings', 'FocalLength', 'DateTimeOriginal', 'PixelXDimension', 'PixelYDimension', 'MakerNote', 'UserComment', 'ExifVersion', 'FlashpixVersion', 'ComponentsConfiguration'];
+                // 2. GPS & Map Logic
+                const lat = EXIF.getTag(this, "GPSLatitude");
+                const latRef = EXIF.getTag(this, "GPSLatitudeRef");
+                const lng = EXIF.getTag(this, "GPSLongitude");
+                const lngRef = EXIF.getTag(this, "GPSLongitudeRef");
 
-                if (Object.keys(allTags).length === 0) {
-                    list.innerHTML = '<div style="grid-column: span 2; text-align: center;">❌ ไม่พบข้อมูล EXIF</div>';
-                } else {
-                    for (let key in allTags) {
-                        if (!skipKeys.includes(key) && typeof allTags[key] !== 'object') { // กรอง object ใหญ่ๆ ออก
-                            let val = allTags[key];
-                            // ตัดข้อความยาวเกินไป
-                            if(typeof val === 'string' && val.length > 15) val = val.substring(0, 15) + '...';
-                            
-                            const row = `
-                                <div class="data-row">
-                                    <span class="data-key">${key}</span>
-                                    <span class="data-val">${val}</span>
-                                </div>
-                            `;
-                            list.innerHTML += row;
-                        }
+                if (lat && lng && latRef && lngRef) {
+                    // แปลงพิกัด
+                    const latDec = convertDMSToDD(lat[0], lat[1], lat[2], latRef);
+                    const lngDec = convertDMSToDD(lng[0], lng[1], lng[2], lngRef);
+
+                    // แสดงแผนที่
+                    mapDiv.style.display = 'block';
+                    locText.style.display = 'block';
+
+                    // สร้างแผนที่ (Leaflet) ถ้ายังไม่มี
+                    if (!map) {
+                        map = L.map('map', { zoomControl: false, attributionControl: false }).setView([latDec, lngDec], 13);
+                        
+                        // ใช้ Dark Theme Map Tiles (CartoDB Dark Matter)
+                        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                            maxZoom: 19
+                        }).addTo(map);
+                    } else {
+                        map.setView([latDec, lngDec], 13);
+                        map.eachLayer((layer) => {
+                            if (layer instanceof L.Marker) { map.removeLayer(layer); }
+                        });
                     }
+
+                    // เพิ่ม Marker
+                    L.marker([latDec, lngDec]).addTo(map);
+                    // บังคับ Map ให้ render ใหม่ (แก้บั๊ก map เทา)
+                    setTimeout(() => { map.invalidateSize(); }, 300);
+
+                    // 3. Reverse Geocoding (หาชื่อสถานที่)
+                    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latDec}&lon=${lngDec}&accept-language=th`)
+                        .then(response => response.json())
+                        .then(data => {
+                            const addr = data.address;
+                            // เลือกเฉพาะส่วนสำคัญ: ตำบล, อำเภอ, จังหวัด
+                            const parts = [];
+                            if (addr.village) parts.push(addr.village);
+                            if (addr.suburb) parts.push(addr.suburb);
+                            if (addr.city_district) parts.push(addr.city_district);
+                            if (addr.city || addr.town || addr.county) parts.push(addr.city || addr.town || addr.county);
+                            if (addr.state) parts.push(addr.state);
+
+                            // กรองค่าซ้ำและแสดงผล
+                            const fullAddr = [...new Set(parts)].join(', ');
+                            document.getElementById('addressVal').textContent = fullAddr || "ไม่พบชื่อสถานที่";
+                        })
+                        .catch(err => {
+                            document.getElementById('addressVal').textContent = "โหลดชื่อสถานที่ล้มเหลว";
+                        });
+
+                } else {
+                    // กรณีไม่มี GPS
+                    document.getElementById('addressVal').textContent = "ไม่มีข้อมูล GPS ในรูปภาพนี้";
+                    locText.style.display = 'block';
                 }
             });
         };
