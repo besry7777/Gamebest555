@@ -3,208 +3,138 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pro EXIF Card + Map</title>
+<title>Pro EXIF Card + Map & Time</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&family=Roboto+Mono:wght@400;700&display=swap');
 
     :root {
-        --bg-color: #0f172a;
+        --bg-color: #020617;
         --card-bg: #1e293b;
         --accent: #38bdf8;
+        --accent-secondary: #818cf8;
         --text-main: #f1f5f9;
         --text-dim: #94a3b8;
     }
 
     * { box-sizing: border-box; }
-
     body {
         font-family: 'Sarabun', sans-serif;
         background: var(--bg-color);
         color: var(--text-main);
-        margin: 0;
-        padding: 20px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        min-height: 100vh;
+        margin: 0; padding: 20px;
+        display: flex; flex-direction: column; align-items: center;
     }
 
-    /* ปุ่ม Upload */
-    .upload-section { margin-bottom: 20px; text-align: center; }
     .btn {
-        border: 1px solid var(--accent);
-        color: var(--accent);
-        background: transparent;
-        padding: 10px 24px;
-        border-radius: 50px;
-        font-size: 14px;
-        font-weight: bold;
-        cursor: pointer;
-        transition: 0.3s;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
+        border: 1px solid var(--accent); color: var(--accent);
+        background: transparent; padding: 10px 24px; border-radius: 50px;
+        font-size: 14px; font-weight: bold; cursor: pointer; transition: 0.3s;
+        margin-bottom: 20px;
     }
-    .btn:hover { background: var(--accent); color: #0f172a; box-shadow: 0 0 15px rgba(56, 189, 248, 0.4); }
+    .btn:hover { background: var(--accent); color: #0f172a; }
     input[type=file] { display: none; }
 
-    /* การ์ดหลัก */
     .capture-card {
         background: var(--card-bg);
-        border: 1px solid rgba(255,255,255,0.1);
-        width: 100%;
-        max-width: 400px; 
-        border-radius: 20px;
-        padding: 20px;
-        box-shadow: 0 20px 50px rgba(0,0,0,0.6);
-        display: none;
-        position: relative;
-        overflow: hidden;
+        width: 100%; max-width: 400px; 
+        border-radius: 24px; padding: 20px;
+        box-shadow: 0 25px 50px -12px rgba(0,0,0,0.7);
+        display: none; border: 1px solid rgba(255,255,255,0.1);
     }
-    .capture-card.active { display: block; animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+    .capture-card.active { display: block; }
 
-    @keyframes popIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+    /* ส่วนหัว: รุ่นกล้อง */
+    .header { text-align: center; margin-bottom: 15px; }
+    .cam-model { font-size: 18px; font-weight: 600; color: #fff; }
+    .cam-lens { font-size: 11px; color: var(--accent); font-family: 'Roboto Mono'; opacity: 0.8; }
 
-    /* ส่วนหัว (รุ่นกล้อง) */
-    .header-info {
-        text-align: center;
-        margin-bottom: 15px;
-        border-bottom: 1px solid rgba(255,255,255,0.1);
-        padding-bottom: 10px;
-    }
-    .cam-model { font-size: 18px; font-weight: 600; color: #fff; letter-spacing: 0.5px; }
-    .cam-lens { font-size: 12px; color: var(--accent); margin-top: 4px; font-family: 'Roboto Mono'; }
-
-    /* Layout รูป + แผนที่ */
-    .visual-grid {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 10px;
-        margin-bottom: 15px;
-    }
-    
-    .img-box {
-        width: 100%;
-        height: 180px;
-        background: #000;
-        border-radius: 12px;
-        overflow: hidden;
-        border: 1px solid #333;
-        display: flex;
-        justify-content: center;
-        align-items: center;
+    /* รูปภาพและแผนที่ */
+    .visual-stack { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; }
+    .img-box { 
+        width: 100%; height: 220px; background: #000; 
+        border-radius: 15px; overflow: hidden; border: 1px solid #333;
+        display: flex; justify-content: center; align-items: center;
     }
     .img-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
+    
+    #map { width: 100%; height: 120px; border-radius: 15px; display: none; }
 
-    /* แผนที่ */
-    #map {
-        width: 100%;
-        height: 150px; /* ความสูงของแผนที่ */
-        border-radius: 12px;
-        border: 1px solid rgba(255,255,255,0.1);
-        z-index: 1;
-        display: none; /* ซ่อนไว้ก่อน */
+    /* แถบข้อมูลสถานที่และเวลา (Highlight) */
+    .info-bar {
+        background: rgba(15, 23, 42, 0.6);
+        border-radius: 12px; padding: 12px;
+        margin-bottom: 15px; border: 1px solid rgba(56, 189, 248, 0.2);
     }
-
-    /* กล่องที่อยู่ */
-    .location-text {
-        text-align: center;
-        font-size: 12px;
-        color: #fff;
-        margin-bottom: 15px;
-        display: none; /* ซ่อนไว้ก่อน */
-        background: rgba(56, 189, 248, 0.1);
-        padding: 8px;
-        border-radius: 8px;
-        border: 1px dashed rgba(56, 189, 248, 0.3);
+    .loc-row { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px; }
+    .time-row { 
+        display: flex; justify-content: space-between; align-items: center;
+        padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.1);
     }
-    .location-icon { margin-right: 5px; }
+    .label-mini { font-size: 9px; color: var(--text-dim); text-transform: uppercase; }
+    .val-mini { font-size: 12px; color: #fff; }
+    .val-time { font-family: 'Roboto Mono'; font-size: 16px; color: var(--accent); font-weight: bold; }
 
-    /* Grid ข้อมูล */
+    /* Stats Grid */
     .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 8px;
-        margin-bottom: 15px;
+        display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
     }
     .stat-box {
-        background: rgba(255,255,255,0.03);
-        padding: 8px;
-        border-radius: 8px;
-        text-align: center;
+        background: rgba(255,255,255,0.03); padding: 10px 5px;
+        border-radius: 10px; text-align: center; border: 1px solid rgba(255,255,255,0.05);
     }
-    .stat-label { font-size: 9px; color: var(--text-dim); text-transform: uppercase; }
-    .stat-value { font-family: 'Roboto Mono'; font-size: 12px; font-weight: 700; color: var(--accent); margin-top: 4px; }
+    .stat-label { font-size: 9px; color: var(--text-dim); margin-bottom: 4px; }
+    .stat-value { font-family: 'Roboto Mono'; font-size: 12px; color: var(--accent-secondary); font-weight: 700; }
 
-    /* Footer */
-    .footer-credit {
-        text-align: center;
-        font-size: 9px;
-        color: #444;
-        margin-top: 10px;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-    }
-
-    /* ปรับแต่ง Marker ของ Leaflet ให้เข้ากับธีม */
-    .leaflet-bar a { background-color: #1e293b !important; color: #fff !important; border-bottom: 1px solid #333 !important; }
+    .footer { text-align: center; font-size: 9px; color: #475569; margin-top: 15px; letter-spacing: 2px; }
 </style>
 </head>
 <body>
 
-    <div class="upload-section">
-        <label for="upload" class="btn">
-            <span>📷 เลือกรูปภาพ</span>
-        </label>
-        <input type="file" accept="image/*" id="upload">
-    </div>
+    <label for="upload" class="btn">📸 เลือกรูปภาพ</label>
+    <input type="file" accept="image/*" id="upload">
 
     <div class="capture-card" id="card">
-        <div class="header-info">
-            <div class="cam-model" id="camModel">Unknown Camera</div>
+        <div class="header">
+            <div class="cam-model" id="camModel">Camera Loading...</div>
             <div class="cam-lens" id="camLens">-</div>
         </div>
 
-        <div class="visual-grid">
-            <div class="img-box">
-                <img id="preview" src="" alt="">
-            </div>
+        <div class="visual-stack">
+            <div class="img-box"><img id="preview"></div>
             <div id="map"></div>
         </div>
 
-        <div class="location-text" id="locText">
-            <span class="location-icon">📍</span> <span id="addressVal">กำลังค้นหาตำแหน่ง...</span>
+        <div class="info-bar">
+            <div class="loc-row">
+                <span>📍</span>
+                <div>
+                    <div class="label-mini">Location</div>
+                    <div class="val-mini" id="addressVal">No GPS Data</div>
+                </div>
+            </div>
+            <div class="time-row">
+                <div>
+                    <div class="label-mini">Date</div>
+                    <div class="val-mini" id="valDate">-</div>
+                </div>
+                <div style="text-align: right;">
+                    <div class="label-mini">Time Taken</div>
+                    <div class="val-time" id="valTime">--:--:--</div>
+                </div>
+            </div>
         </div>
 
         <div class="stats-grid">
-            <div class="stat-box">
-                <div class="stat-label">Aperture</div>
-                <div class="stat-value" id="valF">-</div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-label">Shutter</div>
-                <div class="stat-value" id="valS">-</div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-label">ISO</div>
-                <div class="stat-value" id="valISO">-</div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-label">Focal Length</div>
-                <div class="stat-value" id="valFL">-</div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-label">Date</div>
-                <div class="stat-value" id="valDate">-</div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-label">Resolution</div>
-                <div class="stat-value" id="valRes">-</div>
-            </div>
+            <div class="stat-box"><div class="stat-label">APERTURE</div><div class="stat-value" id="valF">-</div></div>
+            <div class="stat-box"><div class="stat-label">SHUTTER</div><div class="stat-value" id="valS">-</div></div>
+            <div class="stat-box"><div class="stat-label">ISO</div><div class="stat-value" id="valISO">-</div></div>
+            <div class="stat-box"><div class="stat-label">FOCAL</div><div class="stat-value" id="valFL">-</div></div>
+            <div class="stat-box"><div class="stat-label">W x H</div><div class="stat-value" id="valRes">-</div></div>
+            <div class="stat-box"><div class="stat-label">EXPOSURE</div><div class="stat-value" id="valExp">0 ev</div></div>
         </div>
 
-        <div class="footer-credit">EXIF & LOCATION VIEWER</div>
+        <div class="footer">METADATA CAPTURE PRO</div>
     </div>
 
 <script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
@@ -213,13 +143,9 @@
 <script>
     let map = null;
 
-    // Helper: แปลง DMS (Degree Minute Second) เป็น Decimal
-    function convertDMSToDD(degrees, minutes, seconds, direction) {
-        let dd = degrees + minutes/60 + seconds/(60*60);
-        if (direction == "S" || direction == "W") {
-            dd = dd * -1;
-        } 
-        return dd;
+    function convertDMSToDD(d, m, s, ref) {
+        let dd = d + m/60 + s/3600;
+        return (ref === "S" || ref === "W") ? dd * -1 : dd;
     }
 
     document.getElementById('upload').addEventListener('change', function (e) {
@@ -228,104 +154,62 @@
 
         const img = document.getElementById('preview');
         const card = document.getElementById('card');
-        const mapDiv = document.getElementById('map');
-        const locText = document.getElementById('locText');
         
         img.src = URL.createObjectURL(file);
         card.classList.add('active');
 
-        // รีเซ็ตค่าเก่า
-        mapDiv.style.display = 'none';
-        locText.style.display = 'none';
-        document.getElementById('addressVal').textContent = "กำลังค้นหาตำแหน่ง...";
-
         img.onload = function () {
             EXIF.getData(img, function () {
-                // 1. Basic Stats
-                const make = EXIF.getTag(this, "Make") || "";
-                const model = EXIF.getTag(this, "Model") || "Unknown Device";
-                document.getElementById('camModel').textContent = `${make} ${model}`.trim();
-                document.getElementById('camLens').textContent = EXIF.getTag(this, "LensModel") || EXIF.getTag(this, "Undefined") || "Standard Lens";
-
-                document.getElementById('valF').textContent = "f/" + (EXIF.getTag(this, "FNumber") || "-");
-                let shutter = EXIF.getTag(this, "ExposureTime");
-                if(shutter && shutter < 1) shutter = "1/" + Math.round(1/shutter);
-                document.getElementById('valS').textContent = shutter || "-";
+                // ดึงข้อมูลพื้นฐาน
+                document.getElementById('camModel').textContent = EXIF.getTag(this, "Model") || "Smartphone";
+                document.getElementById('camLens').textContent = EXIF.getTag(this, "LensModel") || "Built-in Lens";
+                document.getElementById('valF').textContent = EXIF.getTag(this, "FNumber") ? "f/" + EXIF.getTag(this, "FNumber") : "-";
+                
+                let s = EXIF.getTag(this, "ExposureTime");
+                document.getElementById('valS').textContent = s ? (s < 1 ? `1/${Math.round(1/s)}` : s) + "s" : "-";
                 document.getElementById('valISO').textContent = EXIF.getTag(this, "ISOSpeedRatings") || "-";
                 document.getElementById('valFL').textContent = (EXIF.getTag(this, "FocalLength") || "-") + "mm";
+                document.getElementById('valRes').textContent = `${EXIF.getTag(this, "PixelXDimension") || 0}x${EXIF.getTag(this, "PixelYDimension") || 0}`;
                 
-                const date = EXIF.getTag(this, "DateTimeOriginal");
-                document.getElementById('valDate').textContent = date ? date.split(' ')[0].replace(/:/g, '/') : "-";
-                
-                const w = EXIF.getTag(this, "PixelXDimension");
-                const h = EXIF.getTag(this, "PixelYDimension");
-                document.getElementById('valRes').textContent = (w && h) ? `${w}x${h}` : "-";
+                // จัดการเรื่อง "เวลา" และ "วันที่"
+                const dateTime = EXIF.getTag(this, "DateTimeOriginal");
+                if (dateTime) {
+                    const parts = dateTime.split(" "); // ["2023:10:25", "14:30:05"]
+                    document.getElementById('valDate').textContent = parts[0].replace(/:/g, "/");
+                    document.getElementById('valTime').textContent = parts[1];
+                }
 
-                // 2. GPS & Map Logic
+                // จัดการเรื่อง GPS และแผนที่
                 const lat = EXIF.getTag(this, "GPSLatitude");
-                const latRef = EXIF.getTag(this, "GPSLatitudeRef");
                 const lng = EXIF.getTag(this, "GPSLongitude");
-                const lngRef = EXIF.getTag(this, "GPSLongitudeRef");
-
-                if (lat && lng && latRef && lngRef) {
-                    // แปลงพิกัด
-                    const latDec = convertDMSToDD(lat[0], lat[1], lat[2], latRef);
-                    const lngDec = convertDMSToDD(lng[0], lng[1], lng[2], lngRef);
-
-                    // แสดงแผนที่
-                    mapDiv.style.display = 'block';
-                    locText.style.display = 'block';
-
-                    // สร้างแผนที่ (Leaflet) ถ้ายังไม่มี
+                if (lat && lng) {
+                    const latDec = convertDMSToDD(lat[0], lat[1], lat[2], EXIF.getTag(this, "GPSLatitudeRef"));
+                    const lngDec = convertDMSToDD(lng[0], lng[1], lng[2], EXIF.getTag(this, "GPSLongitudeRef"));
+                    
+                    document.getElementById('map').style.display = 'block';
                     if (!map) {
-                        map = L.map('map', { zoomControl: false, attributionControl: false }).setView([latDec, lngDec], 13);
-                        
-                        // ใช้ Dark Theme Map Tiles (CartoDB Dark Matter)
-                        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                            maxZoom: 19
-                        }).addTo(map);
+                        map = L.map('map', {zoomControl:false, attributionControl:false}).setView([latDec, lngDec], 14);
+                        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
                     } else {
-                        map.setView([latDec, lngDec], 13);
-                        map.eachLayer((layer) => {
-                            if (layer instanceof L.Marker) { map.removeLayer(layer); }
-                        });
+                        map.setView([latDec, lngDec], 14);
                     }
-
-                    // เพิ่ม Marker
                     L.marker([latDec, lngDec]).addTo(map);
-                    // บังคับ Map ให้ render ใหม่ (แก้บั๊ก map เทา)
-                    setTimeout(() => { map.invalidateSize(); }, 300);
+                    setTimeout(() => map.invalidateSize(), 400);
 
-                    // 3. Reverse Geocoding (หาชื่อสถานที่)
+                    // หาที่อยู่
                     fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latDec}&lon=${lngDec}&accept-language=th`)
-                        .then(response => response.json())
+                        .then(res => res.json())
                         .then(data => {
-                            const addr = data.address;
-                            // เลือกเฉพาะส่วนสำคัญ: ตำบล, อำเภอ, จังหวัด
-                            const parts = [];
-                            if (addr.village) parts.push(addr.village);
-                            if (addr.suburb) parts.push(addr.suburb);
-                            if (addr.city_district) parts.push(addr.city_district);
-                            if (addr.city || addr.town || addr.county) parts.push(addr.city || addr.town || addr.county);
-                            if (addr.state) parts.push(addr.state);
-
-                            // กรองค่าซ้ำและแสดงผล
-                            const fullAddr = [...new Set(parts)].join(', ');
-                            document.getElementById('addressVal').textContent = fullAddr || "ไม่พบชื่อสถานที่";
-                        })
-                        .catch(err => {
-                            document.getElementById('addressVal').textContent = "โหลดชื่อสถานที่ล้มเหลว";
+                            const a = data.address;
+                            document.getElementById('addressVal').textContent = `${a.suburb || a.district || ''} ${a.city || a.province || ''}`.trim();
                         });
-
                 } else {
-                    // กรณีไม่มี GPS
-                    document.getElementById('addressVal').textContent = "ไม่มีข้อมูล GPS ในรูปภาพนี้";
-                    locText.style.display = 'block';
+                    document.getElementById('map').style.display = 'none';
+                    document.getElementById('addressVal').textContent = "No GPS Metadata Found";
                 }
             });
         };
     });
 </script>
-
 </body>
 </html>
