@@ -3,7 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Verification Report (iPhone 13 Landscape)</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#f0f2f5">
+<title>Verification Report</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&family=Roboto+Mono:wght@500;700&display=swap');
@@ -27,11 +30,12 @@
         margin: 0; padding: 20px;
         min-height: 100vh;
         display: flex; flex-direction: column; align-items: center;
-        /* ป้องกันการเด้งของหน้าจอใน iOS */
         overscroll-behavior: none;
+        /* ป้องกันการเลือก Text ตอนแตะค้างเพื่อความเนียนเหมือนแอป */
+        -webkit-user-select: none; 
+        user-select: none;
     }
 
-    /* ปุ่มอัปโหลด (จะซ่อนเมื่อโชว์ Report) */
     .upload-area {
         text-align: center;
         margin-top: 20vh;
@@ -56,12 +60,11 @@
         box-shadow: 0 10px 25px rgba(0,0,0,0.08);
         border: 1px solid var(--border);
         overflow: hidden;
-        display: none; /* ซ่อนไว้ก่อน */
+        display: none; 
         flex-direction: column;
     }
     .report-card.active { display: flex; animation: fadeIn 0.5s ease; }
 
-    /* --- Styles สำหรับ Layout ปกติ (แนวตั้ง) --- */
     .card-header {
         padding: 12px 20px;
         border-bottom: 1px solid var(--border);
@@ -72,46 +75,22 @@
     .doc-title { font-weight: 700; color: var(--primary); font-size: 16px; }
     .doc-ref { font-size: 11px; color: var(--text-sub); font-family: 'Roboto Mono'; background: #e2e8f0; padding: 3px 8px; border-radius: 4px; }
 
-    /* Container หลักของเนื้อหา */
-    .content-wrapper {
-        display: flex; flex-direction: column;
-        flex-grow: 1;
-        overflow: hidden;
-    }
+    .content-wrapper { display: flex; flex-direction: column; flex-grow: 1; overflow: hidden; }
 
-    .visual-row {
-        display: grid; grid-template-columns: 1fr 1fr;
-        height: 300px;
-        border-bottom: 1px solid var(--border);
-    }
+    .visual-row { display: grid; grid-template-columns: 1fr 1fr; height: 300px; border-bottom: 1px solid var(--border); }
     
-    /* ปรับแต่งส่วนรูปภาพ */
     .img-container {
-        /* เปลี่ยนจากสีดำ เป็นสีเทาอ่อนหรือขาวตามต้องการ */
         background: #f1f5f9; 
         display: flex; justify-content: center; align-items: center;
-        overflow: hidden;
-        position: relative;
+        overflow: hidden; position: relative;
         border-right: 1px solid var(--border);
     }
-    .img-container img { 
-        width: 100%; 
-        height: 100%; 
-        /* contain = เห็นครบทุกส่วน, cover = เต็มพื้นที่แต่โดนตัดขอบ */
-        object-fit: contain; 
-    }
+    .img-container img { width: 100%; height: 100%; object-fit: contain; }
     
     #map { width: 100%; height: 100%; z-index: 1; background: #eee; }
 
-    .context-row {
-        display: grid; grid-template-columns: 60% 40%;
-        border-bottom: 1px solid var(--border);
-        flex-shrink: 0;
-    }
-    .context-box {
-        padding: 12px 16px;
-        display: flex; flex-direction: column; justify-content: center;
-    }
+    .context-row { display: grid; grid-template-columns: 60% 40%; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .context-box { padding: 12px 16px; display: flex; flex-direction: column; justify-content: center; }
     .context-box:first-child { border-right: 1px solid var(--border); }
 
     .c-label { font-size: 10px; font-weight: 700; color: var(--accent); text-transform: uppercase; margin-bottom: 4px; }
@@ -122,7 +101,6 @@
 
     .tech-footer { padding: 10px 16px; background: #ffffff; flex-shrink: 0; }
     .model-badge { font-size: 12px; font-weight: 600; color: var(--primary); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
-    
     .tech-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
     .tech-item { background: #f8fafc; padding: 6px; border-radius: 4px; border: 1px solid var(--border); text-align: center; }
     .t-label { font-size: 8px; color: var(--text-sub); margin-bottom: 2px; }
@@ -131,54 +109,53 @@
     .hidden-actions { padding: 8px; text-align: center; background: #fafafa; border-top: 1px dashed #e2e8f0; }
     .edit-link { color: #cbd5e1; font-size: 10px; text-decoration: none; cursor: pointer; }
 
-    /* ========================================= */
-    /* MEDIA QUERY: สำหรับ Landscape (iPhone)   */
-    /* ========================================= */
+    /* ปุ่มจำลอง Fullscreen สำหรับกดซ่อน UI (ถ้าไม่ได้ Add to home screen) */
+    #fullscreenBtn {
+        position: fixed; bottom: 20px; right: 20px;
+        background: rgba(0,0,0,0.5); color: white;
+        border: none; border-radius: 50%; width: 40px; height: 40px;
+        font-size: 20px; cursor: pointer; z-index: 999;
+        display: none; /* ซ่อนโดย Default */
+    }
+
+    /* MEDIA QUERY: Landscape (iPhone) */
     @media (orientation: landscape) {
         body {
             padding: 0; margin: 0;
-            background: #000; /* พื้นหลังนอกการ์ดเป็นสีดำเพื่อให้โฟกัส */
+            background: #000; 
             justify-content: center;
             height: 100vh; width: 100vw;
             overflow: hidden;
         }
 
-        .upload-area { display: none; } /* ซ่อนปุ่มอัปโหลดถาวรเมื่อหมุนจอ */
+        .upload-area { display: none; }
         .upload-area.show-init { display: block; margin-top: 15%; }
 
         .report-card.active {
             width: 100vw; height: 100vh;
             max-width: none; border-radius: 0; border: none;
-            /* เปลี่ยน Layout เป็น Grid แนวนอน */
             display: grid;
-            grid-template-columns: 55% 45%; /* รูปเอาไป 55% */
+            grid-template-columns: 55% 45%; 
             grid-template-rows: 100%;
         }
 
-        /* คอลัมน์ซ้าย: รูปภาพ */
         .img-container {
             grid-column: 1; grid-row: 1;
             height: 100%; width: 100%;
             border-right: 1px solid var(--border);
             border-bottom: none;
-            background: #f8fafc; /* พื้นหลังสีสว่างตามที่ขอ */
+            background: #f8fafc;
         }
         
-        /* คอลัมน์ขวา: ข้อมูลทั้งหมด */
         .content-wrapper {
             grid-column: 2; grid-row: 1;
             display: flex; flex-direction: column;
             height: 100vh;
         }
 
-        /* จัดเรียงลำดับใหม่ในคอลัมน์ขวา */
-        .visual-row {
-            display: contents; /* ยกเลิก Grid เดิม */
-        }
+        .visual-row { display: contents; }
         #map {
-            order: 2; /* แผนที่อยู่ลำดับ 2 */
-            height: 40%; /* ความสูงแผนที่ */
-            width: 100%;
+            order: 2; height: 40%; width: 100%;
             border-bottom: 1px solid var(--border);
         }
 
@@ -187,9 +164,7 @@
         .context-box { flex: 1; justify-content: center; padding: 10px 15px; }
         .tech-footer { order: 4; height: auto; padding: 8px 15px; background: #fff; padding-bottom: max(10px, env(safe-area-inset-bottom)); }
         
-        .hidden-actions { display: none; } /* ซ่อนปุ่มแก้ไขเมื่อ Landscape เพื่อความสวยงาม */
-        
-        /* ปรับ Tech Grid ให้เล็กลงในแนวนอน */
+        .hidden-actions { display: none; }
         .tech-grid { gap: 4px; }
         .tech-item { padding: 4px; }
     }
@@ -200,11 +175,16 @@
 </head>
 <body>
 
+    <button id="fullscreenBtn" onclick="toggleFullScreen()">⛶</button>
+
     <div class="upload-area" id="uploadArea">
         <label for="upload" class="upload-btn">
             <span>📷</span> เลือกรูปตรวจสอบ
         </label>
-        <p style="margin-top:10px; font-size:12px; color:#999;">(รองรับการหมุนจอ iPhone Landscape)</p>
+        <div style="margin-top:15px; font-size:12px; color:#666; max-width: 300px; margin-left: auto; margin-right: auto;">
+            <b>วิธีทำให้เต็มจอ (ซ่อนแถบบน-ล่าง):</b><br>
+            กดปุ่มแชร์ (Share) > เลือก "เพิ่มไปยังหน้าจอโฮม" (Add to Home Screen) > เข้าใช้งานผ่านไอคอนใหม่
+        </div>
     </div>
     <input type="file" accept="image/*" id="upload">
 
@@ -255,6 +235,25 @@
 <script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+    // ตรวจสอบว่าเป็นโหมด Standalone (App) หรือไม่
+    if (window.navigator.standalone === true) {
+        // ถ้าเปิดผ่าน App Mode แล้ว ไม่ต้องทำอะไร มันจะเต็มจอเอง
+    } else {
+        // ถ้าเปิดผ่าน Safari ปกติ ให้โชว์ปุ่ม Fullscreen เผื่อใช้กับ Android/Desktop ได้
+        // แต่ใน iOS Safari ปุ่มนี้มักจะไม่ทำงาน
+        document.getElementById('fullscreenBtn').style.display = 'block';
+    }
+
+    function toggleFullScreen() {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(err => {
+                alert("สำหรับ iPhone: เพื่อซ่อนแถบ Address Bar สมบูรณ์แบบ \n\nโปรดกดปุ่ม 'แชร์' ด้านล่าง \nแล้วเลือก 'เพิ่มไปยังหน้าจอโฮม' (Add to Home Screen)");
+            });
+        } else {
+            document.exitFullscreen();
+        }
+    }
+
     let map = null, marker = null;
 
     function convertDMSToDD(degrees, direction) {
@@ -298,12 +297,11 @@
         if(img.src) URL.revokeObjectURL(img.src);
         img.src = URL.createObjectURL(file);
         
-        // UI Handling
-        uploadArea.style.display = 'none'; // ซ่อนปุ่มเมื่ออัปโหลด
+        uploadArea.style.display = 'none';
+        document.getElementById('fullscreenBtn').style.display = 'none'; // ซ่อนปุ่ม Fullscreen เมื่อโชว์ Report
         card.classList.add('active');
 
         img.onload = function () {
-            // Fix Leaflet Map resizing issue when layout changes
             setTimeout(() => { if(map) map.invalidateSize(); }, 500);
 
             EXIF.getData(img, function () {
@@ -384,7 +382,6 @@
         };
     });
 
-    // Handle Resize/Rotate
     window.addEventListener('resize', () => {
         if(map) map.invalidateSize();
     });
