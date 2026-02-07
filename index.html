@@ -35,11 +35,18 @@
         user-select: none;
     }
 
+    /* อนุญาตให้เลือกข้อความใน Input ได้ (แก้ปัญหา iPhone พิมพ์ไม่ได้) */
+    input, textarea {
+        -webkit-user-select: text !important;
+        user-select: text !important;
+    }
+
     /* ปุ่มอัปโหลด */
     .upload-area {
         text-align: center;
-        margin-top: 20vh;
+        margin-top: 15vh;
         transition: 0.3s;
+        z-index: 10;
     }
     .upload-btn {
         background: var(--accent); color: white;
@@ -62,6 +69,7 @@
         overflow: hidden;
         display: none; 
         flex-direction: column;
+        margin-bottom: 50px; /* เผื่อที่ด้านล่าง */
     }
     .report-card.active { display: flex; animation: fadeIn 0.5s ease; }
 
@@ -82,10 +90,19 @@
         display: flex; justify-content: center; align-items: center;
         overflow: hidden; position: relative;
         border-right: 1px solid var(--border);
+        min-height: 250px; /* กำหนดความสูงขั้นต่ำ */
     }
-    .img-container img { width: 100%; height: 100%; object-fit: contain; }
+    .img-container img { width: 100%; height: 100%; object-fit: contain; max-height: 400px; }
     
-    #map { width: 100%; height: 100%; z-index: 1; background: #eee; }
+    /* กล่องแผนที่ */
+    #map-container {
+        width: 100%;
+        height: 200px; /* ความสูงแผนที่ */
+        border-bottom: 1px solid var(--border);
+        position: relative;
+        background: #eee;
+    }
+    #map { width: 100%; height: 100%; z-index: 1; }
 
     .context-row { display: grid; grid-template-columns: 60% 40%; border-bottom: 1px solid var(--border); flex-shrink: 0; }
     .context-box { padding: 12px 16px; display: flex; flex-direction: column; justify-content: center; }
@@ -105,15 +122,30 @@
     .t-val { font-family: 'Roboto Mono'; font-size: 10px; color: var(--primary); font-weight: 600; }
 
     .hidden-actions { padding: 8px; text-align: center; background: #fafafa; border-top: 1px dashed #e2e8f0; }
-    .edit-link { color: #cbd5e1; font-size: 10px; text-decoration: none; cursor: pointer; }
+    .edit-link { color: #64748b; font-size: 12px; text-decoration: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; }
 
-    #fullscreenBtn {
-        position: fixed; bottom: 20px; right: 20px;
-        background: rgba(0,0,0,0.5); color: white;
-        border: none; border-radius: 50%; width: 40px; height: 40px;
-        font-size: 20px; cursor: pointer; z-index: 999;
-        display: none;
+    /* --- Modal Edit (หน้าต่างแก้ไข) --- */
+    .modal-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.5); z-index: 2000;
+        display: none; justify-content: center; align-items: center;
+        backdrop-filter: blur(3px);
     }
+    .modal-box {
+        background: white; width: 90%; max-width: 400px;
+        padding: 20px; border-radius: 12px;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+    }
+    .modal-title { font-weight: 700; margin-bottom: 15px; color: var(--primary); }
+    .modal-input {
+        width: 100%; padding: 10px; margin-bottom: 10px;
+        border: 1px solid #cbd5e1; border-radius: 6px;
+        font-family: 'Sarabun', sans-serif;
+        font-size: 16px; /* 16px ป้องกัน iPhone Zoom */
+    }
+    .modal-btns { display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; }
+    .btn-save { background: var(--accent); color: white; border: none; padding: 8px 20px; border-radius: 6px; font-weight: 600; }
+    .btn-cancel { background: #e2e8f0; color: #64748b; border: none; padding: 8px 20px; border-radius: 6px; }
 
     /* MEDIA QUERY: Landscape (iPhone) */
     @media (orientation: landscape) {
@@ -133,6 +165,7 @@
             display: grid;
             grid-template-columns: 55% 45%; 
             grid-template-rows: 100%;
+            margin-bottom: 0;
         }
 
         .img-container {
@@ -141,7 +174,9 @@
             border-right: 1px solid var(--border);
             border-bottom: none;
             background: #f8fafc;
+            min-height: auto;
         }
+        .img-container img { max-height: none; object-fit: contain; }
         
         .content-wrapper {
             grid-column: 2; grid-row: 1;
@@ -149,8 +184,8 @@
             height: 100vh;
         }
 
-        #map {
-            order: 2; height: 40%; width: 100%;
+        #map-container {
+            order: 2; height: 35%; width: 100%;
             border-bottom: 1px solid var(--border);
         }
 
@@ -169,15 +204,12 @@
 </head>
 <body>
 
-    <button id="fullscreenBtn" onclick="toggleFullScreen()">⛶</button>
-
     <div class="upload-area" id="uploadArea">
         <label for="upload" class="upload-btn">
             <span>📷</span> เลือกรูปตรวจสอบ
         </label>
-        <div style="margin-top:15px; font-size:12px; color:#666; max-width: 300px; margin-left: auto; margin-right: auto;">
-            <b>วิธีใช้ (iPhone):</b><br>
-            กดปุ่มแชร์ > "เพิ่มไปยังหน้าจอโฮม" เพื่อใช้งานแบบเต็มจอ
+        <div style="margin-top:15px; font-size:12px; color:#666;">
+            ระบบจะดึงพิกัดและแผนที่อัตโนมัติ
         </div>
     </div>
     <input type="file" accept="image/*" id="upload">
@@ -193,7 +225,9 @@
                 <div class="doc-ref" id="reportRef">ID: -</div>
             </div>
 
-            <div id="map"></div>
+            <div id="map-container">
+                <div id="map"></div>
+            </div>
             
             <div class="context-row">
                 <div class="context-box">
@@ -221,39 +255,67 @@
             </div>
             
             <div class="hidden-actions">
-                <span class="edit-link" id="manualEditBtn">✏️ แก้ไขข้อมูล (Override)</span>
+                <div class="edit-link" id="manualEditBtn">✏️ แก้ไขข้อมูล (Override)</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="editModal">
+        <div class="modal-box">
+            <div class="modal-title">แก้ไขข้อมูลสถานที่</div>
+            <label style="font-size:12px; font-weight:bold;">ชื่อสถานที่หลัก</label>
+            <input type="text" id="inputMain" class="modal-input" placeholder="เช่น บ้าน, ร้านค้า...">
+            
+            <label style="font-size:12px; font-weight:bold;">รายละเอียดที่อยู่</label>
+            <input type="text" id="inputSub" class="modal-input" placeholder="ถนน, แขวง, เขต...">
+            
+            <div class="modal-btns">
+                <button class="btn-cancel" id="closeModalBtn">ยกเลิก</button>
+                <button class="btn-save" id="saveModalBtn">บันทึก</button>
             </div>
         </div>
     </div>
 
 <script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <script>
-    if (window.navigator.standalone !== true) {
-        document.getElementById('fullscreenBtn').style.display = 'block';
-    }
+    // ตัวแปร Map และ Marker
+    let map = null;
+    let marker = null;
 
-    function toggleFullScreen() {
-        if (!document.fullscreenElement) {
-            document.documentElement.requestFullscreen().catch(err => {
-                alert("ใช้โหมด 'เพิ่มไปยังหน้าจอโฮม' เพื่อให้เต็มจอสมบูรณ์");
-            });
-        } else {
-            document.exitFullscreen();
-        }
-    }
-
-    let map = null, marker = null;
-
+    // Helper: แปลงพิกัด
     function convertDMSToDD(degrees, direction) {
         var dd = degrees[0] + degrees[1]/60 + degrees[2]/(3600);
         if (direction == "S" || direction == "W") dd = dd * -1;
         return dd;
     }
 
-    // ฟังก์ชันล้างข้อมูล (เคลียร์ทุกอย่างให้โล่ง)
+    // --- Modal Logic (แทน prompt) ---
+    const editModal = document.getElementById('editModal');
+    const inputMain = document.getElementById('inputMain');
+    const inputSub = document.getElementById('inputSub');
+
+    document.getElementById('manualEditBtn').addEventListener('click', () => {
+        // ดึงค่าปัจจุบันมาใส่ใน Input
+        inputMain.value = document.getElementById('mainPlace').textContent;
+        inputSub.value = document.getElementById('fullAddr').textContent;
+        editModal.style.display = 'flex'; // แสดง Modal
+    });
+
+    document.getElementById('closeModalBtn').addEventListener('click', () => {
+        editModal.style.display = 'none';
+    });
+
+    document.getElementById('saveModalBtn').addEventListener('click', () => {
+        document.getElementById('mainPlace').textContent = inputMain.value;
+        document.getElementById('fullAddr').textContent = inputSub.value;
+        editModal.style.display = 'none';
+    });
+
+    // --- Main Logic ---
+
     function resetData() {
-        // เคลียร์ Text
         document.getElementById('mainPlace').textContent = "Analyzing...";
         document.getElementById('fullAddr').textContent = "-";
         document.getElementById('gpsCoords').textContent = "GPS: -";
@@ -261,7 +323,6 @@
         document.getElementById('valDate').textContent = "--/--/----";
         document.getElementById('reportRef').textContent = "ID: " + Math.random().toString(36).substr(2, 9).toUpperCase();
         
-        // เคลียร์ข้อมูลกล้อง
         document.getElementById('camModel').textContent = "Unknown Device";
         document.getElementById('valF').textContent = "-";
         document.getElementById('valS').textContent = "-";
@@ -269,36 +330,18 @@
         document.getElementById('valFL').textContent = "-";
         document.getElementById('valRes').textContent = "-";
 
-        // เคลียร์แผนที่ออกแบบถอนรากถอนโคน
-        if(map) { 
-            map.remove(); // ลบ Instance แผนที่ทิ้ง
-            map = null; 
-            marker = null; 
+        // Reset แผนที่
+        if (map) {
+            map.remove(); // ลบ Instance เดิมทิ้ง
+            map = null;
         }
-        document.getElementById('map').innerHTML = ""; // ล้าง HTML ในกล่องแผนที่
+        document.getElementById('map').innerHTML = ""; // ล้าง HTML
     }
-
-    document.getElementById('manualEditBtn').addEventListener('click', function() {
-        const currentMain = document.getElementById('mainPlace').textContent;
-        const currentSub = document.getElementById('fullAddr').textContent;
-        
-        const newMain = prompt("แก้ไขชื่อสถานที่:", currentMain);
-        if (newMain) {
-            document.getElementById('mainPlace').textContent = newMain;
-            // ลบโค้ดเปลี่ยนสีออกแล้ว (.edited)
-        }
-        
-        const newSub = prompt("แก้ไขรายละเอียดที่อยู่:", currentSub);
-        if (newSub) {
-            document.getElementById('fullAddr').textContent = newSub;
-        }
-    });
 
     document.getElementById('upload').addEventListener('change', function (e) {
         const file = e.target.files[0];
         if (!file) return;
 
-        // เรียก resetData ทันทีที่เลือกไฟล์ใหม่
         resetData();
 
         const card = document.getElementById('card');
@@ -309,14 +352,11 @@
         img.src = URL.createObjectURL(file);
         
         uploadArea.style.display = 'none';
-        document.getElementById('fullscreenBtn').style.display = 'none';
         card.classList.add('active');
 
         img.onload = function () {
-            // รอ map container พร้อมแล้วค่อยสร้าง map
-            setTimeout(() => { if(map) map.invalidateSize(); }, 500);
-
             EXIF.getData(img, function () {
+                // ข้อมูลกล้อง
                 let make = EXIF.getTag(this, "Make") || "";
                 let model = EXIF.getTag(this, "Model") || "Unknown Device";
                 if(model.toLowerCase().includes(make.toLowerCase())) make = "";
@@ -330,6 +370,7 @@
                 document.getElementById('valFL').textContent = (EXIF.getTag(this, "FocalLength") || "-") + "mm";
                 document.getElementById('valRes').textContent = `${EXIF.getTag(this, "PixelXDimension")||0}x${EXIF.getTag(this, "PixelYDimension")||0}`;
 
+                // วันที่เวลา
                 const dateTime = EXIF.getTag(this, "DateTimeOriginal");
                 if (dateTime) {
                     const parts = dateTime.split(" ");
@@ -339,6 +380,7 @@
                     }
                 }
 
+                // พิกัด GPS และ แผนที่
                 const latTag = EXIF.getTag(this, "GPSLatitude");
                 const lngTag = EXIF.getTag(this, "GPSLongitude");
                 const latRef = EXIF.getTag(this, "GPSLatitudeRef");
@@ -350,16 +392,29 @@
 
                     document.getElementById('gpsCoords').textContent = `GPS: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
 
-                    // สร้างแผนที่ใหม่เสมอ เพราะเราสั่ง remove ไปแล้วใน resetData
-                    map = L.map('map', {zoomControl:false, attributionControl:false});
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-                    
-                    map.setView([lat, lng], 16);
-                    marker = L.marker([lat, lng]).addTo(map);
-                    
+                    // --- สร้างแผนที่ ---
+                    // ต้องรอเล็กน้อยเพื่อให้ container render เสร็จก่อน
+                    setTimeout(() => {
+                        if(!map) {
+                            map = L.map('map').setView([lat, lng], 15);
+                            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                                attribution: '&copy; OpenStreetMap'
+                            }).addTo(map);
+                            marker = L.marker([lat, lng]).addTo(map);
+                        } else {
+                            map.setView([lat, lng], 15);
+                            if(marker) map.removeLayer(marker);
+                            marker = L.marker([lat, lng]).addTo(map);
+                        }
+                        map.invalidateSize(); // สั่งให้แผนที่ปรับขนาดให้พอดี
+                    }, 300);
+
+                    // Reverse Geocoding
                     fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=th`)
                         .then(res => res.json())
                         .then(data => {
+                            if(data.error) throw new Error(data.error);
+                            
                             const a = data.address || {};
                             let specificPlace = a.amenity || a.building || a.shop || a.office || "";
                             if(!specificPlace && a.village) specificPlace = "หมู่บ้าน " + a.village;
@@ -381,17 +436,19 @@
                             }
                         })
                         .catch(err => {
-                            document.getElementById('mainPlace').textContent = "Connection Error";
+                            document.getElementById('mainPlace').textContent = "ไม่พบชื่อสถานที่";
+                            document.getElementById('fullAddr').textContent = `GPS: ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
                         });
                 } else {
                     document.getElementById('mainPlace').textContent = "ไม่พบ GPS";
                     document.getElementById('fullAddr').textContent = "รูปนี้ไม่มีข้อมูลพิกัด";
-                    document.getElementById('map').innerHTML = '<div style="display:flex;justify-content:center;align-items:center;height:100%;color:#999;font-size:12px;">NO GPS DATA</div>';
+                    document.getElementById('map').innerHTML = '<div style="display:flex;justify-content:center;align-items:center;height:100%;color:#999;font-size:12px;background:#eee;">NO GPS DATA</div>';
                 }
             });
         };
     });
 
+    // แก้ Bug แผนที่เพี้ยนเวลาหมุนจอหรือ Resize
     window.addEventListener('resize', () => {
         if(map) map.invalidateSize();
     });
