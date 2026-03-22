@@ -3,98 +3,114 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TH-Live Anonymous Viewer</title>
+    <title>วิธีเลี่ยงข้อจำกัด: บันทึกหน้าจอ+เสียงโทรศัพท์ iPhone</title>
     <style>
-        body { margin: 0; font-family: sans-serif; background: #000; color: white; overflow: hidden; }
-        
-        /* แถบควบคุมบน */
-        .top-bar { 
-            display: flex; align-items: center; justify-content: center;
-            padding: 10px; background: #111; border-bottom: 2px solid #00ff88;
-            gap: 10px; position: relative; z-index: 100;
+        body {
+            font-family: 'Sarabun', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 650px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f7f6;
         }
-        input { padding: 10px; border-radius: 20px; border: 1px solid #333; background: #222; color: #00ff88; width: 150px; text-align: center; font-weight: bold; }
-        button { padding: 10px 20px; border-radius: 20px; border: none; background: #00ff88; color: #000; font-weight: bold; cursor: pointer; }
-
-        /* พื้นที่ดูไลฟ์ */
-        .viewer-area { position: relative; width: 100%; height: calc(100vh - 65px); background: #000; }
-        
-        /* Iframe ตัวจริง */
-        iframe { 
-            width: 100%; height: 100%; border: none; 
-            background: #000;
+        .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
         }
-
-        /* UI หลอก: โหมดไม่ระบุตัวตน */
-        .anon-status {
-            position: absolute; top: 15px; right: 15px; z-index: 20;
-            background: rgba(0, 255, 136, 0.2);
-            border: 1px solid #00ff88;
-            padding: 5px 12px; border-radius: 15px;
-            font-size: 12px; color: #00ff88;
-            display: none;
+        h1 {
+            color: #d93025;
+            font-size: 24px;
+            text-align: center;
+            border-bottom: 2px solid #f0f0f5;
+            padding-bottom: 15px;
         }
-
-        /* ตัว Loading */
-        #loader {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            text-align: center; z-index: 5; display: none;
+        h2 {
+            color: #1a73e8;
+            font-size: 18px;
+            margin-top: 25px;
         }
-        .spinner { width: 40px; height: 40px; border: 4px solid #111; border-top: 4px solid #00ff88; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 10px; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        p.intro {
+            font-size: 16px;
+            color: #5f6368;
+            text-align: center;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+            font-size: 14px;
+        }
+        th {
+            background-color: #f8f9fa;
+            color: #202124;
+        }
+        .method-card {
+            background-color: #f8f9fa;
+            border-left: 4px solid #1a73e8;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 0 8px 8px 0;
+        }
+        .method-card h3 {
+            margin-top: 0;
+            color: #202124;
+            font-size: 16px;
+        }
     </style>
 </head>
 <body>
 
-<div class="top-bar">
-    <span style="font-size: 14px; color: #888;">ROOM ID:</span>
-    <input type="text" id="roomId" placeholder="000000">
-    <button onclick="connectAnonymous()">เชื่อมต่อแบบไม่ระบุตัวตน</button>
-</div>
+<div class="container">
+    <h1>🚨 วิธีเลี่ยงข้อจำกัดการบันทึกเสียงโทรบน iOS</h1>
+    
+    <p class="intro">เนื่องจาก Apple บล็อกการบันทึกเสียงขณะโทรผ่านแอปอัดหน้าจอทุกชนิด นี่คือวิธี (Workarounds) ที่สามารถทำได้จริงเพื่อเก็บหลักฐานการโทรยืนยัน VPN</p>
 
-<div class="viewer-area">
-    <div id="anonTag" class="anon-status">🛡️ Anonymous Mode Active</div>
+    <h2>ตารางเปรียบเทียบวิธีแก้ปัญหา</h2>
+    <table>
+        <tr>
+            <th>วิธีเลี่ยงข้อจำกัด</th>
+            <th>ข้อดี</th>
+            <th>ข้อเสีย</th>
+        </tr>
+        <tr>
+            <td><strong>1. เปิดลำโพง + ใช้มือถืออีกเครื่องอัด</strong></td>
+            <td>ฟรี, ทำได้ทันที, ได้ทั้งภาพหน้าจอและเสียง</td>
+            <td>ต้องมีมือถือ 2 เครื่อง, คุณภาพเสียงขึ้นอยู่กับสภาพแวดล้อม</td>
+        </tr>
+        <tr>
+            <td><strong>2. ใช้อุปกรณ์อัดเสียง MagSafe (เช่น Plaud Note)</strong></td>
+            <td>เสียงชัดเจนมาก, แยกไฟล์เสียงและสรุปให้อัตโนมัติ</td>
+            <td>มีค่าใช้จ่าย (ต้องซื้ออุปกรณ์เสริม), ต้องนำไฟล์เสียงมาตัดต่อรวมกับวิดีโอหน้าจอเองทีหลัง</td>
+        </tr>
+        <tr>
+            <td><strong>3. ใช้แอปบันทึกการโทร (แบบโทร 3 สาย)</strong></td>
+            <td>ไม่ต้องใช้อุปกรณ์เสริม</td>
+            <td>มักมีค่าบริการรายเดือน, โทรผ่าน LINE ไม่ได้ (ได้เฉพาะเบอร์ปกติ), ได้แค่เสียงไม่มีภาพหน้าจอ</td>
+        </tr>
+    </table>
 
-    <div id="loader">
-        <div class="spinner"></div>
-        <p id="loadText">กำลังข้ามการลงชื่อเข้าใช้...</p>
+    <h2>แนะนำวิธีปฏิบัติที่ง่ายที่สุด (The Simplest Way)</h2>
+    <div class="method-card">
+        <h3>วิธีที่ 1: การใช้อุปกรณ์สองเครื่อง (แนะนำ)</h3>
+        <ol>
+            <li>ใช้ iPhone เครื่องหลัก กด <strong>บันทึกหน้าจอ (Screen Record)</strong> ตามปกติ</li>
+            <li>เตรียมสมาร์ทโฟนอีกเครื่อง เปิดแอป <strong>Voice Memos (บันทึกเสียง)</strong> วางไว้ใกล้ๆ</li>
+            <li>เมื่อเริ่มทำการโทรยืนยัน VPN ให้ <strong>เปิดลำโพง (Speakerphone)</strong> ทันที</li>
+            <li>กดบันทึกเสียงที่เครื่องที่สอง</li>
+            <li>เมื่อเสร็จสิ้น คุณจะได้ไฟล์วิดีโอหน้าจอจากเครื่องหลัก และไฟล์เสียงสนทนาจากเครื่องที่สองนำมาใช้เป็นหลักฐานประกอบกันได้</li>
+        </ol>
     </div>
 
-    <iframe id="mainViewer" sandbox="allow-forms allow-scripts allow-same-origin allow-popups" allow="autoplay; encrypted-media"></iframe>
 </div>
-
-<script>
-function connectAnonymous() {
-    const id = document.getElementById("roomId").value.trim();
-    if (!id) return;
-
-    const iframe = document.getElementById("mainViewer");
-    const loader = document.getElementById("loader");
-    const anonTag = document.getElementById("anonTag");
-    const loadText = document.getElementById("loadText");
-
-    // แสดงสถานะการโหลด
-    loader.style.display = "block";
-    anonTag.style.display = "none";
-    iframe.src = "about:blank";
-
-    // จำลองขั้นตอนการ bypass (หลอกให้ผู้ใช้สบายใจ)
-    setTimeout(() => { loadText.innerText = "กำลังจำลอง Session..."; }, 1000);
-    setTimeout(() => { loadText.innerText = "กำลังเจาะเข้าสู่ห้อง " + id + "..."; }, 2000);
-
-    setTimeout(() => {
-        loader.style.display = "none";
-        anonTag.style.display = "block";
-        
-        /* เทคนิค: บางเว็บถ้าเติมพารามิเตอร์แปลกๆ หรือเข้าผ่านหน้าเล่นโดยตรง
-           จะช่วยให้ข้ามการเช็ค Login ได้ (ขึ้นอยู่กับระบบของเว็บต้นทาง)
-        */
-        const targetUrl = `https://th-live.online/liveRoom?id=${id}&isGuest=true&token=guest_${Math.random().toString(36).substr(2, 9)}`;
-        
-        iframe.src = targetUrl;
-    }, 3500);
-}
-</script>
 
 </body>
 </html>
