@@ -3,91 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TH Live ID Viewer - Pro</title>
+    <title>TH-Live Anonymous Viewer</title>
     <style>
-        body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #000; color: white; overflow: hidden; }
+        body { margin: 0; font-family: sans-serif; background: #000; color: white; overflow: hidden; }
         
-        /* ส่วนควบคุมด้านบน */
-        .header-box { padding: 15px; background: #1a1a1a; border-bottom: 1px solid #333; position: relative; z-index: 100; }
-        input { padding: 10px; border-radius: 5px; border: 1px solid #444; background: #222; color: #fff; width: 200px; }
-        button { padding: 10px 15px; border-radius: 5px; border: none; background: #00ff88; color: #000; font-weight: bold; cursor: pointer; }
-        button:hover { background: #00cc6a; }
-
-        /* ตัวเล่นวิดีโอ (Container) */
-        .video-container { position: relative; width: 100%; height: calc(100vh - 80px); background: #000; }
-        
-        iframe { width: 100%; height: 100%; border: none; position: absolute; top: 0; left: 0; z-index: 1; }
-
-        /* UI หลอกว่ากำลัง Live */
-        .live-overlay {
-            position: absolute; top: 20px; left: 20px; z-index: 10;
-            display: flex; align-items: center; gap: 10px;
-            pointer-events: none; /* ให้คลิกทะลุไปหา iframe ได้ */
-            display: none; /* ซ่อนไว้ก่อนเริ่ม */
+        /* แถบควบคุมบน */
+        .top-bar { 
+            display: flex; align-items: center; justify-content: center;
+            padding: 10px; background: #111; border-bottom: 2px solid #00ff88;
+            gap: 10px; position: relative; z-index: 100;
         }
-        .badge-live { background: red; color: white; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 14px; text-transform: uppercase; animation: blink 1s infinite; }
-        .viewer-count { background: rgba(0,0,0,0.6); padding: 2px 8px; border-radius: 4px; font-size: 14px; }
-        
-        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        input { padding: 10px; border-radius: 20px; border: 1px solid #333; background: #222; color: #00ff88; width: 150px; text-align: center; font-weight: bold; }
+        button { padding: 10px 20px; border-radius: 20px; border: none; background: #00ff88; color: #000; font-weight: bold; cursor: pointer; }
 
-        /* ตัว Loading หมุนๆ ตอนรอ */
+        /* พื้นที่ดูไลฟ์ */
+        .viewer-area { position: relative; width: 100%; height: calc(100vh - 65px); background: #000; }
+        
+        /* Iframe ตัวจริง */
+        iframe { 
+            width: 100%; height: 100%; border: none; 
+            background: #000;
+        }
+
+        /* UI หลอก: โหมดไม่ระบุตัวตน */
+        .anon-status {
+            position: absolute; top: 15px; right: 15px; z-index: 20;
+            background: rgba(0, 255, 136, 0.2);
+            border: 1px solid #00ff88;
+            padding: 5px 12px; border-radius: 15px;
+            font-size: 12px; color: #00ff88;
+            display: none;
+        }
+
+        /* ตัว Loading */
         #loader {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            z-index: 5; display: none; text-align: center;
+            text-align: center; z-index: 5; display: none;
         }
-        .spinner { width: 50px; height: 50px; border: 5px solid #333; border-top: 5px solid #00ff88; border-radius: 50%; animation: spin 1s linear infinite; }
+        .spinner { width: 40px; height: 40px; border: 4px solid #111; border-top: 4px solid #00ff88; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 10px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
-<div class="header-box">
-    <strong>🔴 TH-LIVE:</strong> 
-    <input type="text" id="roomId" placeholder="กรอก ID ห้อง...">
-    <button onclick="startLive()">เข้าชมไลฟ์</button>
+<div class="top-bar">
+    <span style="font-size: 14px; color: #888;">ROOM ID:</span>
+    <input type="text" id="roomId" placeholder="000000">
+    <button onclick="connectAnonymous()">เชื่อมต่อแบบไม่ระบุตัวตน</button>
 </div>
 
-<div class="video-container">
-    <div class="live-overlay" id="overlay">
-        <div class="badge-live">LIVE</div>
-        <div class="viewer-count">👁️ <span id="viewCount">0</span> คนกำลังดู</div>
-    </div>
+<div class="viewer-area">
+    <div id="anonTag" class="anon-status">🛡️ Anonymous Mode Active</div>
 
     <div id="loader">
         <div class="spinner"></div>
-        <p>กำลังเชื่อมต่อสัญญาณ...</p>
+        <p id="loadText">กำลังข้ามการลงชื่อเข้าใช้...</p>
     </div>
 
-    <iframe id="viewer" allowfullscreen></iframe>
+    <iframe id="mainViewer" sandbox="allow-forms allow-scripts allow-same-origin allow-popups" allow="autoplay; encrypted-media"></iframe>
 </div>
 
 <script>
-function startLive() {
+function connectAnonymous() {
     const id = document.getElementById("roomId").value.trim();
-    if (!id) return alert("ใส่ ID ด้วยครับ");
+    if (!id) return;
 
-    const iframe = document.getElementById("viewer");
+    const iframe = document.getElementById("mainViewer");
     const loader = document.getElementById("loader");
-    const overlay = document.getElementById("overlay");
-    const viewCount = document.getElementById("viewCount");
+    const anonTag = document.getElementById("anonTag");
+    const loadText = document.getElementById("loadText");
 
-    // 1. แสดง Loading และซ่อน iframe แว็บนึง
+    // แสดงสถานะการโหลด
     loader.style.display = "block";
-    overlay.style.display = "none";
-    iframe.src = ""; 
+    anonTag.style.display = "none";
+    iframe.src = "about:blank";
 
-    // 2. สุ่มจำนวนคนดูปลอมๆ (เช่น 1,200 - 5,000)
-    viewCount.innerText = Math.floor(Math.random() * (5000 - 1200 + 1)) + 1200;
+    // จำลองขั้นตอนการ bypass (หลอกให้ผู้ใช้สบายใจ)
+    setTimeout(() => { loadText.innerText = "กำลังจำลอง Session..."; }, 1000);
+    setTimeout(() => { loadText.innerText = "กำลังเจาะเข้าสู่ห้อง " + id + "..."; }, 2000);
 
-    // 3. โหลด URL
-    const targetUrl = "https://th-live.online/liveRoom?id=" + id;
-    iframe.src = targetUrl;
-
-    // 4. หลังจาก 2 วิ ให้เอา UI หลอกขึ้นมาทับ
     setTimeout(() => {
         loader.style.display = "none";
-        overlay.style.display = "flex";
-    }, 2000);
+        anonTag.style.display = "block";
+        
+        /* เทคนิค: บางเว็บถ้าเติมพารามิเตอร์แปลกๆ หรือเข้าผ่านหน้าเล่นโดยตรง
+           จะช่วยให้ข้ามการเช็ค Login ได้ (ขึ้นอยู่กับระบบของเว็บต้นทาง)
+        */
+        const targetUrl = `https://th-live.online/liveRoom?id=${id}&isGuest=true&token=guest_${Math.random().toString(36).substr(2, 9)}`;
+        
+        iframe.src = targetUrl;
+    }, 3500);
 }
 </script>
 
