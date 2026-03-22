@@ -1,10 +1,12 @@
-t="standard" id="59183"}
+d + fallback)
+
+:::writing{variant="standard" id="82741"}
 <!DOCTYPE html>
 <html lang="th">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TH Live Viewer</title>
+<title>TH Live ID Viewer</title>
 
 <style>
     body {
@@ -42,9 +44,9 @@ t="standard" id="59183"}
 
 <body>
 
-<h2>🔴 วางลิงก์ TH Live</h2>
+<h2>🔴 ใส่ ID คนไลฟ์</h2>
 
-<input type="text" id="linkInput" placeholder="วางลิงก์ที่นี่...">
+<input type="text" id="roomId" placeholder="เช่น 123456">
 <br>
 <button onclick="loadLive()">ดูไลฟ์</button>
 
@@ -52,5 +54,21 @@ t="standard" id="59183"}
 
 <script>
 function loadLive() {
-    const link = document.getElementById("linkInput").value;
-    document.getElementById("viewer").src =
+    const id = document.getElementById("roomId").value;
+
+    // ลองสร้างลิงก์ (เดา pattern)
+    const tryUrl1 = "https://th-live.online/liveRoom?id=" + id;
+    const tryUrl2 = "https://th-live.online/#/live/" + id;
+
+    // ใช้อันแรกก่อน
+    document.getElementById("viewer").src = tryUrl1;
+
+    // ถ้า iframe โหลดไม่ได้ใน 3 วิ → เปิดแทน
+    setTimeout(() => {
+        const iframe = document.getElementById("viewer");
+        try {
+            if (!iframe.contentWindow || iframe.contentWindow.length === 0) {
+                window.open(tryUrl1, "_blank");
+            }
+        } catch (e) {
+            window.open(
