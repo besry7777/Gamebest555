@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -10,43 +9,79 @@
 
 <h2>🎥 อัดหน้าจอ (สลับแท็บได้)</h2>
 
-<button onclick="startRecording()">เริ่มอัด</button>
-<button onclick="stopRecording()">หยุด</button>
+<button onclick="startRecording()" style="padding: 10px 20px; font-size: 16px; cursor: pointer;">เริ่มอัด</button>
+<button onclick="stopRecording()" style="padding: 10px 20px; font-size: 16px; cursor: pointer;">หยุด</button>
 
 <p id="status">สถานะ: ยังไม่เริ่ม</p>
 
 <script>
 let mediaRecorder;
 let recordedChunks = [];
+let currentStream; // เก็บค่า stream เพื่อไว้สั่งปิดการแชร์หน้าจอ
 
 async function startRecording() {
-    const stream = await navigator.mediaDevices.getDisplayMedia({
-        video: true,
-        audio: true
-    });
+    try {
+        // ล้างข้อมูลเก่าทิ้งทุกครั้งที่กดเริ่มอัดใหม่
+        recordedChunks = []; 
+        
+        currentStream = await navigator.mediaDevices.getDisplayMedia({
+            video: true,
+            audio: true
+        });
 
-    mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder = new MediaRecorder(currentStream);
 
-    mediaRecorder.ondataavailable = function(e) {
-        if (e.data.size > 0) {
-            recordedChunks.push(e.data);
-        }
-    };
+        mediaRecorder.ondataavailable = function(e) {
+            if (e.data.size > 0) {
+                recordedChunks.push(e.data);
+            }
+        };
 
-    mediaRecorder.onstop = function() {
-        const blob = new Blob(recordedChunks, { type: 'video/webm' });
-        const url = URL.createObjectURL(blob);
+        mediaRecorder.onstop = function() {
+            const blob = new Blob(recordedChunks, { type: 'video/webm' });
+            const url = URL.createObjectURL(blob);
 
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "recording.webm";
-        a.click();
-    };
+            const a = document.createElement("a");
+            a.style.display = "none";
+            a.href = url;
+            a.download = "recording.webm";
+            document.body.appendChild(a);
+            a.click();
+            
+            // คืนค่าหน่วยความจำหลังดาวน์โหลดเสร็จ
+            setTimeout(() => {
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            }, 100);
+        };
 
-    mediaRecorder.start();
+        // หากผู้ใช้กด "หยุดแชร์ (Stop sharing)" จากแถบของเบราว์เซอร์โดยตรง
+        currentStream.getVideoTracks()[0].onended = function () {
+            stopRecording();
+        };
 
-    document.getElementById("status").innerText = "สถานะ: กำลังอัด (สลับแท็บได้)";
+        mediaRecorder.start();
+        document.getElementById("status").innerText = "สถานะ: กำลังอัด (สลับแท็บได้)";
+
+    } catch (err) {
+        console.error("Error: " + err);
+        document.getElementById("status").innerText = "สถานะ: เกิดข้อผิดพลาด หรือยกเลิกการแชร์";
+    }
 }
 
 function stopRecording() {
-    mediaRecorde
+    // สั่งหยุดบันทึก
+    if (mediaRecorder && mediaRecorder.state !== "inactive") {
+        mediaRecorder.stop();
+    }
+    
+    // สั่งหยุด track ทั้งหมดเพื่อให้เบราว์เซอร์เลิกจับภาพ และสัญลักษณ์การแชร์หายไป
+    if (currentStream) {
+        currentStream.getTracks().forEach(track => track.stop());
+    }
+
+    document.getElementById("status").innerText = "สถานะ: บันทึกเสร็จสิ้น และกำลังดาวน์โหลด";
+}
+</script>
+</body>
+</html>
