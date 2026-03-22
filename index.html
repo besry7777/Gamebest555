@@ -1,74 +1,53 @@
-d + fallback)
-
-:::writing{variant="standard" id="82741"}
+# 🔥 โค้ด: อัดหน้าจอ + ทำงานต่อแม้เปลี่ยนแท็บ
+:::writing{variant="standard" id="68427"}
 <!DOCTYPE html>
 <html lang="th">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TH Live ID Viewer</title>
-
-<style>
-    body {
-        margin: 0;
-        font-family: Arial;
-        background: #0f0f0f;
-        color: white;
-        text-align: center;
-    }
-    input {
-        width: 80%;
-        padding: 12px;
-        border-radius: 10px;
-        border: none;
-        margin-top: 20px;
-        font-size: 16px;
-    }
-    button {
-        padding: 10px 20px;
-        margin-top: 10px;
-        border: none;
-        border-radius: 10px;
-        background: #00ff88;
-        font-weight: bold;
-        cursor: pointer;
-    }
-    iframe {
-        width: 100%;
-        height: 80vh;
-        margin-top: 20px;
-        border: none;
-    }
-</style>
+<title>Background Recorder</title>
 </head>
+<body style="background:#111; color:white; text-align:center; font-family:sans-serif;">
 
-<body>
+<h2>🎥 อัดหน้าจอ (สลับแท็บได้)</h2>
 
-<h2>🔴 ใส่ ID คนไลฟ์</h2>
+<button onclick="startRecording()">เริ่มอัด</button>
+<button onclick="stopRecording()">หยุด</button>
 
-<input type="text" id="roomId" placeholder="เช่น 123456">
-<br>
-<button onclick="loadLive()">ดูไลฟ์</button>
-
-<iframe id="viewer"></iframe>
+<p id="status">สถานะ: ยังไม่เริ่ม</p>
 
 <script>
-function loadLive() {
-    const id = document.getElementById("roomId").value;
+let mediaRecorder;
+let recordedChunks = [];
 
-    // ลองสร้างลิงก์ (เดา pattern)
-    const tryUrl1 = "https://th-live.online/liveRoom?id=" + id;
-    const tryUrl2 = "https://th-live.online/#/live/" + id;
+async function startRecording() {
+    const stream = await navigator.mediaDevices.getDisplayMedia({
+        video: true,
+        audio: true
+    });
 
-    // ใช้อันแรกก่อน
-    document.getElementById("viewer").src = tryUrl1;
+    mediaRecorder = new MediaRecorder(stream);
 
-    // ถ้า iframe โหลดไม่ได้ใน 3 วิ → เปิดแทน
-    setTimeout(() => {
-        const iframe = document.getElementById("viewer");
-        try {
-            if (!iframe.contentWindow || iframe.contentWindow.length === 0) {
-                window.open(tryUrl1, "_blank");
-            }
-        } catch (e) {
-            window.open(
+    mediaRecorder.ondataavailable = function(e) {
+        if (e.data.size > 0) {
+            recordedChunks.push(e.data);
+        }
+    };
+
+    mediaRecorder.onstop = function() {
+        const blob = new Blob(recordedChunks, { type: 'video/webm' });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "recording.webm";
+        a.click();
+    };
+
+    mediaRecorder.start();
+
+    document.getElementById("status").innerText = "สถานะ: กำลังอัด (สลับแท็บได้)";
+}
+
+function stopRecording() {
+    mediaRecorde
