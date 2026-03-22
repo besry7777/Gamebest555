@@ -2,115 +2,61 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>วิธีเลี่ยงข้อจำกัด: บันทึกหน้าจอ+เสียงโทรศัพท์ iPhone</title>
+    <title>ดูด SMS จาก API เว็บอื่น</title>
     <style>
-        body {
-            font-family: 'Sarabun', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 650px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f4f7f6;
-        }
-        .container {
-            background-color: #ffffff;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-        }
-        h1 {
-            color: #d93025;
-            font-size: 24px;
-            text-align: center;
-            border-bottom: 2px solid #f0f0f5;
-            padding-bottom: 15px;
-        }
-        h2 {
-            color: #1a73e8;
-            font-size: 18px;
-            margin-top: 25px;
-        }
-        p.intro {
-            font-size: 16px;
-            color: #5f6368;
-            text-align: center;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            margin-bottom: 20px;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 12px;
-            text-align: left;
-            font-size: 14px;
-        }
-        th {
-            background-color: #f8f9fa;
-            color: #202124;
-        }
-        .method-card {
-            background-color: #f8f9fa;
-            border-left: 4px solid #1a73e8;
-            padding: 15px;
-            margin-bottom: 15px;
-            border-radius: 0 8px 8px 0;
-        }
-        .method-card h3 {
-            margin-top: 0;
-            color: #202124;
-            font-size: 16px;
-        }
+        body { font-family: sans-serif; padding: 20px; background: #f0f2f5; }
+        .box { background: white; padding: 20px; border-radius: 8px; max-width: 400px; }
+        .sms-item { padding: 10px; border-bottom: 1px solid #eee; margin-bottom: 10px; }
+        .sender { font-weight: bold; color: #0066cc; }
+        .otp { color: red; font-size: 18px; font-weight: bold; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>🚨 วิธีเลี่ยงข้อจำกัดการบันทึกเสียงโทรบน iOS</h1>
-    
-    <p class="intro">เนื่องจาก Apple บล็อกการบันทึกเสียงขณะโทรผ่านแอปอัดหน้าจอทุกชนิด นี่คือวิธี (Workarounds) ที่สามารถทำได้จริงเพื่อเก็บหลักฐานการโทรยืนยัน VPN</p>
-
-    <h2>ตารางเปรียบเทียบวิธีแก้ปัญหา</h2>
-    <table>
-        <tr>
-            <th>วิธีเลี่ยงข้อจำกัด</th>
-            <th>ข้อดี</th>
-            <th>ข้อเสีย</th>
-        </tr>
-        <tr>
-            <td><strong>1. เปิดลำโพง + ใช้มือถืออีกเครื่องอัด</strong></td>
-            <td>ฟรี, ทำได้ทันที, ได้ทั้งภาพหน้าจอและเสียง</td>
-            <td>ต้องมีมือถือ 2 เครื่อง, คุณภาพเสียงขึ้นอยู่กับสภาพแวดล้อม</td>
-        </tr>
-        <tr>
-            <td><strong>2. ใช้อุปกรณ์อัดเสียง MagSafe (เช่น Plaud Note)</strong></td>
-            <td>เสียงชัดเจนมาก, แยกไฟล์เสียงและสรุปให้อัตโนมัติ</td>
-            <td>มีค่าใช้จ่าย (ต้องซื้ออุปกรณ์เสริม), ต้องนำไฟล์เสียงมาตัดต่อรวมกับวิดีโอหน้าจอเองทีหลัง</td>
-        </tr>
-        <tr>
-            <td><strong>3. ใช้แอปบันทึกการโทร (แบบโทร 3 สาย)</strong></td>
-            <td>ไม่ต้องใช้อุปกรณ์เสริม</td>
-            <td>มักมีค่าบริการรายเดือน, โทรผ่าน LINE ไม่ได้ (ได้เฉพาะเบอร์ปกติ), ได้แค่เสียงไม่มีภาพหน้าจอ</td>
-        </tr>
-    </table>
-
-    <h2>แนะนำวิธีปฏิบัติที่ง่ายที่สุด (The Simplest Way)</h2>
-    <div class="method-card">
-        <h3>วิธีที่ 1: การใช้อุปกรณ์สองเครื่อง (แนะนำ)</h3>
-        <ol>
-            <li>ใช้ iPhone เครื่องหลัก กด <strong>บันทึกหน้าจอ (Screen Record)</strong> ตามปกติ</li>
-            <li>เตรียมสมาร์ทโฟนอีกเครื่อง เปิดแอป <strong>Voice Memos (บันทึกเสียง)</strong> วางไว้ใกล้ๆ</li>
-            <li>เมื่อเริ่มทำการโทรยืนยัน VPN ให้ <strong>เปิดลำโพง (Speakerphone)</strong> ทันที</li>
-            <li>กดบันทึกเสียงที่เครื่องที่สอง</li>
-            <li>เมื่อเสร็จสิ้น คุณจะได้ไฟล์วิดีโอหน้าจอจากเครื่องหลัก และไฟล์เสียงสนทนาจากเครื่องที่สองนำมาใช้เป็นหลักฐานประกอบกันได้</li>
-        </ol>
+    <div class="box">
+        <h3>ดึงข้อมูลจากเบอร์: +66999999999</h3>
+        <button onclick="fetchSMS()">🔄 รีเฟรชข้อความ</button>
+        <hr>
+        <div id="sms-container">
+            <p style="color: gray;">คลิกปุ่มเพื่อดึงข้อความจาก API...</p>
+        </div>
     </div>
 
-</div>
+    <script>
+        function fetchSMS() {
+            const container = document.getElementById('sms-container');
+            container.innerHTML = "<p>กำลังดึงข้อมูล...</p>";
+
+            // ⚠️ ตรงนี้คือ URL ของ API เว็บที่คุณไปเจอมา (อันนี้เป็น URL สมมติ)
+            const apiUrl = 'https://api.fake-sms-website.com/get-messages?phone=66999999999';
+
+            fetch(apiUrl)
+                .then(response => {
+                    if (!response.ok) throw new Error("ดึงข้อมูลไม่สำเร็จ หรือติดบล็อก CORS");
+                    return response.json();
+                })
+                .then(data => {
+                    container.innerHTML = ""; // เคลียร์ข้อความเก่า
+                    
+                    // สมมติว่า data มีหน้าตาเป็น Array ของข้อความ
+                    data.messages.forEach(msg => {
+                        const div = document.createElement('div');
+                        div.className = 'sms-item';
+                        div.innerHTML = `
+                            <div class="sender">จาก: ${msg.sender}</div>
+                            <div>ข้อความ: <span class="otp">${msg.text}</span></div>
+                            <div style="font-size:12px; color:gray;">เวลา: ${msg.time}</div>
+                        `;
+                        container.appendChild(div);
+                    });
+                })
+                .catch(error => {
+                    // ถ้าดึงไม่ได้ (เช่น ติด CORS) จะเด้งมาตรงนี้
+                    container.innerHTML = `<p style="color:red;">❌ เกิดข้อผิดพลาด: ${error.message}</p>
+                    <p style="font-size: 13px; color: gray;">(ถ้า API ไม่มีอยู่จริง หรือติดล็อกข้ามโดเมน จะขึ้นข้อความนี้ครับ)</p>`;
+                });
+        }
+    </script>
 
 </body>
 </html>
