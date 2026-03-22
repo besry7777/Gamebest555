@@ -1,130 +1,56 @@
+t="standard" id="59183"}
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Upload & Play Video with PiP</title>
-    <style>
-        body {
-            font-family: sans-serif;
-            text-align: center;
-            background-color: #1a1a1a;
-            color: white;
-            padding: 50px;
-        }
-        .video-container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: #2a2a2a;
-            padding: 20px;
-            border-radius: 16px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-        }
-        /* ตกแต่งปุ่มอัปโหลด */
-        .upload-section {
-            margin-bottom: 20px;
-            padding: 20px;
-            border: 2px dashed #007bff;
-            border-radius: 12px;
-            background: rgba(0, 123, 255, 0.1);
-        }
-        input[type="file"] {
-            font-size: 16px;
-            cursor: pointer;
-        }
-        video {
-            width: 100%;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            background-color: #000;
-            display: none; /* ซ่อนวิดีโอไว้ก่อนจนกว่าจะอัปโหลด */
-        }
-        button {
-            margin-top: 20px;
-            padding: 12px 24px;
-            font-size: 16px;
-            cursor: pointer;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            transition: background 0.3s;
-            display: none; /* ซ่อนปุ่มไว้ก่อนจนกว่าจะมีวิดีโอ */
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TH Live Viewer</title>
+
+<style>
+    body {
+        margin: 0;
+        font-family: Arial;
+        background: #0f0f0f;
+        color: white;
+        text-align: center;
+    }
+    input {
+        width: 80%;
+        padding: 12px;
+        border-radius: 10px;
+        border: none;
+        margin-top: 20px;
+        font-size: 16px;
+    }
+    button {
+        padding: 10px 20px;
+        margin-top: 10px;
+        border: none;
+        border-radius: 10px;
+        background: #00ff88;
+        font-weight: bold;
+        cursor: pointer;
+    }
+    iframe {
+        width: 100%;
+        height: 80vh;
+        margin-top: 20px;
+        border: none;
+    }
+</style>
 </head>
+
 <body>
 
-    <div class="video-container">
-        <h2>อัปโหลดและเล่นวิดีโอแบบต่อเนื่อง</h2>
-        
-        <div class="upload-section">
-            <label for="videoUpload"><strong>เลือกไฟล์วิดีโอจากเครื่องของคุณ: </strong></label><br><br>
-            <input type="file" id="videoUpload" accept="video/*">
-        </div>
+<h2>🔴 วางลิงก์ TH Live</h2>
 
-        <video id="myVideo" controls></video>
+<input type="text" id="linkInput" placeholder="วางลิงก์ที่นี่...">
+<br>
+<button onclick="loadLive()">ดูไลฟ์</button>
 
-        <br>
-        <button id="pipButton">ย่อเป็นหน้าต่างลอย (Picture-in-Picture)</button>
-    </div>
+<iframe id="viewer"></iframe>
 
-    <script>
-        const videoUpload = document.getElementById('videoUpload');
-        const video = document.getElementById('myVideo');
-        const pipButton = document.getElementById('pipButton');
-
-        // เมื่อมีการเลือกไฟล์วิดีโอ
-        videoUpload.addEventListener('change', function(event) {
-            const file = event.target.files[0];
-            
-            if (file) {
-                // ตรวจสอบว่าเป็นไฟล์วิดีโอหรือไม่
-                if (file.type.startsWith('video/')) {
-                    // สร้าง URL ชั่วคราวสำหรับไฟล์ที่อัปโหลด
-                    const fileURL = URL.createObjectURL(file);
-                    
-                    // นำ URL ไปใส่ในตัวเล่นวิดีโอ
-                    video.src = fileURL;
-                    
-                    // แสดงวิดีโอและปุ่ม PiP
-                    video.style.display = 'block';
-                    if ('pictureInPictureEnabled' in document) {
-                        pipButton.style.display = 'inline-block';
-                    }
-                    
-                    // สั่งให้วิดีโอเล่นทันที
-                    video.play();
-                } else {
-                    alert('กรุณาเลือกไฟล์วิดีโอเท่านั้นครับ');
-                    videoUpload.value = ''; // ล้างค่าที่เลือกผิด
-                }
-            }
-        });
-
-        // ระบบ Picture-in-Picture (เหมือนเดิม)
-        pipButton.addEventListener('click', async () => {
-            try {
-                if (document.pictureInPictureElement) {
-                    await document.exitPictureInPicture();
-                    pipButton.textContent = 'ย่อเป็นหน้าต่างลอย (Picture-in-Picture)';
-                } else {
-                    await video.requestPictureInPicture();
-                    pipButton.textContent = 'นำวิดีโอกลับเข้าเว็บ';
-                }
-            } catch (error) {
-                console.error('เกิดข้อผิดพลาด:', error);
-                alert('เกิดข้อผิดพลาดในการเปิดหน้าต่างลอย (บางเบราว์เซอร์อาจไม่รองรับวิดีโอที่เพิ่งอัปโหลดแบบยังไม่กดเล่น)');
-            }
-        });
-        
-        video.addEventListener('leavepictureinpicture', () => {
-            pipButton.textContent = 'ย่อเป็นหน้าต่างลอย (Picture-in-Picture)';
-        });
-    </script>
-
-</body>
-</html>
+<script>
+function loadLive() {
+    const link = document.getElementById("linkInput").value;
+    document.getElementById("viewer").src =
