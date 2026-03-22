@@ -1,124 +1,95 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TH Live ID Viewer</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TH Live ID Viewer - Pro</title>
+    <style>
+        body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #000; color: white; overflow: hidden; }
+        
+        /* ส่วนควบคุมด้านบน */
+        .header-box { padding: 15px; background: #1a1a1a; border-bottom: 1px solid #333; position: relative; z-index: 100; }
+        input { padding: 10px; border-radius: 5px; border: 1px solid #444; background: #222; color: #fff; width: 200px; }
+        button { padding: 10px 15px; border-radius: 5px; border: none; background: #00ff88; color: #000; font-weight: bold; cursor: pointer; }
+        button:hover { background: #00cc6a; }
 
-<style>
-    body {
-        margin: 0;
-        font-family: Arial;
-        background: #0f0f0f;
-        color: white;
-        text-align: center;
-    }
-    input {
-        width: 80%;
-        max-width: 300px;
-        padding: 12px;
-        border-radius: 10px;
-        border: none;
-        margin-top: 20px;
-        font-size: 16px;
-        text-align: center;
-    }
-    .btn-group {
-        margin-top: 15px;
-    }
-    button {
-        padding: 10px 20px;
-        margin: 5px;
-        border: none;
-        border-radius: 10px;
-        background: #00ff88;
-        font-weight: bold;
-        cursor: pointer;
-        color: #000;
-        transition: 0.2s;
-    }
-    button:hover {
-        background: #00cc6a;
-    }
-    button.alt-btn {
-        background: #ff9900;
-    }
-    button.alt-btn:hover {
-        background: #cc7a00;
-    }
-    iframe {
-        width: 100%;
-        height: 75vh;
-        margin-top: 20px;
-        border: none;
-        background: #222;
-    }
-</style>
+        /* ตัวเล่นวิดีโอ (Container) */
+        .video-container { position: relative; width: 100%; height: calc(100vh - 80px); background: #000; }
+        
+        iframe { width: 100%; height: 100%; border: none; position: absolute; top: 0; left: 0; z-index: 1; }
+
+        /* UI หลอกว่ากำลัง Live */
+        .live-overlay {
+            position: absolute; top: 20px; left: 20px; z-index: 10;
+            display: flex; align-items: center; gap: 10px;
+            pointer-events: none; /* ให้คลิกทะลุไปหา iframe ได้ */
+            display: none; /* ซ่อนไว้ก่อนเริ่ม */
+        }
+        .badge-live { background: red; color: white; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 14px; text-transform: uppercase; animation: blink 1s infinite; }
+        .viewer-count { background: rgba(0,0,0,0.6); padding: 2px 8px; border-radius: 4px; font-size: 14px; }
+        
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+
+        /* ตัว Loading หมุนๆ ตอนรอ */
+        #loader {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            z-index: 5; display: none; text-align: center;
+        }
+        .spinner { width: 50px; height: 50px; border: 5px solid #333; border-top: 5px solid #00ff88; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
 </head>
-
 <body>
 
-<h2>🔴 ใส่ ID คนไลฟ์</h2>
-
-<input type="text" id="roomId" placeholder="เช่น 123456">
-
-<div class="btn-group">
-    <button onclick="loadLive()">ดูในหน้านี้</button>
-    <button class="alt-btn" onclick="openNewTab()">เปิดแท็บใหม่</button>
+<div class="header-box">
+    <strong>🔴 TH-LIVE:</strong> 
+    <input type="text" id="roomId" placeholder="กรอก ID ห้อง...">
+    <button onclick="startLive()">เข้าชมไลฟ์</button>
 </div>
 
-<iframe id="viewer"></iframe>
+<div class="video-container">
+    <div class="live-overlay" id="overlay">
+        <div class="badge-live">LIVE</div>
+        <div class="viewer-count">👁️ <span id="viewCount">0</span> คนกำลังดู</div>
+    </div>
+
+    <div id="loader">
+        <div class="spinner"></div>
+        <p>กำลังเชื่อมต่อสัญญาณ...</p>
+    </div>
+
+    <iframe id="viewer" allowfullscreen></iframe>
+</div>
 
 <script>
-function getTryUrls(id) {
-    return [
-        "https://th-live.online/liveRoom?id=" + id,
-        "https://th-live.online/#/live/" + id
-    ];
-}
-
-function loadLive() {
+function startLive() {
     const id = document.getElementById("roomId").value.trim();
-    if (!id) {
-        alert("กรุณาใส่ ID ก่อนครับ");
-        return;
-    }
+    if (!id) return alert("ใส่ ID ด้วยครับ");
 
-    const urls = getTryUrls(id);
-    const tryUrl1 = urls[0];
-    const tryUrl2 = urls[1];
+    const iframe = document.getElementById("viewer");
+    const loader = document.getElementById("loader");
+    const overlay = document.getElementById("overlay");
+    const viewCount = document.getElementById("viewCount");
 
-    // ใช้อันแรกแสดงใน iframe ก่อน
-    document.getElementById("viewer").src = tryUrl1;
+    // 1. แสดง Loading และซ่อน iframe แว็บนึง
+    loader.style.display = "block";
+    overlay.style.display = "none";
+    iframe.src = ""; 
 
-    // ระบบ Fallback ตรวจจับตามที่คุณเขียนมา (พยายามเปิดแท็บใหม่ถ้าขัดข้อง)
+    // 2. สุ่มจำนวนคนดูปลอมๆ (เช่น 1,200 - 5,000)
+    viewCount.innerText = Math.floor(Math.random() * (5000 - 1200 + 1)) + 1200;
+
+    // 3. โหลด URL
+    const targetUrl = "https://th-live.online/liveRoom?id=" + id;
+    iframe.src = targetUrl;
+
+    // 4. หลังจาก 2 วิ ให้เอา UI หลอกขึ้นมาทับ
     setTimeout(() => {
-        const iframe = document.getElementById("viewer");
-        try {
-            // เช็คว่า iframe ว่างเปล่าหรือไม่ (อาจติดปัญหา Cross-Origin)
-            if (!iframe.contentWindow || iframe.contentWindow.length === 0) {
-                console.log("Iframe load failed or empty, opening fallback url...");
-                window.open(tryUrl2, "_blank");
-            }
-        } catch (e) {
-            // ถ้าติด Block การเข้าถึงข้ามโดเมน จะตกลงมาที่นี่
-            console.log("CORS error caught, opening in new tab...");
-            window.open(tryUrl1, "_blank");
-        }
-    }, 3000);
-}
-
-function openNewTab() {
-    const id = document.getElementById("roomId").value.trim();
-    if (!id) {
-        alert("กรุณาใส่ ID ก่อนครับ");
-        return;
-    }
-    
-    // บังคับเปิดแท็บใหม่ทันทีด้วย URL แรก
-    const urls = getTryUrls(id);
-    window.open(urls[0], "_blank");
+        loader.style.display = "none";
+        overlay.style.display = "flex";
+    }, 2000);
 }
 </script>
+
 </body>
 </html>
