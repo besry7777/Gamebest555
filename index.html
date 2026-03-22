@@ -3,84 +3,121 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Background Recorder</title>
+<title>TH Live ID Viewer</title>
+
+<style>
+    body {
+        margin: 0;
+        font-family: Arial;
+        background: #0f0f0f;
+        color: white;
+        text-align: center;
+    }
+    input {
+        width: 80%;
+        max-width: 300px;
+        padding: 12px;
+        border-radius: 10px;
+        border: none;
+        margin-top: 20px;
+        font-size: 16px;
+        text-align: center;
+    }
+    .btn-group {
+        margin-top: 15px;
+    }
+    button {
+        padding: 10px 20px;
+        margin: 5px;
+        border: none;
+        border-radius: 10px;
+        background: #00ff88;
+        font-weight: bold;
+        cursor: pointer;
+        color: #000;
+        transition: 0.2s;
+    }
+    button:hover {
+        background: #00cc6a;
+    }
+    button.alt-btn {
+        background: #ff9900;
+    }
+    button.alt-btn:hover {
+        background: #cc7a00;
+    }
+    iframe {
+        width: 100%;
+        height: 75vh;
+        margin-top: 20px;
+        border: none;
+        background: #222;
+    }
+</style>
 </head>
-<body style="background:#111; color:white; text-align:center; font-family:sans-serif;">
 
-<h2>🎥 อัดหน้าจอ (สลับแท็บได้)</h2>
+<body>
 
-<button onclick="startRecording()" style="padding: 10px 20px; font-size: 16px; cursor: pointer;">เริ่มอัด</button>
-<button onclick="stopRecording()" style="padding: 10px 20px; font-size: 16px; cursor: pointer;">หยุด</button>
+<h2>🔴 ใส่ ID คนไลฟ์</h2>
 
-<p id="status">สถานะ: ยังไม่เริ่ม</p>
+<input type="text" id="roomId" placeholder="เช่น 123456">
+
+<div class="btn-group">
+    <button onclick="loadLive()">ดูในหน้านี้</button>
+    <button class="alt-btn" onclick="openNewTab()">เปิดแท็บใหม่</button>
+</div>
+
+<iframe id="viewer"></iframe>
 
 <script>
-let mediaRecorder;
-let recordedChunks = [];
-let currentStream; // เก็บค่า stream เพื่อไว้สั่งปิดการแชร์หน้าจอ
-
-async function startRecording() {
-    try {
-        // ล้างข้อมูลเก่าทิ้งทุกครั้งที่กดเริ่มอัดใหม่
-        recordedChunks = []; 
-        
-        currentStream = await navigator.mediaDevices.getDisplayMedia({
-            video: true,
-            audio: true
-        });
-
-        mediaRecorder = new MediaRecorder(currentStream);
-
-        mediaRecorder.ondataavailable = function(e) {
-            if (e.data.size > 0) {
-                recordedChunks.push(e.data);
-            }
-        };
-
-        mediaRecorder.onstop = function() {
-            const blob = new Blob(recordedChunks, { type: 'video/webm' });
-            const url = URL.createObjectURL(blob);
-
-            const a = document.createElement("a");
-            a.style.display = "none";
-            a.href = url;
-            a.download = "recording.webm";
-            document.body.appendChild(a);
-            a.click();
-            
-            // คืนค่าหน่วยความจำหลังดาวน์โหลดเสร็จ
-            setTimeout(() => {
-                document.body.removeChild(a);
-                window.URL.revokeObjectURL(url);
-            }, 100);
-        };
-
-        // หากผู้ใช้กด "หยุดแชร์ (Stop sharing)" จากแถบของเบราว์เซอร์โดยตรง
-        currentStream.getVideoTracks()[0].onended = function () {
-            stopRecording();
-        };
-
-        mediaRecorder.start();
-        document.getElementById("status").innerText = "สถานะ: กำลังอัด (สลับแท็บได้)";
-
-    } catch (err) {
-        console.error("Error: " + err);
-        document.getElementById("status").innerText = "สถานะ: เกิดข้อผิดพลาด หรือยกเลิกการแชร์";
-    }
+function getTryUrls(id) {
+    return [
+        "https://th-live.online/liveRoom?id=" + id,
+        "https://th-live.online/#/live/" + id
+    ];
 }
 
-function stopRecording() {
-    // สั่งหยุดบันทึก
-    if (mediaRecorder && mediaRecorder.state !== "inactive") {
-        mediaRecorder.stop();
-    }
-    
-    // สั่งหยุด track ทั้งหมดเพื่อให้เบราว์เซอร์เลิกจับภาพ และสัญลักษณ์การแชร์หายไป
-    if (currentStream) {
-        currentStream.getTracks().forEach(track => track.stop());
+function loadLive() {
+    const id = document.getElementById("roomId").value.trim();
+    if (!id) {
+        alert("กรุณาใส่ ID ก่อนครับ");
+        return;
     }
 
-    document.getElementById("status").innerText = "สถานะ: บันทึกเสร็จสิ้น และกำลังดาวน์โหลด";
+    const urls = getTryUrls(id);
+    const tryUrl1 = urls[0];
+    const tryUrl2 = urls[1];
+
+    // ใช้อันแรกแสดงใน iframe ก่อน
+    document.getElementById("viewer").src = tryUrl1;
+
+    // ระบบ Fallback ตรวจจับตามที่คุณเขียนมา (พยายามเปิดแท็บใหม่ถ้าขัดข้อง)
+    setTimeout(() => {
+        const iframe = document.getElementById("viewer");
+        try {
+            // เช็คว่า iframe ว่างเปล่าหรือไม่ (อาจติดปัญหา Cross-Origin)
+            if (!iframe.contentWindow || iframe.contentWindow.length === 0) {
+                console.log("Iframe load failed or empty, opening fallback url...");
+                window.open(tryUrl2, "_blank");
+            }
+        } catch (e) {
+            // ถ้าติด Block การเข้าถึงข้ามโดเมน จะตกลงมาที่นี่
+            console.log("CORS error caught, opening in new tab...");
+            window.open(tryUrl1, "_blank");
+        }
+    }, 3000);
+}
+
+function openNewTab() {
+    const id = document.getElementById("roomId").value.trim();
+    if (!id) {
+        alert("กรุณาใส่ ID ก่อนครับ");
+        return;
+    }
+    
+    // บังคับเปิดแท็บใหม่ทันทีด้วย URL แรก
+    const urls = getTryUrls(id);
+    window.open(urls[0], "_blank");
 }
 </script>
 </body>
