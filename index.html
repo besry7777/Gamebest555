@@ -3,98 +3,209 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TH-Live Anonymous Viewer</title>
+    <title>🎵 เครื่องเล่นเพลงปีใหม่ (ไม่มีโฆษณา)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500&display=swap" rel="stylesheet">
     <style>
-        body { margin: 0; font-family: sans-serif; background: #000; color: white; overflow: hidden; }
+        body { 
+            font-family: 'Kanit', sans-serif; 
+            background: linear-gradient(135deg, #0b0f19, #16213e, #0f3460, #e94560); 
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            color: white; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            margin: 0; 
+        }
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .player-container { 
+            background: rgba(0, 0, 0, 0.5); 
+            backdrop-filter: blur(10px);
+            padding: 30px; 
+            border-radius: 20px; 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.6); 
+            text-align: center; 
+            max-width: 400px; 
+            width: 90%; 
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        h1 { 
+            font-size: 26px; 
+            margin-bottom: 5px; 
+            color: #ffd700; 
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5); 
+        }
+        .subtitle {
+            font-size: 14px;
+            color: #ccc;
+            margin-bottom: 25px;
+        }
+        .controls button { 
+            background: #ffd700; 
+            color: #1a1a2e; 
+            border: none; 
+            padding: 12px 20px; 
+            margin: 5px; 
+            border-radius: 50px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            font-size: 16px; 
+            transition: all 0.3s ease; 
+        }
+        .controls button:hover { 
+            background: #fff; 
+            transform: scale(1.05); 
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+        }
+        .playlist { 
+            list-style: none; 
+            padding: 0; 
+            margin-top: 25px; 
+            text-align: left; 
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .playlist li { 
+            padding: 12px 15px; 
+            background: rgba(255,255,255,0.05); 
+            margin-bottom: 8px; 
+            border-radius: 10px; 
+            cursor: pointer; 
+            transition: 0.2s; 
+            display: flex;
+            align-items: center;
+        }
+        .playlist li:hover { 
+            background: rgba(255,215,0,0.2); 
+        }
+        .playlist li.active { 
+            background: rgba(255,215,0,0.3); 
+            color: #ffd700; 
+            border-left: 4px solid #ffd700;
+        }
+        .now-playing { 
+            font-size: 16px; 
+            margin-bottom: 20px; 
+            padding: 10px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            color: #fff; 
+        }
+        #track-name {
+            color: #ffd700;
+            font-weight: 500;
+        }
         
-        /* แถบควบคุมบน */
-        .top-bar { 
-            display: flex; align-items: center; justify-content: center;
-            padding: 10px; background: #111; border-bottom: 2px solid #00ff88;
-            gap: 10px; position: relative; z-index: 100;
-        }
-        input { padding: 10px; border-radius: 20px; border: 1px solid #333; background: #222; color: #00ff88; width: 150px; text-align: center; font-weight: bold; }
-        button { padding: 10px 20px; border-radius: 20px; border: none; background: #00ff88; color: #000; font-weight: bold; cursor: pointer; }
-
-        /* พื้นที่ดูไลฟ์ */
-        .viewer-area { position: relative; width: 100%; height: calc(100vh - 65px); background: #000; }
-        
-        /* Iframe ตัวจริง */
-        iframe { 
-            width: 100%; height: 100%; border: none; 
-            background: #000;
-        }
-
-        /* UI หลอก: โหมดไม่ระบุตัวตน */
-        .anon-status {
-            position: absolute; top: 15px; right: 15px; z-index: 20;
-            background: rgba(0, 255, 136, 0.2);
-            border: 1px solid #00ff88;
-            padding: 5px 12px; border-radius: 15px;
-            font-size: 12px; color: #00ff88;
-            display: none;
-        }
-
-        /* ตัว Loading */
-        #loader {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            text-align: center; z-index: 5; display: none;
-        }
-        .spinner { width: 40px; height: 40px; border: 4px solid #111; border-top: 4px solid #00ff88; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 10px; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* ซ่อน Scrollbar ของ Playlist */
+        .playlist::-webkit-scrollbar { width: 5px; }
+        .playlist::-webkit-scrollbar-thumb { background: #ffd700; border-radius: 10px; }
     </style>
 </head>
 <body>
 
-<div class="top-bar">
-    <span style="font-size: 14px; color: #888;">ROOM ID:</span>
-    <input type="text" id="roomId" placeholder="000000">
-    <button onclick="connectAnonymous()">เชื่อมต่อแบบไม่ระบุตัวตน</button>
-</div>
+    <div class="player-container">
+        <h1>🎆 Happy New Year Party 🎆</h1>
+        <div class="subtitle">เครื่องเล่นเพลงเทศกาล ไร้โฆษณาคั่น</div>
+        
+        <div class="now-playing">กำลังเล่น: <span id="track-name">ยังไม่ได้เลือกเพลง</span></div>
 
-<div class="viewer-area">
-    <div id="anonTag" class="anon-status">🛡️ Anonymous Mode Active</div>
+        <audio id="audio-player" src=""></audio>
 
-    <div id="loader">
-        <div class="spinner"></div>
-        <p id="loadText">กำลังข้ามการลงชื่อเข้าใช้...</p>
+        <div class="controls">
+            <button onclick="prevTrack()">⏮</button>
+            <button onclick="togglePlay()" id="play-btn">▶ เล่น</button>
+            <button onclick="nextTrack()">⏭</button>
+        </div>
+
+        <ul class="playlist" id="playlist">
+            <!-- รายชื่อเพลงจะถูกสร้างโดย JavaScript -->
+        </ul>
     </div>
 
-    <iframe id="mainViewer" sandbox="allow-forms allow-scripts allow-same-origin allow-popups" allow="autoplay; encrypted-media"></iframe>
-</div>
+    <script>
+        // ----------------------------------------------------
+        // ตั้งค่ารายชื่อเพลงตรงนี้ (เปลี่ยนชื่อไฟล์ให้ตรงกับเพลงที่คุณมี)
+        // ----------------------------------------------------
+        const tracks = [
+            { name: "1. เพลงแดนซ์มันส์ๆ รับปีใหม่", url: "song1.mp3" },
+            { name: "2. เพลงชิลล์ๆ เคาท์ดาวน์", url: "song2.mp3" },
+            { name: "3. พรปีใหม่", url: "song3.mp3" },
+            { name: "4. เพลงปาร์ตี้สนุกๆ", url: "song4.mp3" }
+        ];
 
-<script>
-function connectAnonymous() {
-    const id = document.getElementById("roomId").value.trim();
-    if (!id) return;
+        let currentTrackIndex = 0;
+        const audioPlayer = document.getElementById('audio-player');
+        const playBtn = document.getElementById('play-btn');
+        const trackNameDisplay = document.getElementById('track-name');
+        const playlistContainer = document.getElementById('playlist');
 
-    const iframe = document.getElementById("mainViewer");
-    const loader = document.getElementById("loader");
-    const anonTag = document.getElementById("anonTag");
-    const loadText = document.getElementById("loadText");
+        // สร้างรายการเพลงใน HTML
+        function renderPlaylist() {
+            playlistContainer.innerHTML = '';
+            tracks.forEach((track, index) => {
+                const li = document.createElement('li');
+                li.innerText = track.name;
+                li.onclick = () => playTrack(index);
+                playlistContainer.appendChild(li);
+            });
+        }
 
-    // แสดงสถานะการโหลด
-    loader.style.display = "block";
-    anonTag.style.display = "none";
-    iframe.src = "about:blank";
+        function loadTrack(index) {
+            audioPlayer.src = tracks[index].url;
+            trackNameDisplay.innerText = tracks[index].name;
+            updatePlaylistUI(index);
+        }
 
-    // จำลองขั้นตอนการ bypass (หลอกให้ผู้ใช้สบายใจ)
-    setTimeout(() => { loadText.innerText = "กำลังจำลอง Session..."; }, 1000);
-    setTimeout(() => { loadText.innerText = "กำลังเจาะเข้าสู่ห้อง " + id + "..."; }, 2000);
+        function playTrack(index) {
+            currentTrackIndex = index;
+            loadTrack(currentTrackIndex);
+            audioPlayer.play();
+            playBtn.innerText = "⏸ หยุดพัก";
+        }
 
-    setTimeout(() => {
-        loader.style.display = "none";
-        anonTag.style.display = "block";
-        
-        /* เทคนิค: บางเว็บถ้าเติมพารามิเตอร์แปลกๆ หรือเข้าผ่านหน้าเล่นโดยตรง
-           จะช่วยให้ข้ามการเช็ค Login ได้ (ขึ้นอยู่กับระบบของเว็บต้นทาง)
-        */
-        const targetUrl = `https://th-live.online/liveRoom?id=${id}&isGuest=true&token=guest_${Math.random().toString(36).substr(2, 9)}`;
-        
-        iframe.src = targetUrl;
-    }, 3500);
-}
-</script>
+        function togglePlay() {
+            if (audioPlayer.src === "" || audioPlayer.src.endsWith(window.location.pathname)) {
+                loadTrack(currentTrackIndex);
+            }
+
+            if (audioPlayer.paused) {
+                audioPlayer.play();
+                playBtn.innerText = "⏸ หยุดพัก";
+            } else {
+                audioPlayer.pause();
+                playBtn.innerText = "▶ เล่น";
+            }
+        }
+
+        function nextTrack() {
+            currentTrackIndex = (currentTrackIndex + 1) % tracks.length;
+            playTrack(currentTrackIndex);
+        }
+
+        function prevTrack() {
+            currentTrackIndex = (currentTrackIndex - 1 + tracks.length) % tracks.length;
+            playTrack(currentTrackIndex);
+        }
+
+        function updatePlaylistUI(index) {
+            const playlistElements = document.querySelectorAll('#playlist li');
+            playlistElements.forEach((el, i) => {
+                if (i === index) el.classList.add('active');
+                else el.classList.remove('active');
+            });
+        }
+
+        // เล่นเพลงถัดไปอัตโนมัติเมื่อเพลงจบ
+        audioPlayer.addEventListener('ended', nextTrack);
+
+        // เริ่มต้นการทำงาน
+        renderPlaylist();
+    </script>
 
 </body>
 </html>
