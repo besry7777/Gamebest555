@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🎵 เครื่องเล่นเพลงปีใหม่ (ไม่มีโฆษณา)</title>
-    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500&display=swap" rel="stylesheet">
+    <title>🎵 Smart Party Player</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
         body { 
             font-family: 'Kanit', sans-serif; 
-            background: linear-gradient(135deg, #0b0f19, #16213e, #0f3460, #e94560); 
+            background: linear-gradient(135deg, #0b0f19, #1a1a2e, #16213e, #e94560); 
             background-size: 400% 400%;
             animation: gradientBG 15s ease infinite;
             color: white; 
@@ -24,32 +24,75 @@
             100% { background-position: 0% 50%; }
         }
         .player-container { 
-            background: rgba(0, 0, 0, 0.5); 
-            backdrop-filter: blur(10px);
-            padding: 30px; 
+            background: rgba(0, 0, 0, 0.6); 
+            backdrop-filter: blur(12px);
+            padding: 25px; 
             border-radius: 20px; 
             box-shadow: 0 15px 35px rgba(0,0,0,0.6); 
             text-align: center; 
-            max-width: 400px; 
+            max-width: 450px; 
             width: 90%; 
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
         h1 { 
-            font-size: 26px; 
-            margin-bottom: 5px; 
+            font-size: 24px; 
+            margin-bottom: 15px; 
             color: #ffd700; 
             text-shadow: 0 0 10px rgba(255, 215, 0, 0.5); 
         }
-        .subtitle {
-            font-size: 14px;
-            color: #ccc;
-            margin-bottom: 25px;
+        .search-box {
+            display: flex;
+            margin-bottom: 20px;
+            gap: 10px;
         }
+        .search-box input {
+            flex: 1;
+            padding: 10px 15px;
+            border-radius: 50px;
+            border: none;
+            outline: none;
+            font-family: 'Kanit', sans-serif;
+            background: rgba(255,255,255,0.9);
+        }
+        .search-box button {
+            background: #e94560;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-family: 'Kanit', sans-serif;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+        .search-box button:hover { background: #ff5e7e; }
+        
+        .now-playing {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+        }
+        #cover-art {
+            width: 120px;
+            height: 120px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            object-fit: cover;
+            display: none;
+        }
+        #track-name { font-size: 18px; color: #ffd700; font-weight: 600; margin-bottom: 5px; }
+        #artist-name { font-size: 14px; color: #ccc; }
+
         .controls button { 
             background: #ffd700; 
             color: #1a1a2e; 
             border: none; 
-            padding: 12px 20px; 
+            padding: 10px 20px; 
             margin: 5px; 
             border-radius: 50px; 
             cursor: pointer; 
@@ -60,18 +103,17 @@
         .controls button:hover { 
             background: #fff; 
             transform: scale(1.05); 
-            box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
         }
         .playlist { 
             list-style: none; 
             padding: 0; 
-            margin-top: 25px; 
+            margin-top: 20px; 
             text-align: left; 
-            max-height: 200px;
+            max-height: 250px;
             overflow-y: auto;
         }
         .playlist li { 
-            padding: 12px 15px; 
+            padding: 10px 15px; 
             background: rgba(255,255,255,0.05); 
             margin-bottom: 8px; 
             border-radius: 10px; 
@@ -79,40 +121,47 @@
             transition: 0.2s; 
             display: flex;
             align-items: center;
+            font-size: 14px;
         }
-        .playlist li:hover { 
-            background: rgba(255,215,0,0.2); 
+        .playlist li img {
+            width: 40px;
+            height: 40px;
+            border-radius: 5px;
+            margin-right: 15px;
         }
+        .playlist li .info { flex: 1; }
+        .playlist li .info strong { display: block; color: white; margin-bottom: 3px; }
+        .playlist li .info span { font-size: 12px; color: #aaa; }
+        
+        .playlist li:hover { background: rgba(255,215,0,0.15); }
         .playlist li.active { 
-            background: rgba(255,215,0,0.3); 
-            color: #ffd700; 
+            background: rgba(255,215,0,0.25); 
             border-left: 4px solid #ffd700;
         }
-        .now-playing { 
-            font-size: 16px; 
-            margin-bottom: 20px; 
-            padding: 10px;
-            background: rgba(0,0,0,0.3);
-            border-radius: 10px;
-            color: #fff; 
-        }
-        #track-name {
-            color: #ffd700;
-            font-weight: 500;
-        }
-        
-        /* ซ่อน Scrollbar ของ Playlist */
-        .playlist::-webkit-scrollbar { width: 5px; }
+
+        .playlist::-webkit-scrollbar { width: 6px; }
         .playlist::-webkit-scrollbar-thumb { background: #ffd700; border-radius: 10px; }
+        
+        #loading { display: none; color: #ffd700; margin: 10px 0; font-size: 14px; }
     </style>
 </head>
 <body>
 
     <div class="player-container">
-        <h1>🎆 Happy New Year Party 🎆</h1>
-        <div class="subtitle">เครื่องเล่นเพลงเทศกาล ไร้โฆษณาคั่น</div>
+        <h1>🎵 Smart Party Player</h1>
         
-        <div class="now-playing">กำลังเล่น: <span id="track-name">ยังไม่ได้เลือกเพลง</span></div>
+        <div class="search-box">
+            <input type="text" id="search-input" placeholder="ค้นหาศิลปิน หรือ ชื่อเพลง..." value="Happy New Year">
+            <button onclick="searchMusic()">ค้นหา</button>
+        </div>
+
+        <div id="loading">กำลังค้นหาเพลง... ⏳</div>
+
+        <div class="now-playing">
+            <img id="cover-art" src="" alt="Album Cover">
+            <div id="track-name">ยังไม่ได้เลือกเพลง</div>
+            <div id="artist-name">-</div>
+        </div>
 
         <audio id="audio-player" src=""></audio>
 
@@ -123,45 +172,94 @@
         </div>
 
         <ul class="playlist" id="playlist">
-            <!-- รายชื่อเพลงจะถูกสร้างโดย JavaScript -->
+            <!-- รายชื่อเพลงจะมาจากการค้นหา -->
         </ul>
     </div>
 
     <script>
-        // ----------------------------------------------------
-        // ตั้งค่ารายชื่อเพลงตรงนี้ (เปลี่ยนชื่อไฟล์ให้ตรงกับเพลงที่คุณมี)
-        // ----------------------------------------------------
-        const tracks = [
-            { name: "1. เพลงแดนซ์มันส์ๆ รับปีใหม่", url: "song1.mp3" },
-            { name: "2. เพลงชิลล์ๆ เคาท์ดาวน์", url: "song2.mp3" },
-            { name: "3. พรปีใหม่", url: "song3.mp3" },
-            { name: "4. เพลงปาร์ตี้สนุกๆ", url: "song4.mp3" }
-        ];
-
+        let tracks = [];
         let currentTrackIndex = 0;
+        
         const audioPlayer = document.getElementById('audio-player');
         const playBtn = document.getElementById('play-btn');
         const trackNameDisplay = document.getElementById('track-name');
+        const artistNameDisplay = document.getElementById('artist-name');
+        const coverArtDisplay = document.getElementById('cover-art');
         const playlistContainer = document.getElementById('playlist');
+        const searchInput = document.getElementById('search-input');
+        const loadingText = document.getElementById('loading');
 
-        // สร้างรายการเพลงใน HTML
+        // ฟังก์ชันดึงข้อมูลจาก iTunes API
+        async function searchMusic() {
+            const query = searchInput.value.trim();
+            if (!query) return;
+
+            loadingText.style.display = 'block';
+            playlistContainer.innerHTML = '';
+            
+            // ใช้ iTunes Search API (ดึงมา 20 เพลง)
+            const url = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=music&limit=20`;
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                // กรองเอาเฉพาะอันที่มี URL สำหรับพรีวิวเพลง
+                tracks = data.results.filter(track => track.previewUrl).map(track => ({
+                    name: track.trackName,
+                    artist: track.artistName,
+                    url: track.previewUrl,
+                    cover: track.artworkUrl100.replace('100x100', '300x300') // ขยายภาพปก
+                }));
+
+                loadingText.style.display = 'none';
+
+                if (tracks.length === 0) {
+                    playlistContainer.innerHTML = '<li style="justify-content: center; color: #ccc;">ไม่พบเพลงที่ค้นหา 😢</li>';
+                    return;
+                }
+
+                renderPlaylist();
+                playTrack(0); // เล่นเพลงแรกที่ค้นหาเจอทันที
+
+            } catch (error) {
+                console.error("Error fetching music:", error);
+                loadingText.style.display = 'none';
+                playlistContainer.innerHTML = '<li style="justify-content: center; color: #e94560;">เกิดข้อผิดพลาดในการดึงข้อมูล</li>';
+            }
+        }
+
+        // ฟังก์ชันสร้างรายการเพลง
         function renderPlaylist() {
             playlistContainer.innerHTML = '';
             tracks.forEach((track, index) => {
                 const li = document.createElement('li');
-                li.innerText = track.name;
+                li.innerHTML = `
+                    <img src="${track.cover}" alt="cover">
+                    <div class="info">
+                        <strong>${track.name}</strong>
+                        <span>${track.artist}</span>
+                    </div>
+                `;
                 li.onclick = () => playTrack(index);
                 playlistContainer.appendChild(li);
             });
         }
 
         function loadTrack(index) {
-            audioPlayer.src = tracks[index].url;
-            trackNameDisplay.innerText = tracks[index].name;
+            const track = tracks[index];
+            audioPlayer.src = track.url;
+            trackNameDisplay.innerText = track.name;
+            artistNameDisplay.innerText = track.artist;
+            
+            coverArtDisplay.src = track.cover;
+            coverArtDisplay.style.display = 'block';
+
             updatePlaylistUI(index);
         }
 
         function playTrack(index) {
+            if (tracks.length === 0) return;
             currentTrackIndex = index;
             loadTrack(currentTrackIndex);
             audioPlayer.play();
@@ -169,9 +267,7 @@
         }
 
         function togglePlay() {
-            if (audioPlayer.src === "" || audioPlayer.src.endsWith(window.location.pathname)) {
-                loadTrack(currentTrackIndex);
-            }
+            if (tracks.length === 0) return;
 
             if (audioPlayer.paused) {
                 audioPlayer.play();
@@ -183,11 +279,13 @@
         }
 
         function nextTrack() {
+            if (tracks.length === 0) return;
             currentTrackIndex = (currentTrackIndex + 1) % tracks.length;
             playTrack(currentTrackIndex);
         }
 
         function prevTrack() {
+            if (tracks.length === 0) return;
             currentTrackIndex = (currentTrackIndex - 1 + tracks.length) % tracks.length;
             playTrack(currentTrackIndex);
         }
@@ -198,14 +296,25 @@
                 if (i === index) el.classList.add('active');
                 else el.classList.remove('active');
             });
+            // เลื่อน Playlist ให้เห็นเพลงที่กำลังเล่น
+            if(playlistElements[index]) {
+                playlistElements[index].scrollIntoView({ behavior: "smooth", block: "nearest" });
+            }
         }
 
         // เล่นเพลงถัดไปอัตโนมัติเมื่อเพลงจบ
         audioPlayer.addEventListener('ended', nextTrack);
 
-        // เริ่มต้นการทำงาน
-        renderPlaylist();
-    </script>
+        // ให้รองรับการกด Enter ในช่องค้นหา
+        searchInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                searchMusic();
+            }
+        });
 
+        // ค้นหาเพลงเริ่มต้นอัตโนมัติเมื่อเปิดเว็บ
+        window.onload = searchMusic;
+
+    </script>
 </body>
 </html>
