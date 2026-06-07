@@ -1,1084 +1,712 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="th">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Lonely Creature</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HeartDays 💖 วันสำคัญของคุณ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700;900&family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&display=swap');
+  :root {
+    --pink: #FF6B9D;
+    --purple: #C084FC;
+    --blue: #60A5FA;
+    --yellow: #FCD34D;
+    --green: #34D399;
+    --orange: #FB923C;
+    --bg: #0F0A1E;
+    --card: #1A1035;
+    --glass: rgba(255,255,255,0.05);
+  }
 
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  * { margin:0; padding:0; box-sizing:border-box; }
 
-html,body{
-  width:100%;height:100%;
-  overflow:hidden;
-  background:#020305;
-  touch-action:none;
-  -webkit-user-select:none;user-select:none;
-  font-family:'Cormorant Garamond',Georgia,serif;
-}
+  body {
+    font-family: 'Kanit', sans-serif;
+    background: var(--bg);
+    color: #fff;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
 
-#canvas{position:fixed;top:0;left:0;width:100%;height:100%;display:block;}
+  /* Animated background */
+  .bg-orbs {
+    position: fixed; inset:0; pointer-events:none; z-index:0;
+    overflow: hidden;
+  }
+  .orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.3;
+    animation: floatOrb 8s ease-in-out infinite;
+  }
+  .orb1 { width:400px;height:400px;background:var(--pink);top:-100px;left:-100px;animation-delay:0s; }
+  .orb2 { width:300px;height:300px;background:var(--purple);bottom:-50px;right:-50px;animation-delay:2s; }
+  .orb3 { width:250px;height:250px;background:var(--blue);top:50%;left:50%;animation-delay:4s; }
 
-#title{
-  position:fixed;top:0;left:0;right:0;
-  text-align:center;
-  padding-top:max(44px,env(safe-area-inset-top));
-  letter-spacing:0.38em;
-  font-size:clamp(12px,3.8vw,16px);
-  font-weight:300;
-  color:rgba(180,195,230,0.38);
-  text-transform:uppercase;
-  pointer-events:none;z-index:10;
-}
+  @keyframes floatOrb {
+    0%,100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-30px) scale(1.1); }
+  }
 
-#hint{
-  position:fixed;
-  bottom:max(30px,env(safe-area-inset-bottom));
-  left:0;right:0;
-  text-align:center;
-  font-size:clamp(11px,3vw,13px);
-  font-weight:300;font-style:italic;
-  color:rgba(140,160,210,0.32);
-  letter-spacing:0.1em;
-  transition:opacity 2s ease;
-  pointer-events:none;z-index:10;
-}
+  /* NAVBAR */
+  .navbar {
+    position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+    z-index: 100;
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 50px;
+    padding: 12px 20px;
+    display: flex; gap: 8px; align-items: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  }
 
-#whisper-layer{
-  position:fixed;inset:0;
-  display:flex;align-items:center;justify-content:center;
-  pointer-events:none;z-index:20;
-}
+  .nav-btn {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 10px 16px; border-radius: 40px;
+    border: none; cursor: pointer; background: transparent; color: rgba(255,255,255,0.5);
+    font-family: 'Kanit', sans-serif; font-size: 11px;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    text-decoration: none;
+    gap: 4px;
+  }
+  .nav-btn .icon { font-size: 22px; transition: transform 0.3s; }
+  .nav-btn:hover { color: #fff; background: rgba(255,255,255,0.1); }
+  .nav-btn:hover .icon { transform: scale(1.2) translateY(-2px); }
+  .nav-btn.active {
+    background: linear-gradient(135deg, var(--pink), var(--purple));
+    color: #fff;
+    box-shadow: 0 8px 25px rgba(255,107,157,0.4);
+    transform: translateY(-5px);
+  }
+  .nav-btn.active .icon { transform: scale(1.1); }
 
-.whisper-text{
-  position:absolute;
-  font-size:clamp(12px,4vw,18px);
-  font-style:italic;font-weight:300;
-  color:rgba(160,180,230,0);
-  letter-spacing:0.12em;
-  text-align:center;
-  white-space:nowrap;
-  transition:none;
-  pointer-events:none;
-}
+  /* MAIN CONTENT */
+  .main {
+    position: relative; z-index: 1;
+    padding: 60px 20px 160px;
+    max-width: 600px; margin: 0 auto;
+    display: flex; flex-direction: column; align-items: center;
+    gap: 30px;
+  }
 
-#track{
-  position:fixed;
-  bottom:max(56px,calc(env(safe-area-inset-bottom)+28px));
-  left:0;right:0;
-  text-align:center;
-  font-size:clamp(9px,2.6vw,12px);
-  color:rgba(130,155,200,0.28);
-  letter-spacing:0.14em;font-style:italic;
-  opacity:0;transition:opacity 3s ease;
-  pointer-events:none;z-index:10;
-}
+  /* Hero Header */
+  .hero-header {
+    text-align: center;
+    animation: slideDown 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  .hero-header h1 {
+    font-size: clamp(2rem, 8vw, 3.5rem);
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--pink), var(--purple), var(--blue));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    line-height: 1.1;
+  }
+  .hero-header p {
+    font-size: 1rem; color: rgba(255,255,255,0.6); margin-top: 8px;
+    font-family: 'Sarabun', sans-serif;
+  }
+  @keyframes slideDown {
+    from { opacity:0; transform:translateY(-30px); }
+    to { opacity:1; transform:translateY(0); }
+  }
 
-#flash-veil{
-  position:fixed;inset:0;
-  background:#ffffff;
-  opacity:0;pointer-events:none;z-index:30;
-}
+  /* CHARACTER SECTION */
+  .character-section {
+    width: 100%;
+    background: var(--glass);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 24px;
+    padding: 30px 20px;
+    display: flex; flex-direction: column; align-items: center; gap: 20px;
+    animation: fadeUp 0.8s 0.2s both;
+  }
+  @keyframes fadeUp {
+    from { opacity:0; transform:translateY(40px); }
+    to { opacity:1; transform:translateY(0); }
+  }
+
+  /* SVG CHARACTER */
+  .char-wrapper {
+    position: relative;
+    cursor: pointer;
+  }
+  .char-svg { width: 180px; height: 220px; }
+
+  /* Emotion particles */
+  .particle {
+    position: absolute;
+    font-size: 20px;
+    animation: particleFloat 2s ease-out forwards;
+    pointer-events: none;
+    opacity: 0;
+  }
+  @keyframes particleFloat {
+    0% { opacity:1; transform: translateY(0) scale(1); }
+    100% { opacity:0; transform: translateY(-80px) scale(0.5); }
+  }
+
+  /* Input area */
+  .input-area {
+    width: 100%; display: flex; flex-direction: column; gap: 12px;
+  }
+  .input-area label {
+    font-size: 0.9rem; color: rgba(255,255,255,0.7); text-align: center;
+  }
+  .select-occasion {
+    width: 100%;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 16px;
+    color: #fff;
+    font-family: 'Kanit', sans-serif;
+    font-size: 1rem;
+    padding: 14px 18px;
+    outline: none; cursor: pointer;
+    appearance: none;
+    transition: border-color 0.3s;
+  }
+  .select-occasion:focus { border-color: var(--pink); }
+  .select-occasion option { background: #1A1035; }
+
+  .text-input {
+    width: 100%;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 16px;
+    color: #fff;
+    font-family: 'Sarabun', sans-serif;
+    font-size: 1rem;
+    padding: 14px 18px;
+    outline: none; resize: none;
+    min-height: 80px;
+    transition: border-color 0.3s;
+    placeholder-color: rgba(255,255,255,0.3);
+  }
+  .text-input::placeholder { color: rgba(255,255,255,0.3); }
+  .text-input:focus { border-color: var(--purple); }
+
+  .send-btn {
+    width: 100%;
+    background: linear-gradient(135deg, var(--pink), var(--purple));
+    border: none; border-radius: 16px;
+    color: #fff; font-family: 'Kanit', sans-serif;
+    font-size: 1.1rem; font-weight: 600;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 8px 30px rgba(255,107,157,0.3);
+  }
+  .send-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(255,107,157,0.4); }
+  .send-btn:active { transform: translateY(0); }
+  .send-btn:disabled { opacity:0.6; cursor:not-allowed; transform:none; }
+
+  /* Response bubble */
+  .response-bubble {
+    width: 100%;
+    background: linear-gradient(135deg, rgba(192,132,252,0.15), rgba(96,165,250,0.15));
+    border: 1px solid rgba(192,132,252,0.3);
+    border-radius: 20px;
+    padding: 20px;
+    display: none;
+    animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  .response-bubble.show { display: block; }
+  @keyframes popIn {
+    from { opacity:0; transform:scale(0.95); }
+    to { opacity:1; transform:scale(1); }
+  }
+  .response-bubble p {
+    font-family: 'Sarabun', sans-serif;
+    font-size: 1rem; line-height: 1.7;
+    color: rgba(255,255,255,0.9);
+  }
+  .bubble-header {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
+  }
+  .bubble-header span { font-size: 0.85rem; color: var(--purple); font-weight: 600; }
+
+  /* QUICK ACTION CARDS */
+  .cards-section { width: 100%; animation: fadeUp 0.8s 0.4s both; }
+  .cards-section h2 { font-size: 1.2rem; margin-bottom: 16px; opacity:0.8; }
+
+  .cards-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;
+  }
+  .day-card {
+    background: var(--glass);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 20px;
+    padding: 20px 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    text-decoration: none; color: #fff;
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+  }
+  .day-card:hover { transform: translateY(-5px) scale(1.02); border-color: rgba(255,255,255,0.3); }
+  .day-card .emoji { font-size: 2rem; }
+  .day-card .title { font-size: 0.95rem; font-weight: 600; }
+  .day-card .sub { font-size: 0.75rem; opacity:0.6; font-family:'Sarabun',sans-serif; }
+  .day-card.birthday { background: linear-gradient(135deg, rgba(255,107,157,0.2), rgba(192,132,252,0.2)); border-color: rgba(255,107,157,0.3); }
+  .day-card.love { background: linear-gradient(135deg, rgba(252,211,77,0.2), rgba(251,146,60,0.2)); border-color: rgba(252,211,77,0.3); }
+  .day-card.vent { background: linear-gradient(135deg, rgba(96,165,250,0.2), rgba(52,211,153,0.2)); border-color: rgba(96,165,250,0.3); }
+  .day-card.game { background: linear-gradient(135deg, rgba(52,211,153,0.2), rgba(96,165,250,0.2)); border-color: rgba(52,211,153,0.3); }
+
+  /* Loading spinner */
+  .spinner {
+    display: inline-block; width: 20px; height: 20px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    vertical-align: middle; margin-right: 8px;
+  }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  /* EMOTION BADGE */
+  .emotion-badge {
+    position: absolute; top: -10px; right: -10px;
+    background: linear-gradient(135deg, var(--yellow), var(--orange));
+    border-radius: 50px; padding: 4px 12px;
+    font-size: 0.8rem; font-weight: 600;
+    box-shadow: 0 4px 15px rgba(252,211,77,0.4);
+    transition: all 0.5s;
+  }
+
+  /* Confetti */
+  .confetti-container {
+    position: fixed; top:0; left:0; width:100%; height:100%;
+    pointer-events: none; z-index: 999; overflow: hidden;
+  }
+  .confetti-piece {
+    position: absolute;
+    width: 10px; height: 10px;
+    border-radius: 2px;
+    animation: confettiFall linear forwards;
+  }
+  @keyframes confettiFall {
+    0% { transform: translateY(-20px) rotate(0deg); opacity:1; }
+    100% { transform: translateY(100vh) rotate(720deg); opacity:0; }
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--purple); border-radius: 2px; }
 </style>
 </head>
 <body>
-<canvas id="canvas"></canvas>
-<div id="title">Lonely Creature</div>
-<div id="hint">Interact by touching the screen</div>
-<div id="whisper-layer"></div>
-<div id="track"></div>
-<div id="flash-veil"></div>
+
+<div class="bg-orbs">
+  <div class="orb orb1"></div>
+  <div class="orb orb2"></div>
+  <div class="orb orb3"></div>
+</div>
+
+<div class="confetti-container" id="confettiContainer"></div>
+
+<main class="main">
+  <!-- HERO -->
+  <div class="hero-header">
+    <h1>HeartDays 💖</h1>
+    <p>บอกความรู้สึก • รับกำลังใจ • เฉลิมฉลอง</p>
+  </div>
+
+  <!-- CHARACTER + AI SECTION -->
+  <div class="character-section">
+    <div class="char-wrapper" id="charWrapper" onclick="pokeChar()">
+      <!-- Animated SVG Character -->
+      <svg class="char-svg" id="charSvg" viewBox="0 0 180 220" xmlns="http://www.w3.org/2000/svg">
+        <!-- Body -->
+        <rect x="40" y="120" width="100" height="80" rx="20" fill="#7C6AF7" id="bodyRect"/>
+        <!-- Shirt shine -->
+        <rect x="50" y="130" width="80" height="60" rx="15" fill="#9080FF" opacity="0.5"/>
+        <!-- Collar area -->
+        <rect x="65" y="118" width="50" height="20" rx="8" fill="#A89FFF"/>
+        <!-- Head -->
+        <rect x="35" y="40" width="110" height="90" rx="35" fill="#FBBF77" id="headRect"/>
+        <!-- Hair -->
+        <rect x="35" y="35" width="110" height="40" rx="20" fill="#5C3D2E" id="hairRect"/>
+        <!-- Ear left -->
+        <rect x="28" y="75" width="18" height="25" rx="9" fill="#FBBF77"/>
+        <!-- Ear right -->
+        <rect x="134" y="75" width="18" height="25" rx="9" fill="#FBBF77"/>
+
+        <!-- EYES group -->
+        <g id="eyesGroup">
+          <!-- Eye left -->
+          <ellipse cx="72" cy="95" rx="14" ry="14" fill="white" id="eyeLeftBg"/>
+          <ellipse cx="72" cy="97" rx="8" ry="9" fill="#3D2B1F" id="eyeLeft"/>
+          <ellipse cx="75" cy="94" rx="3" ry="3" fill="white" id="eyeLeftShine"/>
+          <!-- Eye right -->
+          <ellipse cx="108" cy="95" rx="14" ry="14" fill="white" id="eyeRightBg"/>
+          <ellipse cx="108" cy="97" rx="8" ry="9" fill="#3D2B1F" id="eyeRight"/>
+          <ellipse cx="111" cy="94" rx="3" ry="3" fill="white" id="eyeRightShine"/>
+        </g>
+
+        <!-- Eyebrows -->
+        <path d="M 58 78 Q 72 73 86 78" stroke="#5C3D2E" stroke-width="3.5" fill="none" stroke-linecap="round" id="eyebrowLeft"/>
+        <path d="M 94 78 Q 108 73 122 78" stroke="#5C3D2E" stroke-width="3.5" fill="none" stroke-linecap="round" id="eyebrowRight"/>
+
+        <!-- Nose -->
+        <path d="M 90 102 Q 84 108 90 112 Q 96 108 90 102" fill="#E5A060" id="nose"/>
+
+        <!-- MOUTH -->
+        <path d="M 72 125 Q 90 137 108 125" stroke="#C0794D" stroke-width="3" fill="none" stroke-linecap="round" id="mouth"/>
+
+        <!-- Cheeks -->
+        <ellipse cx="60" cy="118" rx="12" ry="8" fill="#FF9FB0" opacity="0" id="cheekLeft"/>
+        <ellipse cx="120" cy="118" rx="12" ry="8" fill="#FF9FB0" opacity="0" id="cheekRight"/>
+
+        <!-- Tears (hidden by default) -->
+        <ellipse cx="68" cy="110" rx="4" ry="6" fill="#60A5FA" opacity="0" id="tearLeft"/>
+        <ellipse cx="112" cy="110" rx="4" ry="6" fill="#60A5FA" opacity="0" id="tearRight"/>
+
+        <!-- Stars (happy) -->
+        <text x="25" y="60" font-size="18" opacity="0" id="starLeft">⭐</text>
+        <text x="135" y="60" font-size="18" opacity="0" id="starRight">⭐</text>
+      </svg>
+      <div class="emotion-badge" id="emotionBadge">😊 พร้อมฟัง</div>
+    </div>
+
+    <div class="input-area">
+      <label>เลือกโอกาสพิเศษของคุณ 🎉</label>
+      <select class="select-occasion" id="occasionSelect" onchange="onOccasionChange()">
+        <option value="">-- เลือกวันสำคัญ --</option>
+        <option value="birthday">🎂 วันเกิด</option>
+        <option value="valentine">💕 วันวาเลนไทน์</option>
+        <option value="anniversary">💍 วันครบรอบ</option>
+        <option value="newyear">🎆 วันปีใหม่</option>
+        <option value="graduation">🎓 วันสำเร็จการศึกษา</option>
+        <option value="newjob">💼 เริ่มงานใหม่</option>
+        <option value="vent">😢 อยากระบาย</option>
+        <option value="sad">💙 เศร้า/เสียใจ</option>
+        <option value="custom">✏️ อื่นๆ พิมพ์เอง</option>
+      </select>
+
+      <textarea class="text-input" id="userMessage"
+        placeholder="เล่าให้ฟังได้เลย... วันนี้เกิดอะไรขึ้น? หรืออยากให้บอกอะไรกับใคร?"></textarea>
+
+      <button class="send-btn" id="sendBtn" onclick="sendToAI()">
+        💌 ส่งให้น้องตอบ
+      </button>
+    </div>
+
+    <div class="response-bubble" id="responseBubble">
+      <div class="bubble-header">
+        <span>🤖 น้อง HeartBot พูดว่า:</span>
+      </div>
+      <p id="responseText"></p>
+    </div>
+  </div>
+
+  <!-- QUICK CARDS -->
+  <div class="cards-section">
+    <h2>✨ เลือกสิ่งที่อยากทำ</h2>
+    <div class="cards-grid">
+      <a href="birthday.html" class="day-card birthday">
+        <div class="emoji">🎂</div>
+        <div class="title">วันเกิด</div>
+        <div class="sub">อวยพรวันเกิดสุดพิเศษ</div>
+      </a>
+      <a href="love.html" class="day-card love">
+        <div class="emoji">💕</div>
+        <div class="title">วันรัก</div>
+        <div class="sub">โรแมนติก & วาเลนไทน์</div>
+      </a>
+      <a href="vent.html" class="day-card vent">
+        <div class="emoji">🌊</div>
+        <div class="title">ระบาย</div>
+        <div class="sub">บอกได้เลย อยู่ที่นี่</div>
+      </a>
+      <a href="game.html" class="day-card game">
+        <div class="emoji">🎮</div>
+        <div class="title">มินิเกม</div>
+        <div class="sub">เล่นคลายเครียด</div>
+      </a>
+    </div>
+  </div>
+</main>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a href="index.html" class="nav-btn active">
+    <span class="icon">🏠</span>
+    <span>หน้าหลัก</span>
+  </a>
+  <a href="birthday.html" class="nav-btn">
+    <span class="icon">🎂</span>
+    <span>วันเกิด</span>
+  </a>
+  <a href="love.html" class="nav-btn">
+    <span class="icon">💕</span>
+    <span>รัก</span>
+  </a>
+  <a href="vent.html" class="nav-btn">
+    <span class="icon">🌊</span>
+    <span>ระบาย</span>
+  </a>
+  <a href="game.html" class="nav-btn">
+    <span class="icon">🎮</span>
+    <span>เกม</span>
+  </a>
+</nav>
 
 <script>
-// ══════════════════════════════════════════════
-//  CORE SETUP
-// ══════════════════════════════════════════════
-const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d');
-const hintEl = document.getElementById('hint');
-const trackEl = document.getElementById('track');
-const whisperLayer = document.getElementById('whisper-layer');
-const flashVeil = document.getElementById('flash-veil');
+const DEEPSEEK_KEY = 'sk-e6e518770ef249a98a8b93fabe612967';
 
-let W, H, dpr;
-function resize(){
-  dpr = Math.min(window.devicePixelRatio||1, 2);
-  W = window.innerWidth; H = window.innerHeight;
-  canvas.width = W*dpr; canvas.height = H*dpr;
-  canvas.style.width = W+'px'; canvas.style.height = H+'px';
-  ctx.scale(dpr, dpr);
-  buildStarField();
-}
-resize();
-window.addEventListener('resize', resize);
-
-// ══════════════════════════════════════════════
-//  MATH UTILS
-// ══════════════════════════════════════════════
-const PI2 = Math.PI*2;
-const lerp = (a,b,t) => a+(b-a)*t;
-const clamp = (v,lo,hi) => Math.max(lo,Math.min(hi,v));
-const rnd = (a,b) => a+Math.random()*(b-a);
-const rndInt = (a,b) => Math.floor(rnd(a,b+1));
-const dist2 = (ax,ay,bx,by) => Math.hypot(bx-ax,by-ay);
-
-let T = 0;        // frame counter
-let lastTS = 0;
-
-// ── Noise ──────────────────────────────────────
-const NC = new Float32Array(512);
-for(let i=0;i<512;i++) NC[i]=Math.random()*2-1;
-function noise(x,y=0){
-  const ix=Math.floor(x)&255, iy=Math.floor(y)&255;
-  const fx=x-Math.floor(x), fy=y-Math.floor(y);
-  const ux=fx*fx*(3-2*fx), uy=fy*fy*(3-2*fy);
-  const a=NC[(ix+iy*57)&511], b=NC[(ix+1+iy*57)&511];
-  const c=NC[(ix+(iy+1)*57)&511], d=NC[(ix+1+(iy+1)*57)&511];
-  return lerp(lerp(a,b,ux),lerp(c,d,ux),uy);
-}
-
-// ══════════════════════════════════════════════
-//  PARTICLES
-// ══════════════════════════════════════════════
-const particles = [];
-for(let i=0;i<45;i++){
-  particles.push({
-    x:rnd(0,W), y:rnd(0,H),
-    vx:rnd(-0.08,0.08), vy:rnd(-0.2,-0.03),
-    sz:rnd(0.5,1.8),
-    baseA:rnd(0.05,0.25),
-    ts:rnd(0.006,0.02),
-    to:rnd(0,PI2)
-  });
-}
-function updateParticles(){
-  for(const p of particles){
-    p.x+=p.vx; p.y+=p.vy;
-    if(p.y<-5){p.y=H+5;p.x=rnd(0,W);}
-    if(p.x<-5)p.x=W+5; if(p.x>W+5)p.x=-5;
-    p.alpha = p.baseA*(0.4+0.6*Math.sin(T*p.ts+p.to));
+// Character emotion states
+const emotions = {
+  happy: {
+    eyebrowLeft: 'M 58 75 Q 72 69 86 75',
+    eyebrowRight: 'M 94 75 Q 108 69 122 75',
+    mouth: 'M 70 123 Q 90 140 110 123',
+    cheekOpacity: '0.6',
+    tearOpacity: '0',
+    starOpacity: '1',
+    badge: '😄 มีความสุข!',
+    bodyColor: '#7C6AF7',
+    eyeScale: 'scale(1.1)',
+  },
+  excited: {
+    eyebrowLeft: 'M 55 72 Q 72 65 86 72',
+    eyebrowRight: 'M 94 72 Q 108 65 125 72',
+    mouth: 'M 68 122 Q 90 142 112 122',
+    cheekOpacity: '0.8',
+    tearOpacity: '0',
+    starOpacity: '1',
+    badge: '🤩 ตื่นเต้นมาก!',
+    bodyColor: '#F59E0B',
+  },
+  sad: {
+    eyebrowLeft: 'M 58 82 Q 72 79 86 82',
+    eyebrowRight: 'M 94 82 Q 108 79 122 82',
+    mouth: 'M 72 130 Q 90 122 108 130',
+    cheekOpacity: '0',
+    tearOpacity: '0.8',
+    starOpacity: '0',
+    badge: '😢 เข้าใจนะ...',
+    bodyColor: '#3B82F6',
+  },
+  love: {
+    eyebrowLeft: 'M 58 74 Q 72 68 86 74',
+    eyebrowRight: 'M 94 74 Q 108 68 122 74',
+    mouth: 'M 70 123 Q 90 140 110 123',
+    cheekOpacity: '0.9',
+    tearOpacity: '0',
+    starOpacity: '0',
+    badge: '🥰 น่ารักมาก!',
+    bodyColor: '#EC4899',
+  },
+  neutral: {
+    eyebrowLeft: 'M 58 78 Q 72 73 86 78',
+    eyebrowRight: 'M 94 78 Q 108 73 122 78',
+    mouth: 'M 72 125 Q 90 133 108 125',
+    cheekOpacity: '0',
+    tearOpacity: '0',
+    starOpacity: '0',
+    badge: '😊 พร้อมฟัง',
+    bodyColor: '#7C6AF7',
   }
+};
+
+let currentEmotion = 'neutral';
+
+function setEmotion(emotionKey) {
+  const e = emotions[emotionKey] || emotions.neutral;
+  currentEmotion = emotionKey;
+
+  document.getElementById('eyebrowLeft').setAttribute('d', e.eyebrowLeft);
+  document.getElementById('eyebrowRight').setAttribute('d', e.eyebrowRight);
+  document.getElementById('mouth').setAttribute('d', e.mouth);
+  document.getElementById('cheekLeft').style.opacity = e.cheekOpacity;
+  document.getElementById('cheekRight').style.opacity = e.cheekOpacity;
+  document.getElementById('tearLeft').style.opacity = e.tearOpacity;
+  document.getElementById('tearRight').style.opacity = e.tearOpacity;
+  document.getElementById('starLeft').style.opacity = e.starOpacity;
+  document.getElementById('starRight').style.opacity = e.starOpacity;
+  document.getElementById('emotionBadge').textContent = e.badge;
+  document.getElementById('bodyRect').setAttribute('fill', e.bodyColor);
+
+  // Blink animation
+  const eyes = document.getElementById('eyesGroup');
+  eyes.style.animation = 'none';
+  setTimeout(() => eyes.style.animation = '', 10);
 }
 
-// ══════════════════════════════════════════════
-//  RAIN
-// ══════════════════════════════════════════════
-const rain = [];
-for(let i=0;i<65;i++){
-  rain.push({x:rnd(0,W),y:rnd(-H,H),len:rnd(10,24),spd:rnd(5,12),a:rnd(0.02,0.08)});
-}
-function updateRain(){
-  for(const d of rain){
-    d.y+=d.spd; d.x+=d.spd*0.08;
-    if(d.y>H+d.len){d.y=-d.len;d.x=rnd(0,W);}
-  }
-}
-
-// ══════════════════════════════════════════════
-//  FOG BLOBS — deeper, denser
-// ══════════════════════════════════════════════
-const fogBlobs = [];
-for(let i=0;i<8;i++){
-  fogBlobs.push({
-    x:rnd(-150,W+150), y:rnd(H*0.2,H),
-    rx:rnd(200,420), ry:rnd(70,160),
-    a:rnd(0.06,0.18),
-    phase:rnd(0,PI2),
-    spd:rnd(0.02,0.12)
-  });
-}
-
-// ══════════════════════════════════════════════
-//  LIGHTNING / DISTANT FLASH
-// ══════════════════════════════════════════════
-let flashTimer = rndInt(400,1200);
-let flashAlpha = 0;
-let flashBright = false;
-function triggerFlash(){
-  flashBright = true;
-  flashTimer = rndInt(600,1800);
-  // subtle screen-edge flash, NOT jumpscares
-  setTimeout(()=>{ flashBright=false; }, rnd(40,120));
-}
-function updateFlash(){
-  flashTimer--;
-  if(flashTimer<=0) triggerFlash();
-  if(flashBright){
-    flashAlpha = Math.min(flashAlpha+0.08, 0.18);
-  } else {
-    flashAlpha = Math.max(flashAlpha-0.015, 0);
-  }
-  flashVeil.style.opacity = flashAlpha;
-}
-
-// ══════════════════════════════════════════════
-//  RIPPLES
-// ══════════════════════════════════════════════
-const ripples = [];
-function spawnRipple(x,y){
-  ripples.push({x,y,r:0,maxR:rnd(55,95),a:0.65,spd:rnd(1.5,2.5)});
-}
-function updateRipples(){
-  for(let i=ripples.length-1;i>=0;i--){
-    const r=ripples[i];
-    r.r+=r.spd;
-    r.a=0.65*(1-r.r/r.maxR);
-    if(r.r>=r.maxR) ripples.splice(i,1);
-  }
-}
-
-// ══════════════════════════════════════════════
-//  WHISPER MESSAGES — psychological layer
-// ══════════════════════════════════════════════
-const WHISPERS = [
-  'it sees you','don\'t look away','still here','come closer',
-  'are you alone?','it was here','did you hear that?',
-  'watching','remember me','not quite alone','it found you',
-  'blink','it knows','stay','why did you come?'
-];
-let whisperTimer = rndInt(300,800);
-let whisperActive = false;
-
-function spawnWhisper(){
-  if(whisperActive) return;
-  whisperActive = true;
-  const el = document.createElement('div');
-  el.className = 'whisper-text';
-  const text = WHISPERS[rndInt(0,WHISPERS.length-1)];
-  el.textContent = text;
-  // Random position on screen
-  const px = rnd(15,75), py = rnd(20,80);
-  el.style.left = px+'%';
-  el.style.top = py+'%';
-  el.style.transform = 'translate(-50%,-50%)';
-  whisperLayer.appendChild(el);
-
-  // Fade in → hold → fade out
-  let alpha = 0;
-  let phase = 'in';
-  let holdTimer = 0;
-  const maxA = rnd(0.12, 0.28);
-  const speed = 0.006;
-
-  function animWhisper(){
-    if(phase==='in'){
-      alpha = Math.min(alpha+speed, maxA);
-      if(alpha>=maxA){ phase='hold'; holdTimer=0; }
-    } else if(phase==='hold'){
-      holdTimer++;
-      if(holdTimer>90) phase='out';
-    } else {
-      alpha = Math.max(alpha-speed*0.5, 0);
-      if(alpha<=0){
-        el.remove();
-        whisperActive = false;
-        whisperTimer = rndInt(400,1200);
-        return;
-      }
-    }
-    el.style.color = `rgba(160,180,230,${alpha})`;
-    requestAnimationFrame(animWhisper);
-  }
-  requestAnimationFrame(animWhisper);
-}
-
-function updateWhispers(interacted){
-  if(!interacted) return; // Only whisper after interaction
-  whisperTimer--;
-  if(whisperTimer<=0 && !whisperActive) spawnWhisper();
-}
-
-// ══════════════════════════════════════════════
-//  STATIC STAR BACKGROUND
-// ══════════════════════════════════════════════
-let starCanvas, starCtx;
-function buildStarField(){
-  starCanvas = document.createElement('canvas');
-  starCanvas.width = W; starCanvas.height = H;
-  starCtx = starCanvas.getContext('2d');
-  // Deep near-black gradient
-  const bg = starCtx.createRadialGradient(W*.5,H*.25,0,W*.5,H*.5,H*.9);
-  bg.addColorStop(0,'#0e1525');
-  bg.addColorStop(0.4,'#070c18');
-  bg.addColorStop(1,'#020305');
-  starCtx.fillStyle=bg;
-  starCtx.fillRect(0,0,W,H);
-  // Moon haze — very dim
-  const mh = starCtx.createRadialGradient(W*.62,H*.1,0,W*.62,H*.1,180);
-  mh.addColorStop(0,'rgba(140,160,220,0.12)');
-  mh.addColorStop(0.5,'rgba(80,100,180,0.05)');
-  mh.addColorStop(1,'rgba(0,0,0,0)');
-  starCtx.fillStyle=mh; starCtx.fillRect(0,0,W,H);
-  // Stars
-  for(let i=0;i<160;i++){
-    const sx=rnd(0,W),sy=rnd(0,H*.65),ss=rnd(0.3,1.3),sa=rnd(0.15,0.6);
-    starCtx.fillStyle=`rgba(190,210,255,${sa})`;
-    starCtx.beginPath();
-    starCtx.arc(sx,sy,ss,0,PI2);
-    starCtx.fill();
-  }
-}
-
-// ══════════════════════════════════════════════
-//  CREATURE — full rebuild
-// ══════════════════════════════════════════════
-const MAX_SEGS = 50;
-const MIN_SEGS = 20;
-const SEG_LEN  = 15;
-
-class Creature {
-  constructor(){
-    this.visible = true;
-    this.opacity = 1;   // 0..1 for fade in/out
-    this.segCount = 38; // will vary
-    this.segments = [];
-    // Spawn at random edge
-    const {x,y} = this._edgePoint();
-    for(let i=0;i<MAX_SEGS;i++){
-      this.segments.push({x:x-i*SEG_LEN, y});
-    }
-    this.vx = 0; this.vy = 0;
-    this.speed = 2.0;
-    this.targetX = W/2; this.targetY = H/2;
-
-    // Behavior
-    this.state = 'enter';  // enter|wander|follow|flee|stare|sleep|hiding|exit
-    this.stateTimer = 60;
-    this.idleTimer = 0;
-    this.idleThreshold = 1800; // 30s at 60fps
-
-    // Personality roll for this interaction
-    this._rollPersonality();
-
-    // Visual
-    this.legPhase = 0;
-    this.noiseOX = rnd(0,100);
-    this.noiseOY = rnd(100,200);
-    this.eyeRed = false;
-    this.eyeRedTimer = 0;
-    this.blinkTimer = rndInt(80,220);
-    this.blinkVal = 1; // 1=open, 0=closed
-
-    // Sleep zzz
-    this.sleepAlpha = 0;
-
-    // Body length morphing
-    this.segCountTarget = 38;
-    this.segMorphTimer = 0;
-
-    // Stare direction
-    this.stareDX = 0; this.stareDY = 0;
-    this.stareTimer = 0;
-
-    // Touch tracking
-    this.lastTouchX = -999; this.lastTouchY = -999;
-    this.touchDist = 9999;
-
-    this.moodSpeed = 1.0;
-  }
-
-  _edgePoint(){
-    const side = rndInt(0,3);
-    if(side===0) return {x:rnd(0,W),y:-30};
-    if(side===1) return {x:W+30,y:rnd(0,H)};
-    if(side===2) return {x:rnd(0,W),y:H+30};
-    return {x:-30,y:rnd(0,H)};
-  }
-
-  _rollPersonality(){
-    const r = Math.random();
-    if(r<0.40)      this.personality = 'curious';   // approach
-    else if(r<0.80) this.personality = 'shy';       // flee
-    else            this.personality = 'watchful';  // stare
-  }
-
-  wake(){
-    if(this.state==='sleep'||this.state==='hiding'){
-      this.state='wander';
-      this.stateTimer=120;
-    }
-    this.idleTimer=0;
-  }
-
-  onTouch(tx,ty){
-    this.lastTouchX=tx; this.lastTouchY=ty;
-    this.idleTimer=0;
-    // Red eyes occasionally
-    if(Math.random()<0.15){
-      this.eyeRed=true;
-      this.eyeRedTimer=rndInt(40,120);
-    }
-    // Behavior based on personality
-    if(this.personality==='curious'){
-      this.state='follow';
-      this.targetX=tx; this.targetY=ty;
-      this.stateTimer=rndInt(200,400);
-    } else if(this.personality==='shy'){
-      this.state='flee';
-      this.targetX=tx; this.targetY=ty;
-      this.stateTimer=rndInt(150,300);
-    } else {
-      // 50/50 stare or follow
-      if(Math.random()<0.5){
-        this.state='stare';
-        this.stareDX=tx-this.segments[0].x;
-        this.stareDY=ty-this.segments[0].y;
-        this.stareTimer=rndInt(80,200);
-      } else {
-        this.state='follow';
-        this.targetX=tx; this.targetY=ty;
-        this.stateTimer=rndInt(120,260);
-      }
-    }
-  }
-
-  update(){
-    const head = this.segments[0];
-
-    // ── Eye blink ──
-    this.blinkTimer--;
-    if(this.blinkTimer<=0){
-      this.blinkVal=0;
-      setTimeout(()=>{this.blinkVal=1;},80+rnd(0,60));
-      this.blinkTimer=rndInt(120,360);
-    }
-    // Red eyes
-    if(this.eyeRed){
-      this.eyeRedTimer--;
-      if(this.eyeRedTimer<=0) this.eyeRed=false;
-    }
-
-    // ── Body length morph ──
-    this.segMorphTimer--;
-    if(this.segMorphTimer<=0){
-      this.segCountTarget = rndInt(MIN_SEGS, MAX_SEGS);
-      this.segMorphTimer = rndInt(300,900);
-    }
-    if(this.segCount<this.segCountTarget) this.segCount=Math.min(this.segCount+0.04,this.segCountTarget);
-    else if(this.segCount>this.segCountTarget) this.segCount=Math.max(this.segCount-0.04,this.segCountTarget);
-
-    // ── Idle accumulate ──
-    this.idleTimer++;
-
-    // ── Idle behavior (30s) ──
-    if(this.idleTimer>this.idleThreshold && this.state==='wander'){
-      const r2 = Math.random();
-      if(r2<0.33){
-        this.state='exit';
-        const ep = this._edgePoint();
-        this.targetX=ep.x; this.targetY=ep.y;
-        this.stateTimer=300;
-      } else if(r2<0.66){
-        this.state='sleep';
-      } else {
-        this.state='hiding';
-        this.opacity=0.05;
-      }
-      this.idleTimer=0;
-    }
-
-    const spd = this.speed * this.moodSpeed;
-
-    // ── State machine ──
-    if(this.state==='enter'){
-      // Move toward center from edge
-      const dx=W/2-head.x, dy=H/2-head.y;
-      const d=Math.hypot(dx,dy)||1;
-      this.vx=lerp(this.vx,(dx/d)*2.5,0.04);
-      this.vy=lerp(this.vy,(dy/d)*2.5,0.04);
-      head.x+=this.vx*spd; head.y+=this.vy*spd;
-      this.stateTimer--;
-      if(this.stateTimer<=0||d<120){this.state='wander';this.stateTimer=0;}
-      this.opacity=Math.min(this.opacity+0.015,1);
-
-    } else if(this.state==='wander'){
-      const nx=noise(T*0.0025+this.noiseOX)*2.4;
-      const ny=noise(T*0.0025+this.noiseOY)*2.4;
-      this.vx=lerp(this.vx,nx,0.018);
-      this.vy=lerp(this.vy,ny,0.018);
-      const m=80;
-      if(head.x<m) this.vx+=0.3;
-      if(head.x>W-m) this.vx-=0.3;
-      if(head.y<m) this.vy+=0.3;
-      if(head.y>H-m) this.vy-=0.3;
-      head.x+=this.vx*spd; head.y+=this.vy*spd;
-
-    } else if(this.state==='follow'){
-      const dx=this.targetX-head.x, dy=this.targetY-head.y;
-      const d=Math.hypot(dx,dy)||1;
-      if(d>40){
-        this.vx=lerp(this.vx,(dx/d)*2.8,0.07);
-        this.vy=lerp(this.vy,(dy/d)*2.8,0.07);
-        head.x+=this.vx*spd; head.y+=this.vy*spd;
-      }
-      this.stateTimer--;
-      if(this.stateTimer<=0){
-        this.state='wander';
-        this._rollPersonality();
-      }
-
-    } else if(this.state==='flee'){
-      const dx=this.targetX-head.x, dy=this.targetY-head.y;
-      const d=Math.hypot(dx,dy)||1;
-      // Move AWAY
-      this.vx=lerp(this.vx,(-dx/d)*3.2,0.09);
-      this.vy=lerp(this.vy,(-dy/d)*3.2,0.09);
-      head.x+=this.vx*spd*1.4; head.y+=this.vy*spd*1.4;
-      // Boundary bounce
-      if(head.x<-80||head.x>W+80||head.y<-80||head.y>H+80){
-        // Re-enter from opposite edge after a pause
-        this.state='hidden_pause';
-        this.stateTimer=rndInt(60,180);
-        this.opacity=0;
-        const ep=this._edgePoint();
-        for(let i=0;i<MAX_SEGS;i++){this.segments[i].x=ep.x-i*2;this.segments[i].y=ep.y;}
-        this.vx=0;this.vy=0;
-      }
-      this.stateTimer--;
-      if(this.stateTimer<=0){this.state='wander';this._rollPersonality();}
-
-    } else if(this.state==='stare'){
-      // Almost still — tiny drift
-      this.vx=lerp(this.vx,0,0.05);
-      this.vy=lerp(this.vy,0,0.05);
-      head.x+=this.vx*0.3; head.y+=this.vy*0.3;
-      this.stareTimer--;
-      if(this.stareTimer<=0){this.state='wander';this._rollPersonality();}
-
-    } else if(this.state==='sleep'){
-      this.sleepAlpha=Math.min(this.sleepAlpha+0.008,1);
-      head.x+=Math.sin(T*0.006)*0.12;
-      head.y+=Math.sin(T*0.009)*0.08;
-      this.opacity=Math.max(this.opacity-0.002,0.4);
-
-    } else if(this.state==='hiding'){
-      // Creature fades to near-invisible and wanders very slowly
-      this.opacity=Math.max(this.opacity-0.01,0.04);
-      const nx=noise(T*0.0015+this.noiseOX)*1.0;
-      const ny=noise(T*0.0015+this.noiseOY)*1.0;
-      this.vx=lerp(this.vx,nx,0.01);
-      this.vy=lerp(this.vy,ny,0.01);
-      head.x+=this.vx*0.5; head.y+=this.vy*0.5;
-
-    } else if(this.state==='exit'){
-      const dx=this.targetX-head.x, dy=this.targetY-head.y;
-      const d=Math.hypot(dx,dy)||1;
-      this.vx=lerp(this.vx,(dx/d)*3,0.06);
-      this.vy=lerp(this.vy,(dy/d)*3,0.06);
-      head.x+=this.vx*spd*1.2; head.y+=this.vy*spd*1.2;
-      this.opacity=Math.max(this.opacity-0.005,0);
-      this.stateTimer--;
-      if(this.stateTimer<=0||this.opacity<=0){
-        // Reappear elsewhere after pause
-        this.state='hidden_pause';
-        this.stateTimer=rndInt(80,200);
-        this.opacity=0;
-        const ep=this._edgePoint();
-        for(let i=0;i<MAX_SEGS;i++){this.segments[i].x=ep.x-i*2;this.segments[i].y=ep.y;}
-        this.vx=0;this.vy=0;
-      }
-
-    } else if(this.state==='hidden_pause'){
-      this.stateTimer--;
-      if(this.stateTimer<=0){
-        this.state='enter';
-        this.stateTimer=120;
-        this.sleepAlpha=0;
-        this._rollPersonality();
-        this.idleTimer=0;
-      }
-    }
-
-    // Clamp visible head when wandering
-    if(this.state==='wander'||this.state==='follow'||this.state==='stare'||this.state==='flee'){
-      head.x=clamp(head.x,15,W-15);
-      head.y=clamp(head.y,15,H-15);
-    }
-    if(this.state!=='sleep') this.sleepAlpha=Math.max(this.sleepAlpha-0.02,0);
-
-    // ── IK chain ──
-    for(let i=1;i<MAX_SEGS;i++){
-      const prev=this.segments[i-1], seg=this.segments[i];
-      const dx=seg.x-prev.x, dy=seg.y-prev.y;
-      const d=Math.hypot(dx,dy);
-      if(d>SEG_LEN){
-        const ratio=(d-SEG_LEN)/d;
-        seg.x-=dx*ratio*0.92;
-        seg.y-=dy*ratio*0.92;
-      }
-    }
-
-    // Leg wave
-    const vel=Math.hypot(this.vx,this.vy);
-    this.legPhase+=vel*0.14*this.moodSpeed;
-  }
-
-  draw(){
-    const sc=Math.round(this.segCount);
-    const base=this.opacity;
-    if(base<0.01) return;
-
-    // ── Body glow ──
-    const head=this.segments[0];
-    ctx.save();
-    const glowColor = this.eyeRed ? 'rgba(180,30,30' : 'rgba(60,90,200';
-    const gr=ctx.createRadialGradient(head.x,head.y,0,head.x,head.y,90);
-    gr.addColorStop(0,`${glowColor},${0.06*base})`);
-    gr.addColorStop(1,'rgba(0,0,0,0)');
-    ctx.fillStyle=gr;
-    ctx.beginPath(); ctx.ellipse(head.x,head.y,90,90,0,0,PI2); ctx.fill();
-    ctx.restore();
-
-    // ── Legs ──
-    this._drawLegs(sc, base);
-
-    // ── Segments ──
-    ctx.save();
-    ctx.shadowColor=this.eyeRed?'rgba(200,50,50,0.4)':'rgba(100,140,255,0.35)';
-    ctx.shadowBlur=10;
-
-    for(let i=sc-1;i>=0;i--){
-      const seg=this.segments[i];
-      const nxt=this.segments[Math.min(i+1,sc-1)];
-      const tr=i/sc;
-      const sz = i===0 ? 12 : lerp(10,3,tr);
-      const alpha=lerp(0.9,0.45,tr)*base;
-
-      const r=Math.round(lerp(210,140,tr));
-      const g=Math.round(lerp(225,175,tr));
-      const b=Math.round(lerp(255,230,tr));
-
-      ctx.globalAlpha=alpha;
-      const ang=Math.atan2(seg.y-nxt.y,seg.x-nxt.x);
-      ctx.save();
-      ctx.translate(seg.x,seg.y);
-      ctx.rotate(ang);
-
-      // Ring
-      ctx.strokeStyle=`rgba(${r},${g},${b},${alpha*0.55})`;
-      ctx.lineWidth=sz*0.22;
-      ctx.beginPath(); ctx.ellipse(0,0,sz*1.08,sz*0.72,0,0,PI2); ctx.stroke();
-
-      // Fill
-      const sg=ctx.createRadialGradient(0,-sz*0.18,0,0,0,sz);
-      sg.addColorStop(0,`rgba(${r},${g},${b},${alpha})`);
-      sg.addColorStop(0.65,`rgba(${Math.round(r*.65)},${Math.round(g*.65)},${Math.round(b*.82)},${alpha*.75})`);
-      sg.addColorStop(1,'rgba(0,0,0,0)');
-      ctx.fillStyle=sg;
-      ctx.beginPath(); ctx.ellipse(0,0,sz,sz*0.68,0,0,PI2); ctx.fill();
-      ctx.restore();
-    }
-    ctx.restore();
-
-    // ── Head ──
-    this._drawHead(base);
-
-    // ── Sleep Zzz ──
-    if(this.sleepAlpha>0.01) this._drawZzz(base);
-  }
-
-  _drawLegs(sc, base){
-    const segs=this.segments;
-    ctx.save();
-    for(let i=2;i<sc-2;i+=2){
-      const seg=segs[i], nxt=segs[Math.min(i+1,sc-1)];
-      const ang=Math.atan2(nxt.y-seg.y,nxt.x-seg.x);
-      const perp=ang+Math.PI/2;
-      const tr=i/sc;
-      const legLen=lerp(22,9,tr);
-      const alpha=lerp(0.55,0.22,tr)*base;
-
-      for(let s=-1;s<=1;s+=2){
-        const bx=seg.x+Math.cos(perp)*s*6.5;
-        const by=seg.y+Math.sin(perp)*s*6.5;
-        const wv=Math.sin(this.legPhase+i*0.55+s*1.4)*0.55;
-
-        const midAng=perp+s*(0.55+wv*0.35);
-        const ml=legLen*0.52;
-        const mx=bx+Math.cos(midAng)*s*ml;
-        const my=by+Math.sin(midAng)*s*ml;
-
-        const tipAng=midAng+s*(0.48+wv*0.45);
-        const tx2=mx+Math.cos(tipAng)*s*legLen*0.52;
-        const ty2=my+Math.sin(tipAng)*s*legLen*0.52;
-
-        const rv=Math.round(lerp(195,145,tr));
-        const gv=Math.round(lerp(215,175,tr));
-
-        ctx.strokeStyle=`rgba(${rv},${gv},255,${alpha})`;
-        ctx.lineWidth=lerp(1.3,0.5,tr);
-        ctx.lineCap='round';
-        ctx.globalAlpha=alpha;
-        ctx.beginPath(); ctx.moveTo(bx,by); ctx.quadraticCurveTo(mx,my,tx2,ty2); ctx.stroke();
-
-        // Claws
-        ctx.lineWidth=lerp(0.9,0.35,tr);
-        ctx.globalAlpha=alpha*0.75;
-        for(let c=-1;c<=1;c+=2){
-          ctx.beginPath(); ctx.moveTo(tx2,ty2);
-          ctx.lineTo(tx2+Math.cos(tipAng+s*c*0.5)*s*3.5, ty2+Math.sin(tipAng+s*c*0.5)*s*3.5);
-          ctx.stroke();
-        }
-      }
-    }
-    ctx.restore();
-  }
-
-  _drawHead(base){
-    const head=this.segments[0], neck=this.segments[1];
-    const hang=Math.atan2(head.y-neck.y,head.x-neck.x);
-
-    ctx.save();
-    ctx.translate(head.x,head.y);
-    ctx.rotate(hang);
-
-    // Skull dome
-    ctx.shadowColor=this.eyeRed?'rgba(220,40,40,0.7)':'rgba(120,160,255,0.6)';
-    ctx.shadowBlur=18;
-    const sg=ctx.createRadialGradient(-2,-4,0,0,0,14);
-    sg.addColorStop(0,`rgba(228,238,255,${0.93*base})`);
-    sg.addColorStop(0.55,`rgba(150,185,255,${0.72*base})`);
-    sg.addColorStop(1,`rgba(70,100,190,${0.25*base})`);
-    ctx.fillStyle=sg;
-    ctx.beginPath(); ctx.ellipse(2,0,14,10.5,0,0,PI2); ctx.fill();
-    ctx.shadowBlur=0;
-
-    // Eyes
-    const eyeColors = this.eyeRed
-      ? ['rgba(255,30,30,','rgba(180,10,10,']
-      : ['rgba(170,220,255,','rgba(70,140,255,'];
-
-    for(let s=-1;s<=1;s+=2){
-      const ex=6, ey=s*5.5;
-      // Socket
-      ctx.fillStyle=`rgba(8,10,28,${0.88*base})`;
-      ctx.beginPath(); ctx.ellipse(ex,ey,4.2,3.6,0,0,PI2); ctx.fill();
-      // Glow
-      const blink=this.blinkVal;
-      if(blink>0.05){
-        ctx.save();
-        ctx.scale(1,blink);
-        const eg=ctx.createRadialGradient(ex,ey/blink,0,ex,ey/blink,3.6);
-        eg.addColorStop(0,`${eyeColors[0]}${0.95*blink*base})`);
-        eg.addColorStop(0.5,`${eyeColors[1]}${0.65*blink*base})`);
-        eg.addColorStop(1,'rgba(0,0,0,0)');
-        ctx.fillStyle=eg;
-        ctx.beginPath(); ctx.ellipse(ex,ey/blink,3.6,3.2,0,0,PI2); ctx.fill();
-        ctx.restore();
-      }
-    }
-
-    // Mandibles
-    ctx.strokeStyle=`rgba(185,210,255,${0.65*base})`;
-    ctx.lineWidth=1.1; ctx.lineCap='round';
-    for(let s=-1;s<=1;s+=2){
-      ctx.beginPath(); ctx.moveTo(13,s*3); ctx.quadraticCurveTo(20,s*7,25,s*5); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(25,s*5); ctx.lineTo(28,s*2.5); ctx.stroke();
-    }
-
-    // Antennae
-    ctx.strokeStyle=`rgba(150,195,255,${0.42*base})`; ctx.lineWidth=0.75;
-    const aw=Math.sin(T*0.035)*10;
-    for(let s=-1;s<=1;s+=2){
-      ctx.beginPath(); ctx.moveTo(11,s*5);
-      ctx.quadraticCurveTo(22+aw*.25,s*16+aw*.4,36,s*(11+aw*.5));
-      ctx.stroke();
-    }
-
-    ctx.restore();
-  }
-
-  _drawZzz(base){
-    const head=this.segments[0];
-    ctx.save();
-    const sa=this.sleepAlpha*0.65*base;
-    const pts=[{x:14,y:-16,sc:0.7,ph:0},{x:22,y:-27,sc:0.85,ph:.6},{x:30,y:-40,sc:1,ph:1.1}];
-    for(const z of pts){
-      const flt=Math.sin(T*0.018+z.ph)*4;
-      const a=sa*(0.5+0.5*Math.sin(T*0.016+z.ph));
-      ctx.globalAlpha=a;
-      ctx.font=`italic 300 ${Math.round(13*z.sc)}px 'Cormorant Garamond',serif`;
-      ctx.fillStyle=`rgba(160,185,255,${a})`;
-      ctx.fillText('z',head.x+z.x,head.y+z.y+flt);
-    }
-    ctx.restore();
-  }
-}
-
-// ══════════════════════════════════════════════
-//  DRAW BACKGROUND & SCENE
-// ══════════════════════════════════════════════
-function drawBackground(){
-  ctx.drawImage(starCanvas,0,0);
-  // Animated fog
-  for(const f of fogBlobs){
-    const fx=f.x+Math.sin(T*0.002+f.phase)*55;
-    const fy=f.y+Math.sin(T*0.0015+f.phase*1.3)*20;
-    const g=ctx.createRadialGradient(fx,fy,0,fx,fy,f.rx);
-    g.addColorStop(0,`rgba(50,70,160,${f.a})`);
-    g.addColorStop(0.55,`rgba(35,50,120,${f.a*.45})`);
-    g.addColorStop(1,'rgba(0,0,0,0)');
-    ctx.save();
-    ctx.scale(1,f.ry/f.rx);
-    ctx.fillStyle=g;
-    ctx.beginPath(); ctx.arc(fx,fy*(f.rx/f.ry),f.rx,0,PI2);
-    ctx.restore();
-    ctx.fill();
-  }
-}
-
-function drawRain(){
-  ctx.save();
-  ctx.strokeStyle='rgba(160,185,230,0.07)';
-  ctx.lineWidth=0.65;
-  for(const d of rain){
-    ctx.globalAlpha=d.a;
-    ctx.beginPath(); ctx.moveTo(d.x,d.y);
-    ctx.lineTo(d.x+d.len*.07,d.y+d.len); ctx.stroke();
-  }
-  ctx.restore();
-}
-
-function drawParticles(){
-  for(const p of particles){
-    ctx.save(); ctx.globalAlpha=p.alpha;
-    const g=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.sz*2.8);
-    g.addColorStop(0,'rgba(190,215,255,1)');
-    g.addColorStop(1,'rgba(100,140,220,0)');
-    ctx.fillStyle=g;
-    ctx.beginPath(); ctx.arc(p.x,p.y,p.sz*2.8,0,PI2); ctx.fill();
-    ctx.restore();
-  }
-}
-
-function drawRipples(){
-  ctx.save();
-  for(const r of ripples){
-    for(let k=0;k<3;k++){
-      const rk=r.r-k*13; if(rk<0) continue;
-      const a=r.a*(1-k/3)*0.75;
-      ctx.globalAlpha=a;
-      ctx.strokeStyle=`rgba(90,150,240,${a})`;
-      ctx.lineWidth=lerp(1.8,0.4,r.r/r.maxR);
-      ctx.beginPath(); ctx.ellipse(r.x,r.y,rk,rk*0.26,0,0,PI2); ctx.stroke();
-    }
-  }
-  ctx.restore();
-}
-
-function drawVignette(){
-  const vg=ctx.createRadialGradient(W/2,H/2,H*.18,W/2,H/2,H*.88);
-  vg.addColorStop(0,'rgba(0,0,0,0)');
-  vg.addColorStop(0.6,'rgba(2,3,6,0.25)');
-  vg.addColorStop(1,'rgba(2,3,6,0.88)');
-  ctx.fillStyle=vg; ctx.fillRect(0,0,W,H);
-}
-
-// ══════════════════════════════════════════════
-//  AUDIO SYSTEM
-// ══════════════════════════════════════════════
-let audioCtx=null, masterGain=null;
-let currentBuf=null, currentSrc=null, nextSrc=null;
-let audioStarted=false;
-let playlist=[], playIdx=0;
-const JAMENDO_KEY='b6747d04';
-
-async function fetchPlaylist(){
-  const tags=['ambient','dark+ambient','cinematic','neoclassical'];
-  const tag=tags[rndInt(0,tags.length-1)];
-  try{
-    const url=`https://api.jamendo.com/v3.0/tracks/?client_id=${JAMENDO_KEY}&format=json&limit=10&tags=${tag}&fuzzytags=1&audioformat=mp32`;
-    const res=await fetch(url);
-    const data=await res.json();
-    if(data.results&&data.results.length>0){
-      // Shuffle
-      playlist=data.results.map(t=>({name:t.name,artist:t.artist_name,url:t.audio}))
-        .sort(()=>Math.random()-0.5);
-      playIdx=0;
-      return true;
-    }
-  }catch(e){}
-  return false;
-}
-
-function startAudio(){
-  if(audioStarted) return;
-  audioStarted=true;
-  audioCtx=new(window.AudioContext||window.webkitAudioContext)();
-  masterGain=audioCtx.createGain();
-  masterGain.gain.value=0;
-  masterGain.connect(audioCtx.destination);
-
-  fetchPlaylist().then(ok=>{
-    if(ok&&playlist.length>0) loadAndPlay(playlist[playIdx]);
-    else startGenerativeAmbience();
-  });
-}
-
-function loadAndPlay(track){
-  if(!track||!audioCtx) return;
-  fetch(track.url).then(r=>r.arrayBuffer())
-    .then(ab=>audioCtx.decodeAudioData(ab))
-    .then(buf=>{
-      crossfadeTo(buf);
-      trackEl.textContent=`♪ ${track.name}${track.artist?' — '+track.artist:''}`;
-      trackEl.style.opacity='1';
-      setTimeout(()=>{trackEl.style.opacity='0';},8000);
-    }).catch(()=>startGenerativeAmbience());
-}
-
-function crossfadeTo(buf){
-  const src=audioCtx.createBufferSource();
-  src.buffer=buf; src.loop=false;
-  src.connect(masterGain);
-  masterGain.gain.setTargetAtTime(0.5,audioCtx.currentTime,2.5);
-  if(currentSrc){
-    const old=currentSrc;
-    setTimeout(()=>{try{old.stop();}catch(e){}},3000);
-  }
-  src.start();
-  currentSrc=src;
-  src.onended=()=>{
-    playIdx=(playIdx+1)%playlist.length;
-    setTimeout(()=>{
-      if(playlist[playIdx]) loadAndPlay(playlist[playIdx]);
-    },1500);
+function onOccasionChange() {
+  const val = document.getElementById('occasionSelect').value;
+  const emotions_map = {
+    birthday: 'excited',
+    valentine: 'love',
+    anniversary: 'love',
+    newyear: 'excited',
+    graduation: 'happy',
+    newjob: 'happy',
+    vent: 'sad',
+    sad: 'sad',
+    custom: 'neutral'
   };
+  if (val) setEmotion(emotions_map[val] || 'neutral');
+
+  // Set placeholder text
+  const placeholders = {
+    birthday: 'บอกชื่อเพื่อนหรือตัวเองได้เลย เช่น "วันนี้วันเกิดพี่สาวฉัน ชื่อแนน"',
+    valentine: 'เล่าให้ฟังได้เลย หรืออยากส่งความรักให้ใคร?',
+    vent: 'ระบายได้เลย... ไม่ตัดสิน อยู่ที่นี่ฟังอยู่นะ 💙',
+    sad: 'เกิดอะไรขึ้น? เล่าให้ฟังได้เลย...',
+  };
+  const textarea = document.getElementById('userMessage');
+  textarea.placeholder = placeholders[val] || 'เล่าให้ฟังได้เลย...';
 }
 
-function startGenerativeAmbience(){
-  if(!audioCtx) return;
-  trackEl.textContent='♪ The Void Breathes';
-  trackEl.style.opacity='1';
-  setTimeout(()=>{trackEl.style.opacity='0';},6000);
+async function sendToAI() {
+  const occasion = document.getElementById('occasionSelect').value;
+  const message = document.getElementById('userMessage').value.trim();
+  const btn = document.getElementById('sendBtn');
 
-  masterGain.gain.setTargetAtTime(0.55,audioCtx.currentTime,3);
-
-  // Dark drone pads
-  const droneFreqs=[55,82.41,110,130.81];
-  for(const f of droneFreqs){
-    const o=audioCtx.createOscillator();
-    const g=audioCtx.createGain();
-    o.type='sine'; o.frequency.value=f;
-    g.gain.value=0.018+(Math.random()*0.008);
-    o.connect(g); g.connect(masterGain); o.start();
+  if (!occasion && !message) {
+    shakeChar();
+    return;
   }
 
-  // Eerie high overtone
-  const hOsc=audioCtx.createOscillator();
-  const hGain=audioCtx.createGain();
-  hOsc.type='triangle'; hOsc.frequency.value=440;
-  hGain.gain.value=0.006;
-  const lfo=audioCtx.createOscillator();
-  const lfoG=audioCtx.createGain();
-  lfo.frequency.value=0.08; lfoG.gain.value=12;
-  lfo.connect(lfoG); lfoG.connect(hOsc.frequency);
-  lfo.start(); hOsc.connect(hGain); hGain.connect(masterGain); hOsc.start();
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> น้องกำลังคิดอยู่...';
+  setEmotion('neutral');
 
-  // Sparse notes
-  function schedNote(){
-    if(!audioCtx||!audioStarted) return;
-    const minorPentatonic=[110,130.81,155.56,185,220,261.63,311.13];
-    const freq=minorPentatonic[rndInt(0,minorPentatonic.length-1)]*(Math.random()<0.4?0.5:1);
-    const when=audioCtx.currentTime;
-    const o=audioCtx.createOscillator();
-    const g=audioCtx.createGain();
-    o.type=Math.random()<0.6?'sine':'triangle';
-    o.frequency.value=freq;
-    g.gain.setValueAtTime(0,when);
-    g.gain.linearRampToValueAtTime(0.035,when+1.2);
-    g.gain.exponentialRampToValueAtTime(0.0001,when+rnd(4,10));
-    o.connect(g); g.connect(masterGain); o.start(when); o.stop(when+12);
-    setTimeout(schedNote,rnd(1500,5000));
-  }
-  schedNote();
+  const occasionLabels = {
+    birthday: 'วันเกิด', valentine: 'วันวาเลนไทน์',
+    anniversary: 'วันครบรอบ', newyear: 'วันปีใหม่',
+    graduation: 'วันสำเร็จการศึกษา', newjob: 'วันเริ่มงานใหม่',
+    vent: 'การระบาย/บ่น', sad: 'ความเศร้า', custom: 'โอกาสพิเศษ'
+  };
 
-  // Whisper-like white noise burst
-  function schedNoise(){
-    if(!audioCtx||!audioStarted) return;
-    const buf=audioCtx.createBuffer(1,audioCtx.sampleRate*.8,audioCtx.sampleRate);
-    const data=buf.getChannelData(0);
-    for(let i=0;i<data.length;i++) data[i]=(Math.random()*2-1)*0.12;
-    const ns=audioCtx.createBufferSource();
-    ns.buffer=buf;
-    const ng=audioCtx.createGain();
-    const bpf=audioCtx.createBiquadFilter();
-    bpf.type='bandpass'; bpf.frequency.value=rnd(600,3000); bpf.Q.value=8;
-    const when=audioCtx.currentTime;
-    ng.gain.setValueAtTime(0,when);
-    ng.gain.linearRampToValueAtTime(0.04,when+0.3);
-    ng.gain.exponentialRampToValueAtTime(0.0001,when+0.8);
-    ns.connect(bpf); bpf.connect(ng); ng.connect(masterGain);
-    ns.start(when);
-    setTimeout(schedNoise,rnd(4000,12000));
+  const systemPrompt = `คุณคือ "น้อง HeartBot" ผู้ช่วยเป็นมิตร อบอุ่น พูดภาษาไทยน่ารัก ใช้อีโมจิพอดี
+  ตอบสั้นๆ กระชับ 3-5 ประโยค อบอุ่น จริงใจ ไม่เป็นทางการ
+  ถ้าเป็นวันเกิด ให้อวยพรอย่างมีพลัง ถ้าเศร้า ให้ปลอบใจ ถ้าระบาย ให้รับฟังไม่ตัดสิน`;
+
+  const userPrompt = `โอกาส: ${occasionLabels[occasion] || 'ทั่วไป'}\nสิ่งที่ผู้ใช้บอก: ${message || 'ไม่ได้บอกรายละเอียด'}`;
+
+  try {
+    const res = await fetch('https://api.deepseek.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${DEEPSEEK_KEY}`
+      },
+      body: JSON.stringify({
+        model: 'deepseek-chat',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
+        ],
+        max_tokens: 200,
+        temperature: 0.85
+      })
+    });
+
+    const data = await res.json();
+    const reply = data.choices?.[0]?.message?.content || 'ขอโทษนะ น้องตอบไม่ได้ตอนนี้ ลองใหม่อีกทีได้เลย 😊';
+
+    document.getElementById('responseText').textContent = reply;
+    document.getElementById('responseBubble').classList.add('show');
+
+    // Set emotion based on occasion
+    const emotionMap = {
+      birthday: 'excited', valentine: 'love', anniversary: 'love',
+      newyear: 'excited', graduation: 'happy', newjob: 'happy',
+      vent: 'sad', sad: 'sad'
+    };
+    setEmotion(emotionMap[occasion] || 'happy');
+
+    if (['birthday', 'graduation', 'newjob', 'newyear'].includes(occasion)) {
+      launchConfetti();
+    }
+
+  } catch (err) {
+    document.getElementById('responseText').textContent = 'อุ๊ปส์! น้องเชื่อมต่อไม่ได้ตอนนี้ ลองใหม่อีกทีนะ 🙏';
+    document.getElementById('responseBubble').classList.add('show');
+    setEmotion('sad');
   }
-  setTimeout(schedNoise,3000);
+
+  btn.disabled = false;
+  btn.innerHTML = '💌 ส่งให้น้องตอบ';
 }
 
-// ══════════════════════════════════════════════
-//  INTERACTION
-// ══════════════════════════════════════════════
-let interacted=false;
-let lastTX=0, lastTY=0;
+function pokeChar() {
+  const wrapper = document.getElementById('charWrapper');
+  wrapper.style.animation = 'none';
 
-function handleTouch(e){
-  e.preventDefault();
-  const touch=e.touches[0];
-  const tx=touch.clientX, ty=touch.clientY;
+  // Bounce
+  document.getElementById('charSvg').style.transform = 'scale(1.1) rotate(-5deg)';
+  setTimeout(() => {
+    document.getElementById('charSvg').style.transform = 'scale(1) rotate(0deg)';
+  }, 200);
 
-  if(!interacted){
-    interacted=true;
-    hintEl.style.opacity='0';
-    startAudio();
-    whisperTimer=rndInt(500,1000);
+  // Float particle
+  const emojis = ['✨','💫','⭐','🌟','💖'];
+  const particle = document.createElement('div');
+  particle.className = 'particle';
+  particle.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+  particle.style.left = (Math.random() * 120 + 30) + 'px';
+  particle.style.top = '20px';
+  wrapper.appendChild(particle);
+  setTimeout(() => particle.remove(), 2000);
+}
+
+function shakeChar() {
+  const svg = document.getElementById('charSvg');
+  svg.style.animation = 'shake 0.4s';
+  svg.addEventListener('animationend', () => svg.style.animation = '', {once:true});
+}
+
+function launchConfetti() {
+  const container = document.getElementById('confettiContainer');
+  const colors = ['#FF6B9D','#C084FC','#60A5FA','#FCD34D','#34D399','#FB923C'];
+  for (let i = 0; i < 60; i++) {
+    setTimeout(() => {
+      const piece = document.createElement('div');
+      piece.className = 'confetti-piece';
+      piece.style.left = Math.random() * 100 + 'vw';
+      piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+      piece.style.animationDuration = (Math.random() * 2 + 2) + 's';
+      piece.style.animationDelay = Math.random() * 1 + 's';
+      piece.style.transform = `rotate(${Math.random()*360}deg)`;
+      container.appendChild(piece);
+      setTimeout(() => piece.remove(), 4000);
+    }, i * 30);
   }
-
-  spawnRipple(tx,ty);
-  creature.onTouch(tx,ty);
-  lastTX=tx; lastTY=ty;
 }
 
-canvas.addEventListener('touchstart',handleTouch,{passive:false});
-canvas.addEventListener('touchmove',e=>{
-  e.preventDefault();
-  const touch=e.touches[0];
-  if(Math.random()<0.15) spawnRipple(touch.clientX,touch.clientY);
-  creature.targetX=touch.clientX; creature.targetY=touch.clientY;
-  creature.idleTimer=0;
-  lastTX=touch.clientX; lastTY=touch.clientY;
-},{passive:false});
+// Add shake keyframe
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    20% { transform: translateX(-10px) rotate(-5deg); }
+    40% { transform: translateX(10px) rotate(5deg); }
+    60% { transform: translateX(-8px); }
+    80% { transform: translateX(8px); }
+  }
+  #charSvg { transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+`;
+document.head.appendChild(style);
 
-// ══════════════════════════════════════════════
-//  MAIN LOOP
-// ══════════════════════════════════════════════
-const creature = new Creature();
-
-function frame(ts){
-  const dt=Math.min((ts-lastTS)/16.67,3);
-  lastTS=ts; T++;
-
-  ctx.clearRect(0,0,W,H);
-
-  drawBackground();
-  updateRain(); drawRain();
-  updateParticles(); drawParticles();
-  updateRipples(); drawRipples();
-  updateFlash();
-
-  creature.update();
-  creature.draw();
-
-  drawVignette();
-
-  updateWhispers(interacted);
-
-  requestAnimationFrame(frame);
-}
-
-requestAnimationFrame(ts=>{lastTS=ts; requestAnimationFrame(frame);});
+// Auto blink
+setInterval(() => {
+  const eyeL = document.getElementById('eyeLeft');
+  const eyeR = document.getElementById('eyeRight');
+  eyeL.setAttribute('ry','1');
+  eyeR.setAttribute('ry','1');
+  setTimeout(() => {
+    eyeL.setAttribute('ry','9');
+    eyeR.setAttribute('ry','9');
+  }, 120);
+}, 3500 + Math.random()*2000);
 </script>
 </body>
 </html>
