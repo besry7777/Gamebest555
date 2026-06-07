@@ -7,521 +7,719 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Lonely Creature</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&display=swap');
 
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
-  :root {
-    --deep: #050810;
-    --void: #080d1a;
-    --mist: #1a2040;
-    --glow: #7090ff;
-    --pulse: #a080ff;
-    --creature: rgba(200,220,255,0.92);
-    --fog: rgba(80,100,180,0.08);
-    --ripple: rgba(100,160,255,0.6);
-  }
+html,body{
+  width:100%;height:100%;
+  overflow:hidden;
+  background:#020305;
+  touch-action:none;
+  -webkit-user-select:none;user-select:none;
+  font-family:'Cormorant Garamond',Georgia,serif;
+}
 
-  html, body {
-    width: 100%; height: 100%;
-    overflow: hidden;
-    background: var(--deep);
-    touch-action: none;
-    -webkit-user-select: none;
-    user-select: none;
-    font-family: 'Cormorant Garamond', serif;
-  }
+#canvas{position:fixed;top:0;left:0;width:100%;height:100%;display:block;}
 
-  #canvas {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    display: block;
-  }
+#title{
+  position:fixed;top:0;left:0;right:0;
+  text-align:center;
+  padding-top:max(44px,env(safe-area-inset-top));
+  letter-spacing:0.38em;
+  font-size:clamp(12px,3.8vw,16px);
+  font-weight:300;
+  color:rgba(180,195,230,0.38);
+  text-transform:uppercase;
+  pointer-events:none;z-index:10;
+}
 
-  #ui {
-    position: fixed;
-    top: 0; left: 0; right: 0;
-    pointer-events: none;
-    z-index: 10;
-  }
+#hint{
+  position:fixed;
+  bottom:max(30px,env(safe-area-inset-bottom));
+  left:0;right:0;
+  text-align:center;
+  font-size:clamp(11px,3vw,13px);
+  font-weight:300;font-style:italic;
+  color:rgba(140,160,210,0.32);
+  letter-spacing:0.1em;
+  transition:opacity 2s ease;
+  pointer-events:none;z-index:10;
+}
 
-  #title {
-    text-align: center;
-    padding-top: max(44px, env(safe-area-inset-top));
-    letter-spacing: 0.35em;
-    font-size: clamp(13px, 4vw, 17px);
-    font-weight: 300;
-    color: rgba(200,215,255,0.55);
-    text-transform: uppercase;
-  }
+#whisper-layer{
+  position:fixed;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  pointer-events:none;z-index:20;
+}
 
-  #hint {
-    position: fixed;
-    bottom: max(34px, env(safe-area-inset-bottom));
-    left: 0; right: 0;
-    text-align: center;
-    font-size: clamp(11px, 3.2vw, 14px);
-    font-weight: 300;
-    font-style: italic;
-    color: rgba(160,180,255,0.4);
-    letter-spacing: 0.08em;
-    transition: opacity 1.4s ease;
-  }
+.whisper-text{
+  position:absolute;
+  font-size:clamp(12px,4vw,18px);
+  font-style:italic;font-weight:300;
+  color:rgba(160,180,230,0);
+  letter-spacing:0.12em;
+  text-align:center;
+  white-space:nowrap;
+  transition:none;
+  pointer-events:none;
+}
 
-  #track-display {
-    position: fixed;
-    bottom: max(68px, calc(env(safe-area-inset-bottom) + 34px));
-    left: 0; right: 0;
-    text-align: center;
-    font-size: clamp(10px, 2.8vw, 13px);
-    color: rgba(160,180,255,0.35);
-    letter-spacing: 0.12em;
-    font-style: italic;
-    opacity: 0;
-    transition: opacity 2s ease;
-  }
+#track{
+  position:fixed;
+  bottom:max(56px,calc(env(safe-area-inset-bottom)+28px));
+  left:0;right:0;
+  text-align:center;
+  font-size:clamp(9px,2.6vw,12px);
+  color:rgba(130,155,200,0.28);
+  letter-spacing:0.14em;font-style:italic;
+  opacity:0;transition:opacity 3s ease;
+  pointer-events:none;z-index:10;
+}
 
-  #mood-indicator {
-    position: fixed;
-    top: max(80px, calc(env(safe-area-inset-top) + 36px));
-    right: 18px;
-    font-size: 10px;
-    color: rgba(160,180,255,0.3);
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    font-style: normal;
-  }
-
-  #sleep-veil {
-    position: fixed;
-    inset: 0;
-    background: radial-gradient(ellipse at 50% 50%, transparent 30%, rgba(5,8,16,0.8) 100%);
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 3s ease;
-    z-index: 5;
-  }
+#flash-veil{
+  position:fixed;inset:0;
+  background:#ffffff;
+  opacity:0;pointer-events:none;z-index:30;
+}
 </style>
 </head>
 <body>
-
 <canvas id="canvas"></canvas>
-<div id="ui">
-  <div id="title">Lonely Creature</div>
-  <div id="mood-indicator" id="mood">—</div>
-</div>
+<div id="title">Lonely Creature</div>
 <div id="hint">Interact by touching the screen</div>
-<div id="track-display"></div>
-<div id="sleep-veil"></div>
+<div id="whisper-layer"></div>
+<div id="track"></div>
+<div id="flash-veil"></div>
 
 <script>
-// ─── Canvas Setup ─────────────────────────────────────────────
+// ══════════════════════════════════════════════
+//  CORE SETUP
+// ══════════════════════════════════════════════
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
-const hint = document.getElementById('hint');
-const trackDisplay = document.getElementById('track-display');
-const sleepVeil = document.getElementById('sleep-veil');
-const moodEl = document.getElementById('mood-indicator');
+const hintEl = document.getElementById('hint');
+const trackEl = document.getElementById('track');
+const whisperLayer = document.getElementById('whisper-layer');
+const flashVeil = document.getElementById('flash-veil');
 
 let W, H, dpr;
-function resize() {
-  dpr = Math.min(window.devicePixelRatio || 1, 2);
-  W = window.innerWidth;
-  H = window.innerHeight;
-  canvas.width = W * dpr;
-  canvas.height = H * dpr;
-  canvas.style.width = W + 'px';
-  canvas.style.height = H + 'px';
+function resize(){
+  dpr = Math.min(window.devicePixelRatio||1, 2);
+  W = window.innerWidth; H = window.innerHeight;
+  canvas.width = W*dpr; canvas.height = H*dpr;
+  canvas.style.width = W+'px'; canvas.style.height = H+'px';
   ctx.scale(dpr, dpr);
+  buildStarField();
 }
 resize();
 window.addEventListener('resize', resize);
 
-// ─── Math Utils ───────────────────────────────────────────────
-const PI2 = Math.PI * 2;
-const lerp = (a, b, t) => a + (b - a) * t;
-const dist = (ax, ay, bx, by) => Math.hypot(bx - ax, by - ay);
-const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
-const rnd = (a, b) => a + Math.random() * (b - a);
-const rndInt = (a, b) => Math.floor(rnd(a, b + 1));
+// ══════════════════════════════════════════════
+//  MATH UTILS
+// ══════════════════════════════════════════════
+const PI2 = Math.PI*2;
+const lerp = (a,b,t) => a+(b-a)*t;
+const clamp = (v,lo,hi) => Math.max(lo,Math.min(hi,v));
+const rnd = (a,b) => a+Math.random()*(b-a);
+const rndInt = (a,b) => Math.floor(rnd(a,b+1));
+const dist2 = (ax,ay,bx,by) => Math.hypot(bx-ax,by-ay);
 
-// ─── Time ─────────────────────────────────────────────────────
-let t = 0; // global frame counter
-let lastTime = 0;
-let fps = 60;
+let T = 0;        // frame counter
+let lastTS = 0;
 
-// ─── Noise (simple value noise) ───────────────────────────────
-const noiseCache = new Float32Array(512);
-for (let i = 0; i < 512; i++) noiseCache[i] = Math.random() * 2 - 1;
-function noise(x, y = 0) {
-  const ix = Math.floor(x) & 255, iy = Math.floor(y) & 255;
-  const fx = x - Math.floor(x), fy = y - Math.floor(y);
-  const ux = fx * fx * (3 - 2 * fx), uy = fy * fy * (3 - 2 * fy);
-  const a = noiseCache[(ix + iy * 57) & 511];
-  const b = noiseCache[(ix + 1 + iy * 57) & 511];
-  const c = noiseCache[(ix + (iy + 1) * 57) & 511];
-  const d = noiseCache[(ix + 1 + (iy + 1) * 57) & 511];
-  return lerp(lerp(a, b, ux), lerp(c, d, ux), uy);
+// ── Noise ──────────────────────────────────────
+const NC = new Float32Array(512);
+for(let i=0;i<512;i++) NC[i]=Math.random()*2-1;
+function noise(x,y=0){
+  const ix=Math.floor(x)&255, iy=Math.floor(y)&255;
+  const fx=x-Math.floor(x), fy=y-Math.floor(y);
+  const ux=fx*fx*(3-2*fx), uy=fy*fy*(3-2*fy);
+  const a=NC[(ix+iy*57)&511], b=NC[(ix+1+iy*57)&511];
+  const c=NC[(ix+(iy+1)*57)&511], d=NC[(ix+1+(iy+1)*57)&511];
+  return lerp(lerp(a,b,ux),lerp(c,d,ux),uy);
 }
 
-// ─── Particles ────────────────────────────────────────────────
-const NUM_PARTICLES = 60;
+// ══════════════════════════════════════════════
+//  PARTICLES
+// ══════════════════════════════════════════════
 const particles = [];
-for (let i = 0; i < NUM_PARTICLES; i++) {
+for(let i=0;i<45;i++){
   particles.push({
-    x: rnd(0, W), y: rnd(0, H),
-    vx: rnd(-0.12, 0.12), vy: rnd(-0.25, -0.05),
-    size: rnd(0.8, 2.4),
-    alpha: rnd(0.1, 0.45),
-    baseAlpha: rnd(0.1, 0.45),
-    twinkleSpeed: rnd(0.008, 0.025),
-    twinkleOffset: rnd(0, PI2)
+    x:rnd(0,W), y:rnd(0,H),
+    vx:rnd(-0.08,0.08), vy:rnd(-0.2,-0.03),
+    sz:rnd(0.5,1.8),
+    baseA:rnd(0.05,0.25),
+    ts:rnd(0.006,0.02),
+    to:rnd(0,PI2)
   });
 }
-
-function updateParticles() {
-  for (const p of particles) {
-    p.x += p.vx;
-    p.y += p.vy;
-    if (p.y < -5) { p.y = H + 5; p.x = rnd(0, W); }
-    if (p.x < -5) p.x = W + 5;
-    if (p.x > W + 5) p.x = -5;
-    p.alpha = p.baseAlpha * (0.5 + 0.5 * Math.sin(t * p.twinkleSpeed + p.twinkleOffset));
+function updateParticles(){
+  for(const p of particles){
+    p.x+=p.vx; p.y+=p.vy;
+    if(p.y<-5){p.y=H+5;p.x=rnd(0,W);}
+    if(p.x<-5)p.x=W+5; if(p.x>W+5)p.x=-5;
+    p.alpha = p.baseA*(0.4+0.6*Math.sin(T*p.ts+p.to));
   }
 }
 
-// ─── Rain ─────────────────────────────────────────────────────
-const rainDrops = [];
-for (let i = 0; i < 80; i++) {
-  rainDrops.push({
-    x: rnd(0, W), y: rnd(-H, H),
-    len: rnd(12, 28),
-    speed: rnd(6, 14),
-    alpha: rnd(0.03, 0.12)
-  });
+// ══════════════════════════════════════════════
+//  RAIN
+// ══════════════════════════════════════════════
+const rain = [];
+for(let i=0;i<65;i++){
+  rain.push({x:rnd(0,W),y:rnd(-H,H),len:rnd(10,24),spd:rnd(5,12),a:rnd(0.02,0.08)});
 }
-function updateRain() {
-  for (const d of rainDrops) {
-    d.y += d.speed;
-    d.x += d.speed * 0.1;
-    if (d.y > H + d.len) { d.y = -d.len; d.x = rnd(0, W); }
+function updateRain(){
+  for(const d of rain){
+    d.y+=d.spd; d.x+=d.spd*0.08;
+    if(d.y>H+d.len){d.y=-d.len;d.x=rnd(0,W);}
   }
 }
 
-// ─── Fog Blobs ────────────────────────────────────────────────
+// ══════════════════════════════════════════════
+//  FOG BLOBS — deeper, denser
+// ══════════════════════════════════════════════
 const fogBlobs = [];
-for (let i = 0; i < 5; i++) {
+for(let i=0;i<8;i++){
   fogBlobs.push({
-    x: rnd(-100, W + 100), y: rnd(H * 0.4, H),
-    rx: rnd(180, 340), ry: rnd(60, 120),
-    alpha: rnd(0.04, 0.11),
-    speed: rnd(0.05, 0.18),
-    phase: rnd(0, PI2)
+    x:rnd(-150,W+150), y:rnd(H*0.2,H),
+    rx:rnd(200,420), ry:rnd(70,160),
+    a:rnd(0.06,0.18),
+    phase:rnd(0,PI2),
+    spd:rnd(0.02,0.12)
   });
 }
 
-// ─── Ripples ──────────────────────────────────────────────────
-const ripples = [];
-function spawnRipple(x, y) {
-  ripples.push({ x, y, r: 0, maxR: rnd(60, 100), alpha: 0.7, speed: rnd(1.8, 2.8) });
+// ══════════════════════════════════════════════
+//  LIGHTNING / DISTANT FLASH
+// ══════════════════════════════════════════════
+let flashTimer = rndInt(400,1200);
+let flashAlpha = 0;
+let flashBright = false;
+function triggerFlash(){
+  flashBright = true;
+  flashTimer = rndInt(600,1800);
+  // subtle screen-edge flash, NOT jumpscares
+  setTimeout(()=>{ flashBright=false; }, rnd(40,120));
 }
-function updateRipples() {
-  for (let i = ripples.length - 1; i >= 0; i--) {
-    const r = ripples[i];
-    r.r += r.speed;
-    r.alpha = 0.7 * (1 - r.r / r.maxR);
-    if (r.r >= r.maxR) ripples.splice(i, 1);
+function updateFlash(){
+  flashTimer--;
+  if(flashTimer<=0) triggerFlash();
+  if(flashBright){
+    flashAlpha = Math.min(flashAlpha+0.08, 0.18);
+  } else {
+    flashAlpha = Math.max(flashAlpha-0.015, 0);
+  }
+  flashVeil.style.opacity = flashAlpha;
+}
+
+// ══════════════════════════════════════════════
+//  RIPPLES
+// ══════════════════════════════════════════════
+const ripples = [];
+function spawnRipple(x,y){
+  ripples.push({x,y,r:0,maxR:rnd(55,95),a:0.65,spd:rnd(1.5,2.5)});
+}
+function updateRipples(){
+  for(let i=ripples.length-1;i>=0;i--){
+    const r=ripples[i];
+    r.r+=r.spd;
+    r.a=0.65*(1-r.r/r.maxR);
+    if(r.r>=r.maxR) ripples.splice(i,1);
   }
 }
 
-// ─── Creature IK ──────────────────────────────────────────────
-const SEG_COUNT = 40;
-const SEG_LEN = 16;  // distance between segments
+// ══════════════════════════════════════════════
+//  WHISPER MESSAGES — psychological layer
+// ══════════════════════════════════════════════
+const WHISPERS = [
+  'it sees you','don\'t look away','still here','come closer',
+  'are you alone?','it was here','did you hear that?',
+  'watching','remember me','not quite alone','it found you',
+  'blink','it knows','stay','why did you come?'
+];
+let whisperTimer = rndInt(300,800);
+let whisperActive = false;
+
+function spawnWhisper(){
+  if(whisperActive) return;
+  whisperActive = true;
+  const el = document.createElement('div');
+  el.className = 'whisper-text';
+  const text = WHISPERS[rndInt(0,WHISPERS.length-1)];
+  el.textContent = text;
+  // Random position on screen
+  const px = rnd(15,75), py = rnd(20,80);
+  el.style.left = px+'%';
+  el.style.top = py+'%';
+  el.style.transform = 'translate(-50%,-50%)';
+  whisperLayer.appendChild(el);
+
+  // Fade in → hold → fade out
+  let alpha = 0;
+  let phase = 'in';
+  let holdTimer = 0;
+  const maxA = rnd(0.12, 0.28);
+  const speed = 0.006;
+
+  function animWhisper(){
+    if(phase==='in'){
+      alpha = Math.min(alpha+speed, maxA);
+      if(alpha>=maxA){ phase='hold'; holdTimer=0; }
+    } else if(phase==='hold'){
+      holdTimer++;
+      if(holdTimer>90) phase='out';
+    } else {
+      alpha = Math.max(alpha-speed*0.5, 0);
+      if(alpha<=0){
+        el.remove();
+        whisperActive = false;
+        whisperTimer = rndInt(400,1200);
+        return;
+      }
+    }
+    el.style.color = `rgba(160,180,230,${alpha})`;
+    requestAnimationFrame(animWhisper);
+  }
+  requestAnimationFrame(animWhisper);
+}
+
+function updateWhispers(interacted){
+  if(!interacted) return; // Only whisper after interaction
+  whisperTimer--;
+  if(whisperTimer<=0 && !whisperActive) spawnWhisper();
+}
+
+// ══════════════════════════════════════════════
+//  STATIC STAR BACKGROUND
+// ══════════════════════════════════════════════
+let starCanvas, starCtx;
+function buildStarField(){
+  starCanvas = document.createElement('canvas');
+  starCanvas.width = W; starCanvas.height = H;
+  starCtx = starCanvas.getContext('2d');
+  // Deep near-black gradient
+  const bg = starCtx.createRadialGradient(W*.5,H*.25,0,W*.5,H*.5,H*.9);
+  bg.addColorStop(0,'#0e1525');
+  bg.addColorStop(0.4,'#070c18');
+  bg.addColorStop(1,'#020305');
+  starCtx.fillStyle=bg;
+  starCtx.fillRect(0,0,W,H);
+  // Moon haze — very dim
+  const mh = starCtx.createRadialGradient(W*.62,H*.1,0,W*.62,H*.1,180);
+  mh.addColorStop(0,'rgba(140,160,220,0.12)');
+  mh.addColorStop(0.5,'rgba(80,100,180,0.05)');
+  mh.addColorStop(1,'rgba(0,0,0,0)');
+  starCtx.fillStyle=mh; starCtx.fillRect(0,0,W,H);
+  // Stars
+  for(let i=0;i<160;i++){
+    const sx=rnd(0,W),sy=rnd(0,H*.65),ss=rnd(0.3,1.3),sa=rnd(0.15,0.6);
+    starCtx.fillStyle=`rgba(190,210,255,${sa})`;
+    starCtx.beginPath();
+    starCtx.arc(sx,sy,ss,0,PI2);
+    starCtx.fill();
+  }
+}
+
+// ══════════════════════════════════════════════
+//  CREATURE — full rebuild
+// ══════════════════════════════════════════════
+const MAX_SEGS = 50;
+const MIN_SEGS = 20;
+const SEG_LEN  = 15;
 
 class Creature {
-  constructor(x, y) {
+  constructor(){
+    this.visible = true;
+    this.opacity = 1;   // 0..1 for fade in/out
+    this.segCount = 38; // will vary
     this.segments = [];
-    for (let i = 0; i < SEG_COUNT; i++) {
-      this.segments.push({ x: x - i * SEG_LEN, y });
+    // Spawn at random edge
+    const {x,y} = this._edgePoint();
+    for(let i=0;i<MAX_SEGS;i++){
+      this.segments.push({x:x-i*SEG_LEN, y});
     }
-    // Head velocity
-    this.vx = rnd(-0.5, 0.5);
-    this.vy = rnd(-0.5, 0.5);
-    this.speed = 1.8;
-    this.targetX = x;
-    this.targetY = y;
-    this.state = 'wander'; // wander | follow | observe | sleep
-    this.stateTimer = 0;
-    this.observeTimer = 0;
-    this.inactiveTimer = 0;
-    this.sleeping = false;
-    this.sleepAlpha = 0;
+    this.vx = 0; this.vy = 0;
+    this.speed = 2.0;
+    this.targetX = W/2; this.targetY = H/2;
+
+    // Behavior
+    this.state = 'enter';  // enter|wander|follow|flee|stare|sleep|hiding|exit
+    this.stateTimer = 60;
+    this.idleTimer = 0;
+    this.idleThreshold = 1800; // 30s at 60fps
+
+    // Personality roll for this interaction
+    this._rollPersonality();
+
+    // Visual
     this.legPhase = 0;
-    this.noiseOffX = rnd(0, 100);
-    this.noiseOffY = rnd(100, 200);
-    this.mood = 'calm'; // calm | curious | energetic | melancholy
-    this.moodSpeed = 1;
+    this.noiseOX = rnd(0,100);
+    this.noiseOY = rnd(100,200);
+    this.eyeRed = false;
+    this.eyeRedTimer = 0;
+    this.blinkTimer = rndInt(80,220);
+    this.blinkVal = 1; // 1=open, 0=closed
 
-    // Leg positions (per side, per segment group)
-    this.legPositions = [];
-    for (let i = 0; i < SEG_COUNT; i++) {
-      this.legPositions.push({
-        left:  { x: 0, y: 0, targetX: 0, targetY: 0, planted: false, stepTimer: 0 },
-        right: { x: 0, y: 0, targetX: 0, targetY: 0, planted: false, stepTimer: 0 }
-      });
+    // Sleep zzz
+    this.sleepAlpha = 0;
+
+    // Body length morphing
+    this.segCountTarget = 38;
+    this.segMorphTimer = 0;
+
+    // Stare direction
+    this.stareDX = 0; this.stareDY = 0;
+    this.stareTimer = 0;
+
+    // Touch tracking
+    this.lastTouchX = -999; this.lastTouchY = -999;
+    this.touchDist = 9999;
+
+    this.moodSpeed = 1.0;
+  }
+
+  _edgePoint(){
+    const side = rndInt(0,3);
+    if(side===0) return {x:rnd(0,W),y:-30};
+    if(side===1) return {x:W+30,y:rnd(0,H)};
+    if(side===2) return {x:rnd(0,W),y:H+30};
+    return {x:-30,y:rnd(0,H)};
+  }
+
+  _rollPersonality(){
+    const r = Math.random();
+    if(r<0.40)      this.personality = 'curious';   // approach
+    else if(r<0.80) this.personality = 'shy';       // flee
+    else            this.personality = 'watchful';  // stare
+  }
+
+  wake(){
+    if(this.state==='sleep'||this.state==='hiding'){
+      this.state='wander';
+      this.stateTimer=120;
+    }
+    this.idleTimer=0;
+  }
+
+  onTouch(tx,ty){
+    this.lastTouchX=tx; this.lastTouchY=ty;
+    this.idleTimer=0;
+    // Red eyes occasionally
+    if(Math.random()<0.15){
+      this.eyeRed=true;
+      this.eyeRedTimer=rndInt(40,120);
+    }
+    // Behavior based on personality
+    if(this.personality==='curious'){
+      this.state='follow';
+      this.targetX=tx; this.targetY=ty;
+      this.stateTimer=rndInt(200,400);
+    } else if(this.personality==='shy'){
+      this.state='flee';
+      this.targetX=tx; this.targetY=ty;
+      this.stateTimer=rndInt(150,300);
+    } else {
+      // 50/50 stare or follow
+      if(Math.random()<0.5){
+        this.state='stare';
+        this.stareDX=tx-this.segments[0].x;
+        this.stareDY=ty-this.segments[0].y;
+        this.stareTimer=rndInt(80,200);
+      } else {
+        this.state='follow';
+        this.targetX=tx; this.targetY=ty;
+        this.stateTimer=rndInt(120,260);
+      }
     }
   }
 
-  setTarget(x, y) {
-    this.targetX = x;
-    this.targetY = y;
-    this.state = 'follow';
-    this.stateTimer = 180 + rndInt(0, 120);
-  }
-
-  wake() {
-    this.sleeping = false;
-    this.inactiveTimer = 0;
-    this.state = 'wander';
-  }
-
-  update(dt) {
+  update(){
     const head = this.segments[0];
+
+    // ── Eye blink ──
+    this.blinkTimer--;
+    if(this.blinkTimer<=0){
+      this.blinkVal=0;
+      setTimeout(()=>{this.blinkVal=1;},80+rnd(0,60));
+      this.blinkTimer=rndInt(120,360);
+    }
+    // Red eyes
+    if(this.eyeRed){
+      this.eyeRedTimer--;
+      if(this.eyeRedTimer<=0) this.eyeRed=false;
+    }
+
+    // ── Body length morph ──
+    this.segMorphTimer--;
+    if(this.segMorphTimer<=0){
+      this.segCountTarget = rndInt(MIN_SEGS, MAX_SEGS);
+      this.segMorphTimer = rndInt(300,900);
+    }
+    if(this.segCount<this.segCountTarget) this.segCount=Math.min(this.segCount+0.04,this.segCountTarget);
+    else if(this.segCount>this.segCountTarget) this.segCount=Math.max(this.segCount-0.04,this.segCountTarget);
+
+    // ── Idle accumulate ──
+    this.idleTimer++;
+
+    // ── Idle behavior (30s) ──
+    if(this.idleTimer>this.idleThreshold && this.state==='wander'){
+      const r2 = Math.random();
+      if(r2<0.33){
+        this.state='exit';
+        const ep = this._edgePoint();
+        this.targetX=ep.x; this.targetY=ep.y;
+        this.stateTimer=300;
+      } else if(r2<0.66){
+        this.state='sleep';
+      } else {
+        this.state='hiding';
+        this.opacity=0.05;
+      }
+      this.idleTimer=0;
+    }
+
     const spd = this.speed * this.moodSpeed;
 
-    // Inactivity → sleep
-    if (!this.sleeping) {
-      this.inactiveTimer++;
-      if (this.inactiveTimer > 600) {
-        this.sleeping = true;
-        this.state = 'sleep';
-        this.inactiveTimer = 0;
-      }
-    }
+    // ── State machine ──
+    if(this.state==='enter'){
+      // Move toward center from edge
+      const dx=W/2-head.x, dy=H/2-head.y;
+      const d=Math.hypot(dx,dy)||1;
+      this.vx=lerp(this.vx,(dx/d)*2.5,0.04);
+      this.vy=lerp(this.vy,(dy/d)*2.5,0.04);
+      head.x+=this.vx*spd; head.y+=this.vy*spd;
+      this.stateTimer--;
+      if(this.stateTimer<=0||d<120){this.state='wander';this.stateTimer=0;}
+      this.opacity=Math.min(this.opacity+0.015,1);
 
-    if (this.state === 'sleep') {
-      this.sleepAlpha = Math.min(1, this.sleepAlpha + 0.01);
-      // Gentle sway only
-      head.x += Math.sin(t * 0.008) * 0.15;
-      head.y += Math.sin(t * 0.011) * 0.1;
-    } else {
-      this.sleepAlpha = Math.max(0, this.sleepAlpha - 0.02);
-    }
+    } else if(this.state==='wander'){
+      const nx=noise(T*0.0025+this.noiseOX)*2.4;
+      const ny=noise(T*0.0025+this.noiseOY)*2.4;
+      this.vx=lerp(this.vx,nx,0.018);
+      this.vy=lerp(this.vy,ny,0.018);
+      const m=80;
+      if(head.x<m) this.vx+=0.3;
+      if(head.x>W-m) this.vx-=0.3;
+      if(head.y<m) this.vy+=0.3;
+      if(head.y>H-m) this.vy-=0.3;
+      head.x+=this.vx*spd; head.y+=this.vy*spd;
 
-    if (this.state === 'wander') {
-      // Noise-based wandering
-      const nx = noise(t * 0.003 + this.noiseOffX) * 2.2;
-      const ny = noise(t * 0.003 + this.noiseOffY) * 2.2;
-      this.vx = lerp(this.vx, nx, 0.02);
-      this.vy = lerp(this.vy, ny, 0.02);
-
-      // Boundary avoidance
-      const margin = 80;
-      if (head.x < margin) this.vx += 0.25;
-      if (head.x > W - margin) this.vx -= 0.25;
-      if (head.y < margin) this.vy += 0.25;
-      if (head.y > H - margin) this.vy -= 0.25;
-
-      head.x += this.vx * spd;
-      head.y += this.vy * spd;
-
-      // Occasionally stop
-      this.stateTimer++;
-      if (this.stateTimer > 300 && Math.random() < 0.003) {
-        this.state = 'observe';
-        this.observeTimer = rndInt(60, 180);
-        this.stateTimer = 0;
-      }
-
-    } else if (this.state === 'follow') {
-      const dx = this.targetX - head.x;
-      const dy = this.targetY - head.y;
-      const d = Math.hypot(dx, dy);
-
-      if (d > 30) {
-        this.vx = lerp(this.vx, (dx / d) * 2.5, 0.08);
-        this.vy = lerp(this.vy, (dy / d) * 2.5, 0.08);
-        head.x += this.vx * spd;
-        head.y += this.vy * spd;
-        this.inactiveTimer = 0;
-      } else {
-        // Reached target — observe
-        this.state = 'observe';
-        this.observeTimer = rndInt(80, 200);
+    } else if(this.state==='follow'){
+      const dx=this.targetX-head.x, dy=this.targetY-head.y;
+      const d=Math.hypot(dx,dy)||1;
+      if(d>40){
+        this.vx=lerp(this.vx,(dx/d)*2.8,0.07);
+        this.vy=lerp(this.vy,(dy/d)*2.8,0.07);
+        head.x+=this.vx*spd; head.y+=this.vy*spd;
       }
       this.stateTimer--;
-      if (this.stateTimer <= 0) { this.state = 'wander'; this.stateTimer = 0; }
+      if(this.stateTimer<=0){
+        this.state='wander';
+        this._rollPersonality();
+      }
 
-    } else if (this.state === 'observe') {
-      // Slow drift
-      head.x += this.vx * 0.1;
-      head.y += this.vy * 0.1;
-      this.observeTimer--;
-      if (this.observeTimer <= 0) this.state = 'wander';
-    }
+    } else if(this.state==='flee'){
+      const dx=this.targetX-head.x, dy=this.targetY-head.y;
+      const d=Math.hypot(dx,dy)||1;
+      // Move AWAY
+      this.vx=lerp(this.vx,(-dx/d)*3.2,0.09);
+      this.vy=lerp(this.vy,(-dy/d)*3.2,0.09);
+      head.x+=this.vx*spd*1.4; head.y+=this.vy*spd*1.4;
+      // Boundary bounce
+      if(head.x<-80||head.x>W+80||head.y<-80||head.y>H+80){
+        // Re-enter from opposite edge after a pause
+        this.state='hidden_pause';
+        this.stateTimer=rndInt(60,180);
+        this.opacity=0;
+        const ep=this._edgePoint();
+        for(let i=0;i<MAX_SEGS;i++){this.segments[i].x=ep.x-i*2;this.segments[i].y=ep.y;}
+        this.vx=0;this.vy=0;
+      }
+      this.stateTimer--;
+      if(this.stateTimer<=0){this.state='wander';this._rollPersonality();}
 
-    // Clamp
-    head.x = clamp(head.x, 20, W - 20);
-    head.y = clamp(head.y, 20, H - 20);
+    } else if(this.state==='stare'){
+      // Almost still — tiny drift
+      this.vx=lerp(this.vx,0,0.05);
+      this.vy=lerp(this.vy,0,0.05);
+      head.x+=this.vx*0.3; head.y+=this.vy*0.3;
+      this.stareTimer--;
+      if(this.stareTimer<=0){this.state='wander';this._rollPersonality();}
 
-    // IK chain: each segment follows the one ahead
-    for (let i = 1; i < SEG_COUNT; i++) {
-      const prev = this.segments[i - 1];
-      const seg = this.segments[i];
-      const dx = seg.x - prev.x;
-      const dy = seg.y - prev.y;
-      const d = Math.hypot(dx, dy);
-      if (d > SEG_LEN) {
-        const ratio = (d - SEG_LEN) / d;
-        seg.x -= dx * ratio * 0.9;
-        seg.y -= dy * ratio * 0.9;
+    } else if(this.state==='sleep'){
+      this.sleepAlpha=Math.min(this.sleepAlpha+0.008,1);
+      head.x+=Math.sin(T*0.006)*0.12;
+      head.y+=Math.sin(T*0.009)*0.08;
+      this.opacity=Math.max(this.opacity-0.002,0.4);
+
+    } else if(this.state==='hiding'){
+      // Creature fades to near-invisible and wanders very slowly
+      this.opacity=Math.max(this.opacity-0.01,0.04);
+      const nx=noise(T*0.0015+this.noiseOX)*1.0;
+      const ny=noise(T*0.0015+this.noiseOY)*1.0;
+      this.vx=lerp(this.vx,nx,0.01);
+      this.vy=lerp(this.vy,ny,0.01);
+      head.x+=this.vx*0.5; head.y+=this.vy*0.5;
+
+    } else if(this.state==='exit'){
+      const dx=this.targetX-head.x, dy=this.targetY-head.y;
+      const d=Math.hypot(dx,dy)||1;
+      this.vx=lerp(this.vx,(dx/d)*3,0.06);
+      this.vy=lerp(this.vy,(dy/d)*3,0.06);
+      head.x+=this.vx*spd*1.2; head.y+=this.vy*spd*1.2;
+      this.opacity=Math.max(this.opacity-0.005,0);
+      this.stateTimer--;
+      if(this.stateTimer<=0||this.opacity<=0){
+        // Reappear elsewhere after pause
+        this.state='hidden_pause';
+        this.stateTimer=rndInt(80,200);
+        this.opacity=0;
+        const ep=this._edgePoint();
+        for(let i=0;i<MAX_SEGS;i++){this.segments[i].x=ep.x-i*2;this.segments[i].y=ep.y;}
+        this.vx=0;this.vy=0;
+      }
+
+    } else if(this.state==='hidden_pause'){
+      this.stateTimer--;
+      if(this.stateTimer<=0){
+        this.state='enter';
+        this.stateTimer=120;
+        this.sleepAlpha=0;
+        this._rollPersonality();
+        this.idleTimer=0;
       }
     }
 
-    // Leg phase
-    const vel = Math.hypot(this.vx, this.vy);
-    this.legPhase += vel * 0.15 * this.moodSpeed;
+    // Clamp visible head when wandering
+    if(this.state==='wander'||this.state==='follow'||this.state==='stare'||this.state==='flee'){
+      head.x=clamp(head.x,15,W-15);
+      head.y=clamp(head.y,15,H-15);
+    }
+    if(this.state!=='sleep') this.sleepAlpha=Math.max(this.sleepAlpha-0.02,0);
+
+    // ── IK chain ──
+    for(let i=1;i<MAX_SEGS;i++){
+      const prev=this.segments[i-1], seg=this.segments[i];
+      const dx=seg.x-prev.x, dy=seg.y-prev.y;
+      const d=Math.hypot(dx,dy);
+      if(d>SEG_LEN){
+        const ratio=(d-SEG_LEN)/d;
+        seg.x-=dx*ratio*0.92;
+        seg.y-=dy*ratio*0.92;
+      }
+    }
+
+    // Leg wave
+    const vel=Math.hypot(this.vx,this.vy);
+    this.legPhase+=vel*0.14*this.moodSpeed;
   }
 
-  draw(ctx) {
-    const segs = this.segments;
-    const sleeping = this.sleeping;
-    const baseAlpha = sleeping ? 0.45 : 1.0;
+  draw(){
+    const sc=Math.round(this.segCount);
+    const base=this.opacity;
+    if(base<0.01) return;
 
-    // ── Glow under body ──
-    const head = segs[0];
-    const grad = ctx.createRadialGradient(head.x, head.y, 0, head.x, head.y, 70);
-    grad.addColorStop(0, `rgba(100,140,255,${0.08 * baseAlpha})`);
-    grad.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = grad;
-    ctx.beginPath();
-    ctx.ellipse(head.x, head.y, 70, 70, 0, 0, PI2);
-    ctx.fill();
+    // ── Body glow ──
+    const head=this.segments[0];
+    ctx.save();
+    const glowColor = this.eyeRed ? 'rgba(180,30,30' : 'rgba(60,90,200';
+    const gr=ctx.createRadialGradient(head.x,head.y,0,head.x,head.y,90);
+    gr.addColorStop(0,`${glowColor},${0.06*base})`);
+    gr.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=gr;
+    ctx.beginPath(); ctx.ellipse(head.x,head.y,90,90,0,0,PI2); ctx.fill();
+    ctx.restore();
 
     // ── Legs ──
-    this.drawLegs(ctx, baseAlpha);
+    this._drawLegs(sc, base);
 
-    // ── Body segments ──
+    // ── Segments ──
     ctx.save();
-    ctx.shadowColor = 'rgba(130,170,255,0.5)';
-    ctx.shadowBlur = 12;
-    for (let i = SEG_COUNT - 1; i >= 0; i--) {
-      const seg = segs[i];
-      const nextSeg = segs[Math.min(i + 1, SEG_COUNT - 1)];
-      const t_ratio = i / SEG_COUNT;
-      // Size: bigger at front, tapering toward tail
-      const size = i === 0 ? 11 : lerp(9, 3.5, t_ratio);
-      const alpha = lerp(0.95, 0.55, t_ratio) * baseAlpha;
+    ctx.shadowColor=this.eyeRed?'rgba(200,50,50,0.4)':'rgba(100,140,255,0.35)';
+    ctx.shadowBlur=10;
 
-      // Segment color: pearlescent white-blue
-      const r = Math.round(lerp(210, 160, t_ratio));
-      const g = Math.round(lerp(225, 190, t_ratio));
-      const b = Math.round(lerp(255, 240, t_ratio));
+    for(let i=sc-1;i>=0;i--){
+      const seg=this.segments[i];
+      const nxt=this.segments[Math.min(i+1,sc-1)];
+      const tr=i/sc;
+      const sz = i===0 ? 12 : lerp(10,3,tr);
+      const alpha=lerp(0.9,0.45,tr)*base;
 
-      ctx.globalAlpha = alpha;
+      const r=Math.round(lerp(210,140,tr));
+      const g=Math.round(lerp(225,175,tr));
+      const b=Math.round(lerp(255,230,tr));
 
-      // Draw vertebra ellipse
-      const dx = seg.x - nextSeg.x;
-      const dy = seg.y - nextSeg.y;
-      const angle = Math.atan2(dy, dx);
-
+      ctx.globalAlpha=alpha;
+      const ang=Math.atan2(seg.y-nxt.y,seg.x-nxt.x);
       ctx.save();
-      ctx.translate(seg.x, seg.y);
-      ctx.rotate(angle);
+      ctx.translate(seg.x,seg.y);
+      ctx.rotate(ang);
 
-      // Outer ring
-      ctx.strokeStyle = `rgba(${r},${g},${b},${alpha * 0.6})`;
-      ctx.lineWidth = size * 0.25;
-      ctx.beginPath();
-      ctx.ellipse(0, 0, size * 1.1, size * 0.75, 0, 0, PI2);
-      ctx.stroke();
+      // Ring
+      ctx.strokeStyle=`rgba(${r},${g},${b},${alpha*0.55})`;
+      ctx.lineWidth=sz*0.22;
+      ctx.beginPath(); ctx.ellipse(0,0,sz*1.08,sz*0.72,0,0,PI2); ctx.stroke();
 
-      // Inner body
-      const sg = ctx.createRadialGradient(0, -size * 0.2, 0, 0, 0, size);
-      sg.addColorStop(0, `rgba(${r},${g},${b},${alpha})`);
-      sg.addColorStop(0.7, `rgba(${Math.round(r*0.7)},${Math.round(g*0.7)},${Math.round(b*0.85)},${alpha * 0.8})`);
-      sg.addColorStop(1, `rgba(${Math.round(r*0.4)},${Math.round(g*0.4)},${Math.round(b*0.6)},0)`);
-      ctx.fillStyle = sg;
-      ctx.beginPath();
-      ctx.ellipse(0, 0, size, size * 0.7, 0, 0, PI2);
-      ctx.fill();
-
+      // Fill
+      const sg=ctx.createRadialGradient(0,-sz*0.18,0,0,0,sz);
+      sg.addColorStop(0,`rgba(${r},${g},${b},${alpha})`);
+      sg.addColorStop(0.65,`rgba(${Math.round(r*.65)},${Math.round(g*.65)},${Math.round(b*.82)},${alpha*.75})`);
+      sg.addColorStop(1,'rgba(0,0,0,0)');
+      ctx.fillStyle=sg;
+      ctx.beginPath(); ctx.ellipse(0,0,sz,sz*0.68,0,0,PI2); ctx.fill();
       ctx.restore();
     }
     ctx.restore();
 
-    // ── Head details ──
-    this.drawHead(ctx, baseAlpha);
+    // ── Head ──
+    this._drawHead(base);
 
-    // ── Sleep ZZZ ──
-    if (this.sleepAlpha > 0.01) {
-      this.drawSleepZzz(ctx);
-    }
+    // ── Sleep Zzz ──
+    if(this.sleepAlpha>0.01) this._drawZzz(base);
   }
 
-  drawLegs(ctx, baseAlpha) {
-    const segs = this.segments;
-    const legSpacing = 2; // every N segments has legs
+  _drawLegs(sc, base){
+    const segs=this.segments;
     ctx.save();
-    ctx.shadowBlur = 0;
+    for(let i=2;i<sc-2;i+=2){
+      const seg=segs[i], nxt=segs[Math.min(i+1,sc-1)];
+      const ang=Math.atan2(nxt.y-seg.y,nxt.x-seg.x);
+      const perp=ang+Math.PI/2;
+      const tr=i/sc;
+      const legLen=lerp(22,9,tr);
+      const alpha=lerp(0.55,0.22,tr)*base;
 
-    for (let i = 2; i < SEG_COUNT - 2; i += legSpacing) {
-      const seg = segs[i];
-      const nextSeg = segs[Math.min(i + 1, SEG_COUNT - 1)];
-      const dx = nextSeg.x - seg.x;
-      const dy = nextSeg.y - seg.y;
-      const angle = Math.atan2(dy, dx);
-      const perp = angle + Math.PI / 2;
+      for(let s=-1;s<=1;s+=2){
+        const bx=seg.x+Math.cos(perp)*s*6.5;
+        const by=seg.y+Math.sin(perp)*s*6.5;
+        const wv=Math.sin(this.legPhase+i*0.55+s*1.4)*0.55;
 
-      const t_ratio = i / SEG_COUNT;
-      const legLen = lerp(20, 10, t_ratio);
-      const alpha = lerp(0.65, 0.3, t_ratio) * baseAlpha;
-      const legOffset = (i % 4 === 0) ? 0 : Math.PI;
-      const wave = Math.sin(this.legPhase + i * 0.6 + legOffset) * 0.5;
-      const wave2 = Math.sin(this.legPhase + i * 0.6 + legOffset + Math.PI) * 0.5;
+        const midAng=perp+s*(0.55+wv*0.35);
+        const ml=legLen*0.52;
+        const mx=bx+Math.cos(midAng)*s*ml;
+        const my=by+Math.sin(midAng)*s*ml;
 
-      // Each side leg — 2 joints
-      for (let side = -1; side <= 1; side += 2) {
-        const baseX = seg.x + Math.cos(perp) * side * 7;
-        const baseY = seg.y + Math.sin(perp) * side * 7;
+        const tipAng=midAng+s*(0.48+wv*0.45);
+        const tx2=mx+Math.cos(tipAng)*s*legLen*0.52;
+        const ty2=my+Math.sin(tipAng)*s*legLen*0.52;
 
-        // Mid joint
-        const waveUse = side === -1 ? wave : wave2;
-        const midAngle = perp + side * (0.6 + waveUse * 0.4);
-        const midLen = legLen * 0.55;
-        const midX = baseX + Math.cos(midAngle) * side * midLen;
-        const midY = baseY + Math.sin(midAngle) * side * midLen;
+        const rv=Math.round(lerp(195,145,tr));
+        const gv=Math.round(lerp(215,175,tr));
 
-        // Tip
-        const tipAngle = midAngle + side * (0.5 + waveUse * 0.5);
-        const tipX = midX + Math.cos(tipAngle) * side * legLen * 0.55;
-        const tipY = midY + Math.sin(tipAngle) * side * legLen * 0.55;
+        ctx.strokeStyle=`rgba(${rv},${gv},255,${alpha})`;
+        ctx.lineWidth=lerp(1.3,0.5,tr);
+        ctx.lineCap='round';
+        ctx.globalAlpha=alpha;
+        ctx.beginPath(); ctx.moveTo(bx,by); ctx.quadraticCurveTo(mx,my,tx2,ty2); ctx.stroke();
 
-        const r = Math.round(lerp(200, 150, t_ratio));
-        const g2 = Math.round(lerp(220, 180, t_ratio));
-
-        ctx.strokeStyle = `rgba(${r},${g2},255,${alpha})`;
-        ctx.lineWidth = lerp(1.4, 0.6, t_ratio);
-        ctx.lineCap = 'round';
-        ctx.globalAlpha = alpha;
-
-        ctx.beginPath();
-        ctx.moveTo(baseX, baseY);
-        ctx.quadraticCurveTo(midX, midY, tipX, tipY);
-        ctx.stroke();
-
-        // Tiny claw tip
-        ctx.globalAlpha = alpha * 0.8;
-        ctx.lineWidth = lerp(1.0, 0.4, t_ratio);
-        const clawLen = 4;
-        for (let c = -1; c <= 1; c += 2) {
-          ctx.beginPath();
-          ctx.moveTo(tipX, tipY);
-          ctx.lineTo(
-            tipX + Math.cos(tipAngle + side * c * 0.45) * side * clawLen,
-            tipY + Math.sin(tipAngle + side * c * 0.45) * side * clawLen
-          );
+        // Claws
+        ctx.lineWidth=lerp(0.9,0.35,tr);
+        ctx.globalAlpha=alpha*0.75;
+        for(let c=-1;c<=1;c+=2){
+          ctx.beginPath(); ctx.moveTo(tx2,ty2);
+          ctx.lineTo(tx2+Math.cos(tipAng+s*c*0.5)*s*3.5, ty2+Math.sin(tipAng+s*c*0.5)*s*3.5);
           ctx.stroke();
         }
       }
@@ -529,455 +727,358 @@ class Creature {
     ctx.restore();
   }
 
-  drawHead(ctx, baseAlpha) {
-    const head = this.segments[0];
-    const neck = this.segments[1];
-    const headAngle = Math.atan2(head.y - neck.y, head.x - neck.x);
-    const eyeSpread = 0.55;
-    const eyeDist = 7;
+  _drawHead(base){
+    const head=this.segments[0], neck=this.segments[1];
+    const hang=Math.atan2(head.y-neck.y,head.x-neck.x);
 
     ctx.save();
-    ctx.translate(head.x, head.y);
-    ctx.rotate(headAngle);
+    ctx.translate(head.x,head.y);
+    ctx.rotate(hang);
 
     // Skull dome
-    ctx.shadowColor = 'rgba(130,170,255,0.7)';
-    ctx.shadowBlur = 16;
+    ctx.shadowColor=this.eyeRed?'rgba(220,40,40,0.7)':'rgba(120,160,255,0.6)';
+    ctx.shadowBlur=18;
+    const sg=ctx.createRadialGradient(-2,-4,0,0,0,14);
+    sg.addColorStop(0,`rgba(228,238,255,${0.93*base})`);
+    sg.addColorStop(0.55,`rgba(150,185,255,${0.72*base})`);
+    sg.addColorStop(1,`rgba(70,100,190,${0.25*base})`);
+    ctx.fillStyle=sg;
+    ctx.beginPath(); ctx.ellipse(2,0,14,10.5,0,0,PI2); ctx.fill();
+    ctx.shadowBlur=0;
 
-    const skullGrad = ctx.createRadialGradient(-3, -4, 0, 0, 0, 13);
-    skullGrad.addColorStop(0, `rgba(230,240,255,${0.95 * baseAlpha})`);
-    skullGrad.addColorStop(0.6, `rgba(160,190,255,${0.75 * baseAlpha})`);
-    skullGrad.addColorStop(1, `rgba(80,110,200,${0.3 * baseAlpha})`);
-    ctx.fillStyle = skullGrad;
-    ctx.beginPath();
-    ctx.ellipse(2, 0, 13, 10, 0, 0, PI2);
-    ctx.fill();
+    // Eyes
+    const eyeColors = this.eyeRed
+      ? ['rgba(255,30,30,','rgba(180,10,10,']
+      : ['rgba(170,220,255,','rgba(70,140,255,'];
 
-    ctx.shadowBlur = 0;
-
-    // Eyes — two glowing orbs
-    for (let s = -1; s <= 1; s += 2) {
-      const ex = 5;
-      const ey = s * eyeDist * 0.55;
-      // Eye socket
-      ctx.fillStyle = `rgba(10,15,40,${0.9 * baseAlpha})`;
-      ctx.beginPath();
-      ctx.ellipse(ex, ey, 4, 3.5, 0, 0, PI2);
-      ctx.fill();
-
-      // Eye glow
-      const eyeGrad = ctx.createRadialGradient(ex, ey, 0, ex, ey, 3.5);
-      const blink = this.sleeping ? 0.1 : (1 - Math.abs(Math.sin(t * 0.015 + s * 2)) * 0.7);
-      eyeGrad.addColorStop(0, `rgba(180,220,255,${0.95 * blink * baseAlpha})`);
-      eyeGrad.addColorStop(0.5, `rgba(80,140,255,${0.7 * blink * baseAlpha})`);
-      eyeGrad.addColorStop(1, `rgba(20,60,180,0)`);
-      ctx.fillStyle = eyeGrad;
-      ctx.beginPath();
-      ctx.ellipse(ex, ey, 3.5, 3, 0, 0, PI2);
-      ctx.fill();
+    for(let s=-1;s<=1;s+=2){
+      const ex=6, ey=s*5.5;
+      // Socket
+      ctx.fillStyle=`rgba(8,10,28,${0.88*base})`;
+      ctx.beginPath(); ctx.ellipse(ex,ey,4.2,3.6,0,0,PI2); ctx.fill();
+      // Glow
+      const blink=this.blinkVal;
+      if(blink>0.05){
+        ctx.save();
+        ctx.scale(1,blink);
+        const eg=ctx.createRadialGradient(ex,ey/blink,0,ex,ey/blink,3.6);
+        eg.addColorStop(0,`${eyeColors[0]}${0.95*blink*base})`);
+        eg.addColorStop(0.5,`${eyeColors[1]}${0.65*blink*base})`);
+        eg.addColorStop(1,'rgba(0,0,0,0)');
+        ctx.fillStyle=eg;
+        ctx.beginPath(); ctx.ellipse(ex,ey/blink,3.6,3.2,0,0,PI2); ctx.fill();
+        ctx.restore();
+      }
     }
 
     // Mandibles
-    ctx.strokeStyle = `rgba(190,215,255,${0.7 * baseAlpha})`;
-    ctx.lineWidth = 1.2;
-    for (let s = -1; s <= 1; s += 2) {
-      ctx.beginPath();
-      ctx.moveTo(12, s * 3);
-      ctx.quadraticCurveTo(20, s * 6, 24, s * 4);
-      ctx.stroke();
-      // Mandible tip claw
-      ctx.beginPath();
-      ctx.moveTo(24, s * 4);
-      ctx.lineTo(27, s * 2);
-      ctx.stroke();
+    ctx.strokeStyle=`rgba(185,210,255,${0.65*base})`;
+    ctx.lineWidth=1.1; ctx.lineCap='round';
+    for(let s=-1;s<=1;s+=2){
+      ctx.beginPath(); ctx.moveTo(13,s*3); ctx.quadraticCurveTo(20,s*7,25,s*5); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(25,s*5); ctx.lineTo(28,s*2.5); ctx.stroke();
     }
 
     // Antennae
-    ctx.strokeStyle = `rgba(160,200,255,${0.5 * baseAlpha})`;
-    ctx.lineWidth = 0.8;
-    const antWave = Math.sin(t * 0.04) * 12;
-    for (let s = -1; s <= 1; s += 2) {
-      ctx.beginPath();
-      ctx.moveTo(10, s * 5);
-      ctx.quadraticCurveTo(20 + antWave * 0.3, s * 14 + antWave * 0.5, 35, s * (10 + antWave * 0.6));
+    ctx.strokeStyle=`rgba(150,195,255,${0.42*base})`; ctx.lineWidth=0.75;
+    const aw=Math.sin(T*0.035)*10;
+    for(let s=-1;s<=1;s+=2){
+      ctx.beginPath(); ctx.moveTo(11,s*5);
+      ctx.quadraticCurveTo(22+aw*.25,s*16+aw*.4,36,s*(11+aw*.5));
       ctx.stroke();
     }
 
     ctx.restore();
   }
 
-  drawSleepZzz(ctx) {
-    const head = this.segments[0];
+  _drawZzz(base){
+    const head=this.segments[0];
     ctx.save();
-    ctx.globalAlpha = this.sleepAlpha * 0.7;
-    ctx.font = 'italic 300 14px Cormorant Garamond, serif';
-    ctx.fillStyle = 'rgba(180,200,255,0.8)';
-    const zOffsets = [
-      { x: 14, y: -18, scale: 0.7, phase: 0 },
-      { x: 22, y: -28, scale: 0.85, phase: 0.5 },
-      { x: 30, y: -40, scale: 1, phase: 1 }
-    ];
-    for (const z of zOffsets) {
-      const floatY = Math.sin(t * 0.02 + z.phase) * 4;
-      const a = (0.5 + 0.5 * Math.sin(t * 0.018 + z.phase));
-      ctx.globalAlpha = this.sleepAlpha * 0.55 * a;
-      ctx.font = `italic 300 ${Math.round(12 * z.scale)}px Cormorant Garamond, serif`;
-      ctx.fillText('z', head.x + z.x, head.y + z.y + floatY);
+    const sa=this.sleepAlpha*0.65*base;
+    const pts=[{x:14,y:-16,sc:0.7,ph:0},{x:22,y:-27,sc:0.85,ph:.6},{x:30,y:-40,sc:1,ph:1.1}];
+    for(const z of pts){
+      const flt=Math.sin(T*0.018+z.ph)*4;
+      const a=sa*(0.5+0.5*Math.sin(T*0.016+z.ph));
+      ctx.globalAlpha=a;
+      ctx.font=`italic 300 ${Math.round(13*z.sc)}px 'Cormorant Garamond',serif`;
+      ctx.fillStyle=`rgba(160,185,255,${a})`;
+      ctx.fillText('z',head.x+z.x,head.y+z.y+flt);
     }
     ctx.restore();
   }
 }
 
-// ─── Create Creature ──────────────────────────────────────────
-const creature = new Creature(W / 2, H / 2);
-
-// ─── Background ───────────────────────────────────────────────
-// Pre-render star field to offscreen canvas
-let starCanvas, starCtx;
-function buildStarField() {
-  starCanvas = document.createElement('canvas');
-  starCanvas.width = W; starCanvas.height = H;
-  starCtx = starCanvas.getContext('2d');
-
-  // Deep background gradient
-  const bg = starCtx.createRadialGradient(W * 0.5, H * 0.3, 0, W * 0.5, H * 0.5, H * 0.8);
-  bg.addColorStop(0, '#1a2050');
-  bg.addColorStop(0.45, '#0d1228');
-  bg.addColorStop(1, '#05080f');
-  starCtx.fillStyle = bg;
-  starCtx.fillRect(0, 0, W, H);
-
-  // Moon glow
-  const moon = starCtx.createRadialGradient(W * 0.55, H * 0.12, 0, W * 0.55, H * 0.12, 160);
-  moon.addColorStop(0, 'rgba(180,200,255,0.18)');
-  moon.addColorStop(0.4, 'rgba(120,150,255,0.08)');
-  moon.addColorStop(1, 'rgba(60,80,200,0)');
-  starCtx.fillStyle = moon;
-  starCtx.fillRect(0, 0, W, H);
-
-  // Stars
-  for (let i = 0; i < 200; i++) {
-    const sx = rnd(0, W), sy = rnd(0, H * 0.7);
-    const ss = rnd(0.4, 1.6);
-    const sa = rnd(0.3, 0.9);
-    starCtx.fillStyle = `rgba(200,215,255,${sa})`;
-    starCtx.beginPath();
-    starCtx.arc(sx, sy, ss, 0, PI2);
-    starCtx.fill();
-  }
-}
-buildStarField();
-window.addEventListener('resize', buildStarField);
-
-// ─── Draw Background ──────────────────────────────────────────
-function drawBackground() {
-  ctx.drawImage(starCanvas, 0, 0);
-
+// ══════════════════════════════════════════════
+//  DRAW BACKGROUND & SCENE
+// ══════════════════════════════════════════════
+function drawBackground(){
+  ctx.drawImage(starCanvas,0,0);
   // Animated fog
-  for (const fog of fogBlobs) {
-    const fx = fog.x + Math.sin(t * 0.003 + fog.phase) * 40;
-    const fy = fog.y + Math.sin(t * 0.002 + fog.phase * 1.3) * 15;
-    const g = ctx.createRadialGradient(fx, fy, 0, fx, fy, fog.rx);
-    g.addColorStop(0, `rgba(80,100,200,${fog.alpha})`);
-    g.addColorStop(0.5, `rgba(60,80,160,${fog.alpha * 0.5})`);
-    g.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = g;
+  for(const f of fogBlobs){
+    const fx=f.x+Math.sin(T*0.002+f.phase)*55;
+    const fy=f.y+Math.sin(T*0.0015+f.phase*1.3)*20;
+    const g=ctx.createRadialGradient(fx,fy,0,fx,fy,f.rx);
+    g.addColorStop(0,`rgba(50,70,160,${f.a})`);
+    g.addColorStop(0.55,`rgba(35,50,120,${f.a*.45})`);
+    g.addColorStop(1,'rgba(0,0,0,0)');
     ctx.save();
-    ctx.scale(1, fog.ry / fog.rx);
-    ctx.beginPath();
-    ctx.arc(fx, fy * (fog.rx / fog.ry), fog.rx, 0, PI2);
+    ctx.scale(1,f.ry/f.rx);
+    ctx.fillStyle=g;
+    ctx.beginPath(); ctx.arc(fx,fy*(f.rx/f.ry),f.rx,0,PI2);
     ctx.restore();
     ctx.fill();
   }
 }
 
-function drawRain() {
+function drawRain(){
   ctx.save();
-  ctx.strokeStyle = 'rgba(180,200,255,0.09)';
-  ctx.lineWidth = 0.7;
-  for (const d of rainDrops) {
-    ctx.globalAlpha = d.alpha;
-    ctx.beginPath();
-    ctx.moveTo(d.x, d.y);
-    ctx.lineTo(d.x + d.len * 0.08, d.y + d.len);
-    ctx.stroke();
+  ctx.strokeStyle='rgba(160,185,230,0.07)';
+  ctx.lineWidth=0.65;
+  for(const d of rain){
+    ctx.globalAlpha=d.a;
+    ctx.beginPath(); ctx.moveTo(d.x,d.y);
+    ctx.lineTo(d.x+d.len*.07,d.y+d.len); ctx.stroke();
   }
   ctx.restore();
 }
 
-function drawParticles() {
-  for (const p of particles) {
-    ctx.save();
-    ctx.globalAlpha = p.alpha;
-    const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 2.5);
-    g.addColorStop(0, 'rgba(200,220,255,1)');
-    g.addColorStop(1, 'rgba(120,160,255,0)');
-    ctx.fillStyle = g;
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, p.size * 2.5, 0, PI2);
-    ctx.fill();
+function drawParticles(){
+  for(const p of particles){
+    ctx.save(); ctx.globalAlpha=p.alpha;
+    const g=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.sz*2.8);
+    g.addColorStop(0,'rgba(190,215,255,1)');
+    g.addColorStop(1,'rgba(100,140,220,0)');
+    ctx.fillStyle=g;
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.sz*2.8,0,PI2); ctx.fill();
     ctx.restore();
   }
 }
 
-function drawRipples() {
+function drawRipples(){
   ctx.save();
-  for (const r of ripples) {
-    const rings = 3;
-    for (let k = 0; k < rings; k++) {
-      const rk = r.r - k * 14;
-      if (rk < 0) continue;
-      const alpha = r.alpha * (1 - k / rings) * 0.8;
-      ctx.globalAlpha = alpha;
-      ctx.strokeStyle = `rgba(100,160,255,${alpha})`;
-      ctx.lineWidth = lerp(2.0, 0.5, r.r / r.maxR);
-      ctx.beginPath();
-      ctx.ellipse(r.x, r.y, rk, rk * 0.28, 0, 0, PI2);
-      ctx.stroke();
+  for(const r of ripples){
+    for(let k=0;k<3;k++){
+      const rk=r.r-k*13; if(rk<0) continue;
+      const a=r.a*(1-k/3)*0.75;
+      ctx.globalAlpha=a;
+      ctx.strokeStyle=`rgba(90,150,240,${a})`;
+      ctx.lineWidth=lerp(1.8,0.4,r.r/r.maxR);
+      ctx.beginPath(); ctx.ellipse(r.x,r.y,rk,rk*0.26,0,0,PI2); ctx.stroke();
     }
   }
   ctx.restore();
 }
 
-// ─── Touch / Interaction ──────────────────────────────────────
-let firstTouch = false;
-let lastTouchTime = 0;
-
-canvas.addEventListener('touchstart', e => {
-  e.preventDefault();
-  const touch = e.touches[0];
-  const x = touch.clientX, y = touch.clientY;
-
-  if (!firstTouch) {
-    firstTouch = true;
-    hint.style.opacity = '0';
-    startAudio();
-  }
-
-  if (creature.sleeping) creature.wake();
-
-  spawnRipple(x, y);
-  spawnRipple(x, y); // double for intensity
-  creature.setTarget(x, y);
-  lastTouchTime = t;
-}, { passive: false });
-
-canvas.addEventListener('touchmove', e => {
-  e.preventDefault();
-  const touch = e.touches[0];
-  const x = touch.clientX, y = touch.clientY;
-  if (Math.random() < 0.2) spawnRipple(x, y);
-  creature.setTarget(x, y);
-  lastTouchTime = t;
-}, { passive: false });
-
-// ─── Audio System ─────────────────────────────────────────────
-// Using Jamendo API for copyright-free music
-const JAMENDO_KEY = 'b6747d04';
-let audioCtx = null;
-let currentSource = null;
-let gainNode = null;
-let currentTrackName = '';
-let playlist = [];
-let playlistIndex = 0;
-let audioStarted = false;
-let nextTrackTimer = 0;
-let trackDuration = 0;
-
-const MOODS = ['ambient', 'electronic', 'classical', 'acoustic'];
-const JAMENDO_TRACKS = [
-  // Curated fallback tracks from Jamendo (public domain / CC)
-  { name: 'Midnight Drift', url: 'https://storage.googleapis.com/media-session/elephants-dream/the-wires.mp3' },
-];
-
-async function fetchJamendoTracks() {
-  try {
-    const tags = MOODS[rndInt(0, MOODS.length - 1)];
-    const url = `https://api.jamendo.com/v3.0/tracks/?client_id=${JAMENDO_KEY}&format=json&limit=10&tags=${tags}&include=musicinfo&audioformat=mp32`;
-    const res = await fetch(url);
-    const data = await res.json();
-    if (data.results && data.results.length > 0) {
-      playlist = data.results.map(tr => ({
-        name: tr.name,
-        artist: tr.artist_name,
-        url: tr.audio,
-        duration: tr.duration
-      }));
-      playlistIndex = 0;
-    }
-  } catch (e) {
-    // Use built-in relaxed tone generation if API fails
-    playlist = [];
-  }
+function drawVignette(){
+  const vg=ctx.createRadialGradient(W/2,H/2,H*.18,W/2,H/2,H*.88);
+  vg.addColorStop(0,'rgba(0,0,0,0)');
+  vg.addColorStop(0.6,'rgba(2,3,6,0.25)');
+  vg.addColorStop(1,'rgba(2,3,6,0.88)');
+  ctx.fillStyle=vg; ctx.fillRect(0,0,W,H);
 }
 
-function startAudio() {
-  if (audioStarted) return;
-  audioStarted = true;
-  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  gainNode = audioCtx.createGain();
-  gainNode.gain.value = 0;
-  gainNode.connect(audioCtx.destination);
+// ══════════════════════════════════════════════
+//  AUDIO SYSTEM
+// ══════════════════════════════════════════════
+let audioCtx=null, masterGain=null;
+let currentBuf=null, currentSrc=null, nextSrc=null;
+let audioStarted=false;
+let playlist=[], playIdx=0;
+const JAMENDO_KEY='b6747d04';
 
-  fetchJamendoTracks().then(() => {
-    if (playlist.length > 0) {
-      playTrack(playlist[0]);
-    } else {
-      playGenerativeAmbience();
+async function fetchPlaylist(){
+  const tags=['ambient','dark+ambient','cinematic','neoclassical'];
+  const tag=tags[rndInt(0,tags.length-1)];
+  try{
+    const url=`https://api.jamendo.com/v3.0/tracks/?client_id=${JAMENDO_KEY}&format=json&limit=10&tags=${tag}&fuzzytags=1&audioformat=mp32`;
+    const res=await fetch(url);
+    const data=await res.json();
+    if(data.results&&data.results.length>0){
+      // Shuffle
+      playlist=data.results.map(t=>({name:t.name,artist:t.artist_name,url:t.audio}))
+        .sort(()=>Math.random()-0.5);
+      playIdx=0;
+      return true;
     }
+  }catch(e){}
+  return false;
+}
+
+function startAudio(){
+  if(audioStarted) return;
+  audioStarted=true;
+  audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+  masterGain=audioCtx.createGain();
+  masterGain.gain.value=0;
+  masterGain.connect(audioCtx.destination);
+
+  fetchPlaylist().then(ok=>{
+    if(ok&&playlist.length>0) loadAndPlay(playlist[playIdx]);
+    else startGenerativeAmbience();
   });
 }
 
-function playTrack(track) {
-  if (!track || !audioCtx) return;
-  fetch(track.url)
-    .then(r => r.arrayBuffer())
-    .then(ab => audioCtx.decodeAudioData(ab))
-    .then(buffer => {
-      fadeOutCurrent(() => {
-        const src = audioCtx.createBufferSource();
-        src.buffer = buffer;
-        src.connect(gainNode);
-        src.loop = false;
-        src.start();
-        currentSource = src;
-        currentTrackName = track.name + (track.artist ? ` — ${track.artist}` : '');
-        trackDisplay.textContent = '♪ ' + currentTrackName;
-        trackDisplay.style.opacity = '1';
-
-        gainNode.gain.setTargetAtTime(0.55, audioCtx.currentTime, 2.0);
-
-        src.onended = () => {
-          playlistIndex = (playlistIndex + 1) % playlist.length;
-          setTimeout(() => {
-            if (playlist[playlistIndex]) playTrack(playlist[playlistIndex]);
-          }, 2000);
-        };
-
-        // Mood from track name heuristics
-        updateMoodFromTrack(track.name);
-      });
-    })
-    .catch(() => playGenerativeAmbience());
+function loadAndPlay(track){
+  if(!track||!audioCtx) return;
+  fetch(track.url).then(r=>r.arrayBuffer())
+    .then(ab=>audioCtx.decodeAudioData(ab))
+    .then(buf=>{
+      crossfadeTo(buf);
+      trackEl.textContent=`♪ ${track.name}${track.artist?' — '+track.artist:''}`;
+      trackEl.style.opacity='1';
+      setTimeout(()=>{trackEl.style.opacity='0';},8000);
+    }).catch(()=>startGenerativeAmbience());
 }
 
-function fadeOutCurrent(cb) {
-  if (currentSource && gainNode) {
-    gainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 1.2);
-    setTimeout(() => {
-      try { currentSource.stop(); } catch(e) {}
-      if (cb) cb();
-    }, 2000);
-  } else {
-    if (cb) cb();
+function crossfadeTo(buf){
+  const src=audioCtx.createBufferSource();
+  src.buffer=buf; src.loop=false;
+  src.connect(masterGain);
+  masterGain.gain.setTargetAtTime(0.5,audioCtx.currentTime,2.5);
+  if(currentSrc){
+    const old=currentSrc;
+    setTimeout(()=>{try{old.stop();}catch(e){}},3000);
   }
+  src.start();
+  currentSrc=src;
+  src.onended=()=>{
+    playIdx=(playIdx+1)%playlist.length;
+    setTimeout(()=>{
+      if(playlist[playIdx]) loadAndPlay(playlist[playIdx]);
+    },1500);
+  };
 }
 
-// Generative ambient fallback using Web Audio API
-function playGenerativeAmbience() {
-  if (!audioCtx) return;
-  trackDisplay.textContent = '♪ Ambient Silence';
-  trackDisplay.style.opacity = '1';
+function startGenerativeAmbience(){
+  if(!audioCtx) return;
+  trackEl.textContent='♪ The Void Breathes';
+  trackEl.style.opacity='1';
+  setTimeout(()=>{trackEl.style.opacity='0';},6000);
 
-  const notes = [220, 246.94, 261.63, 293.66, 329.63, 349.23, 392, 440];
-  let osc1, osc2, lfo;
+  masterGain.gain.setTargetAtTime(0.55,audioCtx.currentTime,3);
 
-  function scheduleNote() {
-    if (!audioCtx || !audioStarted) return;
-    const freq = notes[rndInt(0, notes.length - 1)] * (Math.random() < 0.5 ? 0.5 : 1);
-    const when = audioCtx.currentTime;
-    const osc = audioCtx.createOscillator();
-    const envGain = audioCtx.createGain();
-    osc.type = Math.random() < 0.5 ? 'sine' : 'triangle';
-    osc.frequency.value = freq;
-    envGain.gain.setValueAtTime(0, when);
-    envGain.gain.linearRampToValueAtTime(0.04, when + 0.8);
-    envGain.gain.exponentialRampToValueAtTime(0.001, when + rnd(3, 8));
-    osc.connect(envGain);
-    envGain.connect(gainNode);
-    osc.start(when);
-    osc.stop(when + 10);
-    gainNode.gain.setTargetAtTime(0.6, audioCtx.currentTime, 2);
-    setTimeout(scheduleNote, rnd(1000, 4000));
+  // Dark drone pads
+  const droneFreqs=[55,82.41,110,130.81];
+  for(const f of droneFreqs){
+    const o=audioCtx.createOscillator();
+    const g=audioCtx.createGain();
+    o.type='sine'; o.frequency.value=f;
+    g.gain.value=0.018+(Math.random()*0.008);
+    o.connect(g); g.connect(masterGain); o.start();
   }
 
-  scheduleNote();
+  // Eerie high overtone
+  const hOsc=audioCtx.createOscillator();
+  const hGain=audioCtx.createGain();
+  hOsc.type='triangle'; hOsc.frequency.value=440;
+  hGain.gain.value=0.006;
+  const lfo=audioCtx.createOscillator();
+  const lfoG=audioCtx.createGain();
+  lfo.frequency.value=0.08; lfoG.gain.value=12;
+  lfo.connect(lfoG); lfoG.connect(hOsc.frequency);
+  lfo.start(); hOsc.connect(hGain); hGain.connect(masterGain); hOsc.start();
 
-  // Pad drone
-  const padFreqs = [110, 130.81, 164.81];
-  for (const pf of padFreqs) {
-    const padOsc = audioCtx.createOscillator();
-    const padGain = audioCtx.createGain();
-    padOsc.type = 'sine';
-    padOsc.frequency.value = pf;
-    padGain.gain.value = 0.015;
-    padOsc.connect(padGain);
-    padGain.connect(gainNode);
-    padOsc.start();
+  // Sparse notes
+  function schedNote(){
+    if(!audioCtx||!audioStarted) return;
+    const minorPentatonic=[110,130.81,155.56,185,220,261.63,311.13];
+    const freq=minorPentatonic[rndInt(0,minorPentatonic.length-1)]*(Math.random()<0.4?0.5:1);
+    const when=audioCtx.currentTime;
+    const o=audioCtx.createOscillator();
+    const g=audioCtx.createGain();
+    o.type=Math.random()<0.6?'sine':'triangle';
+    o.frequency.value=freq;
+    g.gain.setValueAtTime(0,when);
+    g.gain.linearRampToValueAtTime(0.035,when+1.2);
+    g.gain.exponentialRampToValueAtTime(0.0001,when+rnd(4,10));
+    o.connect(g); g.connect(masterGain); o.start(when); o.stop(when+12);
+    setTimeout(schedNote,rnd(1500,5000));
+  }
+  schedNote();
+
+  // Whisper-like white noise burst
+  function schedNoise(){
+    if(!audioCtx||!audioStarted) return;
+    const buf=audioCtx.createBuffer(1,audioCtx.sampleRate*.8,audioCtx.sampleRate);
+    const data=buf.getChannelData(0);
+    for(let i=0;i<data.length;i++) data[i]=(Math.random()*2-1)*0.12;
+    const ns=audioCtx.createBufferSource();
+    ns.buffer=buf;
+    const ng=audioCtx.createGain();
+    const bpf=audioCtx.createBiquadFilter();
+    bpf.type='bandpass'; bpf.frequency.value=rnd(600,3000); bpf.Q.value=8;
+    const when=audioCtx.currentTime;
+    ng.gain.setValueAtTime(0,when);
+    ng.gain.linearRampToValueAtTime(0.04,when+0.3);
+    ng.gain.exponentialRampToValueAtTime(0.0001,when+0.8);
+    ns.connect(bpf); bpf.connect(ng); ng.connect(masterGain);
+    ns.start(when);
+    setTimeout(schedNoise,rnd(4000,12000));
+  }
+  setTimeout(schedNoise,3000);
+}
+
+// ══════════════════════════════════════════════
+//  INTERACTION
+// ══════════════════════════════════════════════
+let interacted=false;
+let lastTX=0, lastTY=0;
+
+function handleTouch(e){
+  e.preventDefault();
+  const touch=e.touches[0];
+  const tx=touch.clientX, ty=touch.clientY;
+
+  if(!interacted){
+    interacted=true;
+    hintEl.style.opacity='0';
+    startAudio();
+    whisperTimer=rndInt(500,1000);
   }
 
-  creature.mood = 'melancholy';
-  moodEl.textContent = 'melancholy';
+  spawnRipple(tx,ty);
+  creature.onTouch(tx,ty);
+  lastTX=tx; lastTY=ty;
 }
 
-function updateMoodFromTrack(name) {
-  const n = (name || '').toLowerCase();
-  if (n.includes('fast') || n.includes('dance') || n.includes('energy') || n.includes('beat')) {
-    creature.mood = 'energetic';
-    creature.moodSpeed = 1.6;
-    moodEl.textContent = 'energetic';
-  } else if (n.includes('sad') || n.includes('lone') || n.includes('mela') || n.includes('elegy')) {
-    creature.mood = 'melancholy';
-    creature.moodSpeed = 0.65;
-    moodEl.textContent = 'melancholy';
-  } else if (n.includes('curious') || n.includes('wonder') || n.includes('explore')) {
-    creature.mood = 'curious';
-    creature.moodSpeed = 1.1;
-    moodEl.textContent = 'curious';
-  } else {
-    creature.mood = 'calm';
-    creature.moodSpeed = 1.0;
-    moodEl.textContent = 'calm';
-  }
-}
+canvas.addEventListener('touchstart',handleTouch,{passive:false});
+canvas.addEventListener('touchmove',e=>{
+  e.preventDefault();
+  const touch=e.touches[0];
+  if(Math.random()<0.15) spawnRipple(touch.clientX,touch.clientY);
+  creature.targetX=touch.clientX; creature.targetY=touch.clientY;
+  creature.idleTimer=0;
+  lastTX=touch.clientX; lastTY=touch.clientY;
+},{passive:false});
 
-// ─── Sleep Veil ───────────────────────────────────────────────
-function updateSleepVeil() {
-  sleepVeil.style.opacity = creature.sleepAlpha * 0.6;
-}
+// ══════════════════════════════════════════════
+//  MAIN LOOP
+// ══════════════════════════════════════════════
+const creature = new Creature();
 
-// ─── Main Loop ────────────────────────────────────────────────
-function frame(ts) {
-  const dt = Math.min((ts - lastTime) / 16.67, 3);
-  lastTime = ts;
-  t++;
+function frame(ts){
+  const dt=Math.min((ts-lastTS)/16.67,3);
+  lastTS=ts; T++;
 
-  // Clear
-  ctx.clearRect(0, 0, W, H);
+  ctx.clearRect(0,0,W,H);
 
-  // Scene
   drawBackground();
   updateRain(); drawRain();
   updateParticles(); drawParticles();
   updateRipples(); drawRipples();
+  updateFlash();
 
-  // Creature
-  creature.update(dt);
-  creature.draw(ctx);
+  creature.update();
+  creature.draw();
 
-  // Vignette
-  const vg = ctx.createRadialGradient(W / 2, H / 2, H * 0.3, W / 2, H / 2, H * 0.9);
-  vg.addColorStop(0, 'rgba(0,0,0,0)');
-  vg.addColorStop(1, 'rgba(5,8,16,0.72)');
-  ctx.fillStyle = vg;
-  ctx.fillRect(0, 0, W, H);
+  drawVignette();
 
-  updateSleepVeil();
+  updateWhispers(interacted);
 
   requestAnimationFrame(frame);
 }
 
-requestAnimationFrame(ts => { lastTime = ts; requestAnimationFrame(frame); });
+requestAnimationFrame(ts=>{lastTS=ts; requestAnimationFrame(frame);});
 </script>
 </body>
 </html>
