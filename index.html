@@ -2,711 +2,77 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HeartDays 💖 วันสำคัญของคุณ</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700;900&family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet">
+<title>MP3 Batch Downloader</title>
+
 <style>
-  :root {
-    --pink: #FF6B9D;
-    --purple: #C084FC;
-    --blue: #60A5FA;
-    --yellow: #FCD34D;
-    --green: #34D399;
-    --orange: #FB923C;
-    --bg: #0F0A1E;
-    --card: #1A1035;
-    --glass: rgba(255,255,255,0.05);
-  }
-
-  * { margin:0; padding:0; box-sizing:border-box; }
-
-  body {
-    font-family: 'Kanit', sans-serif;
-    background: var(--bg);
-    color: #fff;
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
-
-  /* Animated background */
-  .bg-orbs {
-    position: fixed; inset:0; pointer-events:none; z-index:0;
-    overflow: hidden;
-  }
-  .orb {
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(80px);
-    opacity: 0.3;
-    animation: floatOrb 8s ease-in-out infinite;
-  }
-  .orb1 { width:400px;height:400px;background:var(--pink);top:-100px;left:-100px;animation-delay:0s; }
-  .orb2 { width:300px;height:300px;background:var(--purple);bottom:-50px;right:-50px;animation-delay:2s; }
-  .orb3 { width:250px;height:250px;background:var(--blue);top:50%;left:50%;animation-delay:4s; }
-
-  @keyframes floatOrb {
-    0%,100% { transform: translateY(0) scale(1); }
-    50% { transform: translateY(-30px) scale(1.1); }
-  }
-
-  /* NAVBAR */
-  .navbar {
-    position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
-    z-index: 100;
-    background: rgba(255,255,255,0.08);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255,255,255,0.15);
-    border-radius: 50px;
-    padding: 12px 20px;
-    display: flex; gap: 8px; align-items: center;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
-  }
-
-  .nav-btn {
-    display: flex; flex-direction: column; align-items: center;
-    padding: 10px 16px; border-radius: 40px;
-    border: none; cursor: pointer; background: transparent; color: rgba(255,255,255,0.5);
-    font-family: 'Kanit', sans-serif; font-size: 11px;
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    text-decoration: none;
-    gap: 4px;
-  }
-  .nav-btn .icon { font-size: 22px; transition: transform 0.3s; }
-  .nav-btn:hover { color: #fff; background: rgba(255,255,255,0.1); }
-  .nav-btn:hover .icon { transform: scale(1.2) translateY(-2px); }
-  .nav-btn.active {
-    background: linear-gradient(135deg, var(--pink), var(--purple));
-    color: #fff;
-    box-shadow: 0 8px 25px rgba(255,107,157,0.4);
-    transform: translateY(-5px);
-  }
-  .nav-btn.active .icon { transform: scale(1.1); }
-
-  /* MAIN CONTENT */
-  .main {
-    position: relative; z-index: 1;
-    padding: 60px 20px 160px;
-    max-width: 600px; margin: 0 auto;
-    display: flex; flex-direction: column; align-items: center;
-    gap: 30px;
-  }
-
-  /* Hero Header */
-  .hero-header {
-    text-align: center;
-    animation: slideDown 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  }
-  .hero-header h1 {
-    font-size: clamp(2rem, 8vw, 3.5rem);
-    font-weight: 900;
-    background: linear-gradient(135deg, var(--pink), var(--purple), var(--blue));
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    line-height: 1.1;
-  }
-  .hero-header p {
-    font-size: 1rem; color: rgba(255,255,255,0.6); margin-top: 8px;
-    font-family: 'Sarabun', sans-serif;
-  }
-  @keyframes slideDown {
-    from { opacity:0; transform:translateY(-30px); }
-    to { opacity:1; transform:translateY(0); }
-  }
-
-  /* CHARACTER SECTION */
-  .character-section {
-    width: 100%;
-    background: var(--glass);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 24px;
-    padding: 30px 20px;
-    display: flex; flex-direction: column; align-items: center; gap: 20px;
-    animation: fadeUp 0.8s 0.2s both;
-  }
-  @keyframes fadeUp {
-    from { opacity:0; transform:translateY(40px); }
-    to { opacity:1; transform:translateY(0); }
-  }
-
-  /* SVG CHARACTER */
-  .char-wrapper {
-    position: relative;
-    cursor: pointer;
-  }
-  .char-svg { width: 180px; height: 220px; }
-
-  /* Emotion particles */
-  .particle {
-    position: absolute;
-    font-size: 20px;
-    animation: particleFloat 2s ease-out forwards;
-    pointer-events: none;
-    opacity: 0;
-  }
-  @keyframes particleFloat {
-    0% { opacity:1; transform: translateY(0) scale(1); }
-    100% { opacity:0; transform: translateY(-80px) scale(0.5); }
-  }
-
-  /* Input area */
-  .input-area {
-    width: 100%; display: flex; flex-direction: column; gap: 12px;
-  }
-  .input-area label {
-    font-size: 0.9rem; color: rgba(255,255,255,0.7); text-align: center;
-  }
-  .select-occasion {
-    width: 100%;
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.15);
-    border-radius: 16px;
-    color: #fff;
-    font-family: 'Kanit', sans-serif;
-    font-size: 1rem;
-    padding: 14px 18px;
-    outline: none; cursor: pointer;
-    appearance: none;
-    transition: border-color 0.3s;
-  }
-  .select-occasion:focus { border-color: var(--pink); }
-  .select-occasion option { background: #1A1035; }
-
-  .text-input {
-    width: 100%;
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.15);
-    border-radius: 16px;
-    color: #fff;
-    font-family: 'Sarabun', sans-serif;
-    font-size: 1rem;
-    padding: 14px 18px;
-    outline: none; resize: none;
-    min-height: 80px;
-    transition: border-color 0.3s;
-    placeholder-color: rgba(255,255,255,0.3);
-  }
-  .text-input::placeholder { color: rgba(255,255,255,0.3); }
-  .text-input:focus { border-color: var(--purple); }
-
-  .send-btn {
-    width: 100%;
-    background: linear-gradient(135deg, var(--pink), var(--purple));
-    border: none; border-radius: 16px;
-    color: #fff; font-family: 'Kanit', sans-serif;
-    font-size: 1.1rem; font-weight: 600;
-    padding: 16px;
-    cursor: pointer;
-    transition: all 0.3s;
-    box-shadow: 0 8px 30px rgba(255,107,157,0.3);
-  }
-  .send-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(255,107,157,0.4); }
-  .send-btn:active { transform: translateY(0); }
-  .send-btn:disabled { opacity:0.6; cursor:not-allowed; transform:none; }
-
-  /* Response bubble */
-  .response-bubble {
-    width: 100%;
-    background: linear-gradient(135deg, rgba(192,132,252,0.15), rgba(96,165,250,0.15));
-    border: 1px solid rgba(192,132,252,0.3);
-    border-radius: 20px;
-    padding: 20px;
-    display: none;
-    animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  }
-  .response-bubble.show { display: block; }
-  @keyframes popIn {
-    from { opacity:0; transform:scale(0.95); }
-    to { opacity:1; transform:scale(1); }
-  }
-  .response-bubble p {
-    font-family: 'Sarabun', sans-serif;
-    font-size: 1rem; line-height: 1.7;
-    color: rgba(255,255,255,0.9);
-  }
-  .bubble-header {
-    display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
-  }
-  .bubble-header span { font-size: 0.85rem; color: var(--purple); font-weight: 600; }
-
-  /* QUICK ACTION CARDS */
-  .cards-section { width: 100%; animation: fadeUp 0.8s 0.4s both; }
-  .cards-section h2 { font-size: 1.2rem; margin-bottom: 16px; opacity:0.8; }
-
-  .cards-grid {
-    display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;
-  }
-  .day-card {
-    background: var(--glass);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 20px;
-    padding: 20px 16px;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    text-decoration: none; color: #fff;
-    display: flex; flex-direction: column; align-items: center; gap: 8px;
-  }
-  .day-card:hover { transform: translateY(-5px) scale(1.02); border-color: rgba(255,255,255,0.3); }
-  .day-card .emoji { font-size: 2rem; }
-  .day-card .title { font-size: 0.95rem; font-weight: 600; }
-  .day-card .sub { font-size: 0.75rem; opacity:0.6; font-family:'Sarabun',sans-serif; }
-  .day-card.birthday { background: linear-gradient(135deg, rgba(255,107,157,0.2), rgba(192,132,252,0.2)); border-color: rgba(255,107,157,0.3); }
-  .day-card.love { background: linear-gradient(135deg, rgba(252,211,77,0.2), rgba(251,146,60,0.2)); border-color: rgba(252,211,77,0.3); }
-  .day-card.vent { background: linear-gradient(135deg, rgba(96,165,250,0.2), rgba(52,211,153,0.2)); border-color: rgba(96,165,250,0.3); }
-  .day-card.game { background: linear-gradient(135deg, rgba(52,211,153,0.2), rgba(96,165,250,0.2)); border-color: rgba(52,211,153,0.3); }
-
-  /* Loading spinner */
-  .spinner {
-    display: inline-block; width: 20px; height: 20px;
-    border: 2px solid rgba(255,255,255,0.3);
-    border-top-color: #fff;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-    vertical-align: middle; margin-right: 8px;
-  }
-  @keyframes spin { to { transform:rotate(360deg); } }
-
-  /* EMOTION BADGE */
-  .emotion-badge {
-    position: absolute; top: -10px; right: -10px;
-    background: linear-gradient(135deg, var(--yellow), var(--orange));
-    border-radius: 50px; padding: 4px 12px;
-    font-size: 0.8rem; font-weight: 600;
-    box-shadow: 0 4px 15px rgba(252,211,77,0.4);
-    transition: all 0.5s;
-  }
-
-  /* Confetti */
-  .confetti-container {
-    position: fixed; top:0; left:0; width:100%; height:100%;
-    pointer-events: none; z-index: 999; overflow: hidden;
-  }
-  .confetti-piece {
-    position: absolute;
-    width: 10px; height: 10px;
-    border-radius: 2px;
-    animation: confettiFall linear forwards;
-  }
-  @keyframes confettiFall {
-    0% { transform: translateY(-20px) rotate(0deg); opacity:1; }
-    100% { transform: translateY(100vh) rotate(720deg); opacity:0; }
-  }
-
-  /* Scrollbar */
-  ::-webkit-scrollbar { width: 4px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: var(--purple); border-radius: 2px; }
+body{
+    font-family:Arial;
+    background:#111;
+    color:white;
+    text-align:center;
+    padding:30px;
+}
+textarea{
+    width:90%;
+    height:250px;
+    font-size:16px;
+    padding:10px;
+}
+button{
+    padding:15px 35px;
+    font-size:18px;
+    margin-top:20px;
+    cursor:pointer;
+}
 </style>
+
 </head>
 <body>
 
-<div class="bg-orbs">
-  <div class="orb orb1"></div>
-  <div class="orb orb2"></div>
-  <div class="orb orb3"></div>
-</div>
+<h1>โหลด MP3 หลายเพลง</h1>
 
-<div class="confetti-container" id="confettiContainer"></div>
+<p>วางลิงก์ MP3 ทีละบรรทัด</p>
 
-<main class="main">
-  <!-- HERO -->
-  <div class="hero-header">
-    <h1>HeartDays 💖</h1>
-    <p>บอกความรู้สึก • รับกำลังใจ • เฉลิมฉลอง</p>
-  </div>
+<textarea id="links">
+https://example.com/song1.mp3
+https://example.com/song2.mp3
+https://example.com/song3.mp3
+</textarea>
 
-  <!-- CHARACTER + AI SECTION -->
-  <div class="character-section">
-    <div class="char-wrapper" id="charWrapper" onclick="pokeChar()">
-      <!-- Animated SVG Character -->
-      <svg class="char-svg" id="charSvg" viewBox="0 0 180 220" xmlns="http://www.w3.org/2000/svg">
-        <!-- Body -->
-        <rect x="40" y="120" width="100" height="80" rx="20" fill="#7C6AF7" id="bodyRect"/>
-        <!-- Shirt shine -->
-        <rect x="50" y="130" width="80" height="60" rx="15" fill="#9080FF" opacity="0.5"/>
-        <!-- Collar area -->
-        <rect x="65" y="118" width="50" height="20" rx="8" fill="#A89FFF"/>
-        <!-- Head -->
-        <rect x="35" y="40" width="110" height="90" rx="35" fill="#FBBF77" id="headRect"/>
-        <!-- Hair -->
-        <rect x="35" y="35" width="110" height="40" rx="20" fill="#5C3D2E" id="hairRect"/>
-        <!-- Ear left -->
-        <rect x="28" y="75" width="18" height="25" rx="9" fill="#FBBF77"/>
-        <!-- Ear right -->
-        <rect x="134" y="75" width="18" height="25" rx="9" fill="#FBBF77"/>
+<br>
 
-        <!-- EYES group -->
-        <g id="eyesGroup">
-          <!-- Eye left -->
-          <ellipse cx="72" cy="95" rx="14" ry="14" fill="white" id="eyeLeftBg"/>
-          <ellipse cx="72" cy="97" rx="8" ry="9" fill="#3D2B1F" id="eyeLeft"/>
-          <ellipse cx="75" cy="94" rx="3" ry="3" fill="white" id="eyeLeftShine"/>
-          <!-- Eye right -->
-          <ellipse cx="108" cy="95" rx="14" ry="14" fill="white" id="eyeRightBg"/>
-          <ellipse cx="108" cy="97" rx="8" ry="9" fill="#3D2B1F" id="eyeRight"/>
-          <ellipse cx="111" cy="94" rx="3" ry="3" fill="white" id="eyeRightShine"/>
-        </g>
-
-        <!-- Eyebrows -->
-        <path d="M 58 78 Q 72 73 86 78" stroke="#5C3D2E" stroke-width="3.5" fill="none" stroke-linecap="round" id="eyebrowLeft"/>
-        <path d="M 94 78 Q 108 73 122 78" stroke="#5C3D2E" stroke-width="3.5" fill="none" stroke-linecap="round" id="eyebrowRight"/>
-
-        <!-- Nose -->
-        <path d="M 90 102 Q 84 108 90 112 Q 96 108 90 102" fill="#E5A060" id="nose"/>
-
-        <!-- MOUTH -->
-        <path d="M 72 125 Q 90 137 108 125" stroke="#C0794D" stroke-width="3" fill="none" stroke-linecap="round" id="mouth"/>
-
-        <!-- Cheeks -->
-        <ellipse cx="60" cy="118" rx="12" ry="8" fill="#FF9FB0" opacity="0" id="cheekLeft"/>
-        <ellipse cx="120" cy="118" rx="12" ry="8" fill="#FF9FB0" opacity="0" id="cheekRight"/>
-
-        <!-- Tears (hidden by default) -->
-        <ellipse cx="68" cy="110" rx="4" ry="6" fill="#60A5FA" opacity="0" id="tearLeft"/>
-        <ellipse cx="112" cy="110" rx="4" ry="6" fill="#60A5FA" opacity="0" id="tearRight"/>
-
-        <!-- Stars (happy) -->
-        <text x="25" y="60" font-size="18" opacity="0" id="starLeft">⭐</text>
-        <text x="135" y="60" font-size="18" opacity="0" id="starRight">⭐</text>
-      </svg>
-      <div class="emotion-badge" id="emotionBadge">😊 พร้อมฟัง</div>
-    </div>
-
-    <div class="input-area">
-      <label>เลือกโอกาสพิเศษของคุณ 🎉</label>
-      <select class="select-occasion" id="occasionSelect" onchange="onOccasionChange()">
-        <option value="">-- เลือกวันสำคัญ --</option>
-        <option value="birthday">🎂 วันเกิด</option>
-        <option value="valentine">💕 วันวาเลนไทน์</option>
-        <option value="anniversary">💍 วันครบรอบ</option>
-        <option value="newyear">🎆 วันปีใหม่</option>
-        <option value="graduation">🎓 วันสำเร็จการศึกษา</option>
-        <option value="newjob">💼 เริ่มงานใหม่</option>
-        <option value="vent">😢 อยากระบาย</option>
-        <option value="sad">💙 เศร้า/เสียใจ</option>
-        <option value="custom">✏️ อื่นๆ พิมพ์เอง</option>
-      </select>
-
-      <textarea class="text-input" id="userMessage"
-        placeholder="เล่าให้ฟังได้เลย... วันนี้เกิดอะไรขึ้น? หรืออยากให้บอกอะไรกับใคร?"></textarea>
-
-      <button class="send-btn" id="sendBtn" onclick="sendToAI()">
-        💌 ส่งให้น้องตอบ
-      </button>
-    </div>
-
-    <div class="response-bubble" id="responseBubble">
-      <div class="bubble-header">
-        <span>🤖 น้อง HeartBot พูดว่า:</span>
-      </div>
-      <p id="responseText"></p>
-    </div>
-  </div>
-
-  <!-- QUICK CARDS -->
-  <div class="cards-section">
-    <h2>✨ เลือกสิ่งที่อยากทำ</h2>
-    <div class="cards-grid">
-      <a href="birthday.html" class="day-card birthday">
-        <div class="emoji">🎂</div>
-        <div class="title">วันเกิด</div>
-        <div class="sub">อวยพรวันเกิดสุดพิเศษ</div>
-      </a>
-      <a href="love.html" class="day-card love">
-        <div class="emoji">💕</div>
-        <div class="title">วันรัก</div>
-        <div class="sub">โรแมนติก & วาเลนไทน์</div>
-      </a>
-      <a href="vent.html" class="day-card vent">
-        <div class="emoji">🌊</div>
-        <div class="title">ระบาย</div>
-        <div class="sub">บอกได้เลย อยู่ที่นี่</div>
-      </a>
-      <a href="game.html" class="day-card game">
-        <div class="emoji">🎮</div>
-        <div class="title">มินิเกม</div>
-        <div class="sub">เล่นคลายเครียด</div>
-      </a>
-    </div>
-  </div>
-</main>
-
-<!-- NAVBAR -->
-<nav class="navbar">
-  <a href="index.html" class="nav-btn active">
-    <span class="icon">🏠</span>
-    <span>หน้าหลัก</span>
-  </a>
-  <a href="birthday.html" class="nav-btn">
-    <span class="icon">🎂</span>
-    <span>วันเกิด</span>
-  </a>
-  <a href="love.html" class="nav-btn">
-    <span class="icon">💕</span>
-    <span>รัก</span>
-  </a>
-  <a href="vent.html" class="nav-btn">
-    <span class="icon">🌊</span>
-    <span>ระบาย</span>
-  </a>
-  <a href="game.html" class="nav-btn">
-    <span class="icon">🎮</span>
-    <span>เกม</span>
-  </a>
-</nav>
+<button onclick="downloadAll()">ดาวน์โหลดทั้งหมด</button>
 
 <script>
-const DEEPSEEK_KEY = 'sk-e6e518770ef249a98a8b93fabe612967';
 
-// Character emotion states
-const emotions = {
-  happy: {
-    eyebrowLeft: 'M 58 75 Q 72 69 86 75',
-    eyebrowRight: 'M 94 75 Q 108 69 122 75',
-    mouth: 'M 70 123 Q 90 140 110 123',
-    cheekOpacity: '0.6',
-    tearOpacity: '0',
-    starOpacity: '1',
-    badge: '😄 มีความสุข!',
-    bodyColor: '#7C6AF7',
-    eyeScale: 'scale(1.1)',
-  },
-  excited: {
-    eyebrowLeft: 'M 55 72 Q 72 65 86 72',
-    eyebrowRight: 'M 94 72 Q 108 65 125 72',
-    mouth: 'M 68 122 Q 90 142 112 122',
-    cheekOpacity: '0.8',
-    tearOpacity: '0',
-    starOpacity: '1',
-    badge: '🤩 ตื่นเต้นมาก!',
-    bodyColor: '#F59E0B',
-  },
-  sad: {
-    eyebrowLeft: 'M 58 82 Q 72 79 86 82',
-    eyebrowRight: 'M 94 82 Q 108 79 122 82',
-    mouth: 'M 72 130 Q 90 122 108 130',
-    cheekOpacity: '0',
-    tearOpacity: '0.8',
-    starOpacity: '0',
-    badge: '😢 เข้าใจนะ...',
-    bodyColor: '#3B82F6',
-  },
-  love: {
-    eyebrowLeft: 'M 58 74 Q 72 68 86 74',
-    eyebrowRight: 'M 94 74 Q 108 68 122 74',
-    mouth: 'M 70 123 Q 90 140 110 123',
-    cheekOpacity: '0.9',
-    tearOpacity: '0',
-    starOpacity: '0',
-    badge: '🥰 น่ารักมาก!',
-    bodyColor: '#EC4899',
-  },
-  neutral: {
-    eyebrowLeft: 'M 58 78 Q 72 73 86 78',
-    eyebrowRight: 'M 94 78 Q 108 73 122 78',
-    mouth: 'M 72 125 Q 90 133 108 125',
-    cheekOpacity: '0',
-    tearOpacity: '0',
-    starOpacity: '0',
-    badge: '😊 พร้อมฟัง',
-    bodyColor: '#7C6AF7',
-  }
-};
+function downloadAll(){
 
-let currentEmotion = 'neutral';
+let list=document.getElementById("links").value
+.split("\n")
+.filter(x=>x.trim()!="");
 
-function setEmotion(emotionKey) {
-  const e = emotions[emotionKey] || emotions.neutral;
-  currentEmotion = emotionKey;
+let delay=0;
 
-  document.getElementById('eyebrowLeft').setAttribute('d', e.eyebrowLeft);
-  document.getElementById('eyebrowRight').setAttribute('d', e.eyebrowRight);
-  document.getElementById('mouth').setAttribute('d', e.mouth);
-  document.getElementById('cheekLeft').style.opacity = e.cheekOpacity;
-  document.getElementById('cheekRight').style.opacity = e.cheekOpacity;
-  document.getElementById('tearLeft').style.opacity = e.tearOpacity;
-  document.getElementById('tearRight').style.opacity = e.tearOpacity;
-  document.getElementById('starLeft').style.opacity = e.starOpacity;
-  document.getElementById('starRight').style.opacity = e.starOpacity;
-  document.getElementById('emotionBadge').textContent = e.badge;
-  document.getElementById('bodyRect').setAttribute('fill', e.bodyColor);
+list.forEach(link=>{
 
-  // Blink animation
-  const eyes = document.getElementById('eyesGroup');
-  eyes.style.animation = 'none';
-  setTimeout(() => eyes.style.animation = '', 10);
+setTimeout(()=>{
+
+let a=document.createElement("a");
+a.href=link.trim();
+a.download="";
+document.body.appendChild(a);
+a.click();
+a.remove();
+
+},delay);
+
+delay+=1200;
+
+});
+
 }
 
-function onOccasionChange() {
-  const val = document.getElementById('occasionSelect').value;
-  const emotions_map = {
-    birthday: 'excited',
-    valentine: 'love',
-    anniversary: 'love',
-    newyear: 'excited',
-    graduation: 'happy',
-    newjob: 'happy',
-    vent: 'sad',
-    sad: 'sad',
-    custom: 'neutral'
-  };
-  if (val) setEmotion(emotions_map[val] || 'neutral');
-
-  // Set placeholder text
-  const placeholders = {
-    birthday: 'บอกชื่อเพื่อนหรือตัวเองได้เลย เช่น "วันนี้วันเกิดพี่สาวฉัน ชื่อแนน"',
-    valentine: 'เล่าให้ฟังได้เลย หรืออยากส่งความรักให้ใคร?',
-    vent: 'ระบายได้เลย... ไม่ตัดสิน อยู่ที่นี่ฟังอยู่นะ 💙',
-    sad: 'เกิดอะไรขึ้น? เล่าให้ฟังได้เลย...',
-  };
-  const textarea = document.getElementById('userMessage');
-  textarea.placeholder = placeholders[val] || 'เล่าให้ฟังได้เลย...';
-}
-
-async function sendToAI() {
-  const occasion = document.getElementById('occasionSelect').value;
-  const message = document.getElementById('userMessage').value.trim();
-  const btn = document.getElementById('sendBtn');
-
-  if (!occasion && !message) {
-    shakeChar();
-    return;
-  }
-
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span> น้องกำลังคิดอยู่...';
-  setEmotion('neutral');
-
-  const occasionLabels = {
-    birthday: 'วันเกิด', valentine: 'วันวาเลนไทน์',
-    anniversary: 'วันครบรอบ', newyear: 'วันปีใหม่',
-    graduation: 'วันสำเร็จการศึกษา', newjob: 'วันเริ่มงานใหม่',
-    vent: 'การระบาย/บ่น', sad: 'ความเศร้า', custom: 'โอกาสพิเศษ'
-  };
-
-  const systemPrompt = `คุณคือ "น้อง HeartBot" ผู้ช่วยเป็นมิตร อบอุ่น พูดภาษาไทยน่ารัก ใช้อีโมจิพอดี
-  ตอบสั้นๆ กระชับ 3-5 ประโยค อบอุ่น จริงใจ ไม่เป็นทางการ
-  ถ้าเป็นวันเกิด ให้อวยพรอย่างมีพลัง ถ้าเศร้า ให้ปลอบใจ ถ้าระบาย ให้รับฟังไม่ตัดสิน`;
-
-  const userPrompt = `โอกาส: ${occasionLabels[occasion] || 'ทั่วไป'}\nสิ่งที่ผู้ใช้บอก: ${message || 'ไม่ได้บอกรายละเอียด'}`;
-
-  try {
-    const res = await fetch('https://api.deepseek.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${DEEPSEEK_KEY}`
-      },
-      body: JSON.stringify({
-        model: 'deepseek-chat',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-        max_tokens: 200,
-        temperature: 0.85
-      })
-    });
-
-    const data = await res.json();
-    const reply = data.choices?.[0]?.message?.content || 'ขอโทษนะ น้องตอบไม่ได้ตอนนี้ ลองใหม่อีกทีได้เลย 😊';
-
-    document.getElementById('responseText').textContent = reply;
-    document.getElementById('responseBubble').classList.add('show');
-
-    // Set emotion based on occasion
-    const emotionMap = {
-      birthday: 'excited', valentine: 'love', anniversary: 'love',
-      newyear: 'excited', graduation: 'happy', newjob: 'happy',
-      vent: 'sad', sad: 'sad'
-    };
-    setEmotion(emotionMap[occasion] || 'happy');
-
-    if (['birthday', 'graduation', 'newjob', 'newyear'].includes(occasion)) {
-      launchConfetti();
-    }
-
-  } catch (err) {
-    document.getElementById('responseText').textContent = 'อุ๊ปส์! น้องเชื่อมต่อไม่ได้ตอนนี้ ลองใหม่อีกทีนะ 🙏';
-    document.getElementById('responseBubble').classList.add('show');
-    setEmotion('sad');
-  }
-
-  btn.disabled = false;
-  btn.innerHTML = '💌 ส่งให้น้องตอบ';
-}
-
-function pokeChar() {
-  const wrapper = document.getElementById('charWrapper');
-  wrapper.style.animation = 'none';
-
-  // Bounce
-  document.getElementById('charSvg').style.transform = 'scale(1.1) rotate(-5deg)';
-  setTimeout(() => {
-    document.getElementById('charSvg').style.transform = 'scale(1) rotate(0deg)';
-  }, 200);
-
-  // Float particle
-  const emojis = ['✨','💫','⭐','🌟','💖'];
-  const particle = document.createElement('div');
-  particle.className = 'particle';
-  particle.textContent = emojis[Math.floor(Math.random() * emojis.length)];
-  particle.style.left = (Math.random() * 120 + 30) + 'px';
-  particle.style.top = '20px';
-  wrapper.appendChild(particle);
-  setTimeout(() => particle.remove(), 2000);
-}
-
-function shakeChar() {
-  const svg = document.getElementById('charSvg');
-  svg.style.animation = 'shake 0.4s';
-  svg.addEventListener('animationend', () => svg.style.animation = '', {once:true});
-}
-
-function launchConfetti() {
-  const container = document.getElementById('confettiContainer');
-  const colors = ['#FF6B9D','#C084FC','#60A5FA','#FCD34D','#34D399','#FB923C'];
-  for (let i = 0; i < 60; i++) {
-    setTimeout(() => {
-      const piece = document.createElement('div');
-      piece.className = 'confetti-piece';
-      piece.style.left = Math.random() * 100 + 'vw';
-      piece.style.background = colors[Math.floor(Math.random() * colors.length)];
-      piece.style.animationDuration = (Math.random() * 2 + 2) + 's';
-      piece.style.animationDelay = Math.random() * 1 + 's';
-      piece.style.transform = `rotate(${Math.random()*360}deg)`;
-      container.appendChild(piece);
-      setTimeout(() => piece.remove(), 4000);
-    }, i * 30);
-  }
-}
-
-// Add shake keyframe
-const style = document.createElement('style');
-style.textContent = `
-  @keyframes shake {
-    0%,100% { transform: translateX(0); }
-    20% { transform: translateX(-10px) rotate(-5deg); }
-    40% { transform: translateX(10px) rotate(5deg); }
-    60% { transform: translateX(-8px); }
-    80% { transform: translateX(8px); }
-  }
-  #charSvg { transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-`;
-document.head.appendChild(style);
-
-// Auto blink
-setInterval(() => {
-  const eyeL = document.getElementById('eyeLeft');
-  const eyeR = document.getElementById('eyeRight');
-  eyeL.setAttribute('ry','1');
-  eyeR.setAttribute('ry','1');
-  setTimeout(() => {
-    eyeL.setAttribute('ry','9');
-    eyeR.setAttribute('ry','9');
-  }, 120);
-}, 3500 + Math.random()*2000);
 </script>
+
 </body>
 </html>
