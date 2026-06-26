@@ -1,77 +1,253 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<meta charset="UTF-8">
-<title>MP3 Batch Downloader</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MP3 Downloader</title>
 
-<style>
-body{
-    font-family:Arial;
-    background:#111;
-    color:white;
-    text-align:center;
-    padding:30px;
-}
-textarea{
-    width:90%;
-    height:250px;
-    font-size:16px;
-    padding:10px;
-}
-button{
-    padding:15px 35px;
-    font-size:18px;
-    margin-top:20px;
-    cursor:pointer;
-}
-</style>
+    <style>
+        :root {
+            --ios-bg: #000000;
+            --ios-card: #1c1c1e;
+            --ios-blue: #0a84ff;
+            --ios-blue-active: #0070e0;
+            --ios-text: #ffffff;
+            --ios-subtext: #8e8e93;
+            --ios-border: #38383a;
+        }
 
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "San Francisco", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            background-color: var(--ios-bg);
+            color: var(--ios-text);
+            margin: 0;
+            padding: 20px;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 5px;
+            letter-spacing: -0.5px;
+        }
+
+        p.subtitle {
+            color: var(--ios-subtext);
+            font-size: 15px;
+            margin-top: 0;
+            margin-bottom: 25px;
+        }
+
+        /* ส่วนเพลงแนะนำ */
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            margin-top: 30px;
+        }
+
+        .recommend-list {
+            background-color: var(--ios-card);
+            border-radius: 14px;
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+
+        .song-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--ios-border);
+        }
+
+        .song-item:last-child {
+            border-bottom: none;
+        }
+
+        .song-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .song-title {
+            font-size: 17px;
+            font-weight: 500;
+        }
+
+        .song-artist {
+            font-size: 13px;
+            color: var(--ios-subtext);
+            margin-top: 4px;
+        }
+
+        .btn-download-small {
+            background-color: rgba(10, 132, 255, 0.15);
+            color: var(--ios-blue);
+            border: none;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .btn-download-small:hover {
+            background-color: rgba(10, 132, 255, 0.25);
+        }
+
+        /* ส่วนฟอร์มโหลดหลายไฟล์ */
+        .batch-section {
+            background-color: var(--ios-card);
+            padding: 20px;
+            border-radius: 14px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 150px;
+            background-color: transparent;
+            color: var(--ios-text);
+            border: none;
+            font-size: 16px;
+            line-height: 1.5;
+            resize: none;
+            outline: none;
+            box-sizing: border-box;
+        }
+
+        textarea::placeholder {
+            color: var(--ios-subtext);
+        }
+
+        .btn-primary {
+            background-color: var(--ios-blue);
+            color: white;
+            border: none;
+            width: 100%;
+            padding: 16px;
+            border-radius: 14px;
+            font-size: 17px;
+            font-weight: 600;
+            margin-top: 15px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .btn-primary:active {
+            background-color: var(--ios-blue-active);
+        }
+
+    </style>
 </head>
 <body>
 
-<h1>โหลด MP3 หลายเพลง</h1>
+<div class="container">
+    <h1>ดาวน์โหลด MP3</h1>
+    <p class="subtitle">ระบบโหลดเพลงความเร็วสูง</p>
 
-<p>วางลิงก์ MP3 ทีละบรรทัด</p>
+    <div class="section-title">เพลงแนะนำ</div>
+    <div class="recommend-list">
+        <div class="song-item">
+            <div class="song-info">
+                <span class="song-title">Cinematic Ambient</span>
+                <span class="song-artist">NoCopyrightSounds</span>
+            </div>
+            <button class="btn-download-small" onclick="downloadSingle('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', 'Cinematic_Ambient')">รับ</button>
+        </div>
+        
+        <div class="song-item">
+            <div class="song-info">
+                <span class="song-title">Electronic Pop</span>
+                <span class="song-artist">Vlog Music</span>
+            </div>
+            <button class="btn-download-small" onclick="downloadSingle('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3', 'Electronic_Pop')">รับ</button>
+        </div>
 
-<textarea id="links">
-https://example.com/song1.mp3
-https://example.com/song2.mp3
-https://example.com/song3.mp3
-</textarea>
+        <div class="song-item">
+            <div class="song-info">
+                <span class="song-title">Lofi Chill Vibes</span>
+                <span class="song-artist">Free BGM</span>
+            </div>
+            <button class="btn-download-small" onclick="downloadSingle('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3', 'Lofi_Chill')">รับ</button>
+        </div>
+    </div>
 
-<br>
-
-<button onclick="downloadAll()">ดาวน์โหลดทั้งหมด</button>
+    <div class="section-title">โหลดทีละหลายไฟล์</div>
+    <div class="batch-section">
+        <textarea id="links" placeholder="วางลิงก์ MP3 ที่นี่ (บรรทัดละ 1 ลิงก์)...">
+https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3
+https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3
+        </textarea>
+    </div>
+    
+    <button class="btn-primary" onclick="downloadAll()">ดาวน์โหลดทั้งหมด</button>
+</div>
 
 <script>
+    // ฟังก์ชันบังคับดาวน์โหลด (แก้ปัญหาเบราว์เซอร์เปิดแท็บใหม่แทนการโหลด)
+    async function forceDownload(url, filename) {
+        try {
+            const response = await fetch(url);
+            const blob = await response.blob();
+            const blobUrl = URL.createObjectURL(blob);
+            
+            let a = document.createElement("a");
+            a.href = blobUrl;
+            a.download = filename || "download.mp3";
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            
+            // ลบ Blob URL ออกจากหน่วยความจำหลังจากโหลดเสร็จ
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
+        } catch (error) {
+            // สำรองในกรณีที่ติด CORS ให้ใช้วิธีเปิดแท็บ/หน้าต่างใหม่
+            let a = document.createElement("a");
+            a.href = url;
+            a.download = filename || "download.mp3";
+            a.target = "_blank";
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+        }
+    }
 
-function downloadAll(){
+    // ฟังก์ชันดาวน์โหลดเพลงแนะนำทีละเพลง
+    function downloadSingle(url, filename) {
+        forceDownload(url, filename + ".mp3");
+    }
 
-let list=document.getElementById("links").value
-.split("\n")
-.filter(x=>x.trim()!="");
+    // ฟังก์ชันดาวน์โหลดแบบ Batch
+    function downloadAll() {
+        let list = document.getElementById("links").value
+            .split("\n")
+            .map(x => x.trim())
+            .filter(x => x !== "");
 
-let delay=0;
+        if (list.length === 0) {
+            alert("กรุณาใส่ลิงก์อย่างน้อย 1 ลิงก์");
+            return;
+        }
 
-list.forEach(link=>{
+        let delay = 0;
 
-setTimeout(()=>{
-
-let a=document.createElement("a");
-a.href=link.trim();
-a.download="";
-document.body.appendChild(a);
-a.click();
-a.remove();
-
-},delay);
-
-delay+=1200;
-
-});
-
-}
-
+        list.forEach((link, index) => {
+            setTimeout(() => {
+                forceDownload(link, "Song_" + (index + 1) + ".mp3");
+            }, delay);
+            
+            delay += 1500; // หน่วงเวลา 1.5 วินาทีต่อไฟล์เพื่อป้องกันเบราว์เซอร์บล็อก
+        });
+    }
 </script>
 
 </body>
