@@ -45,7 +45,6 @@
             margin-bottom: 25px;
         }
 
-        /* ส่วนเพลงแนะนำ */
         .section-title {
             font-size: 20px;
             font-weight: 600;
@@ -92,19 +91,25 @@
             background-color: rgba(10, 132, 255, 0.15);
             color: var(--ios-blue);
             border: none;
-            padding: 6px 16px;
+            padding: 8px 16px;
             border-radius: 20px;
             font-size: 14px;
             font-weight: 600;
             cursor: pointer;
             transition: background-color 0.2s;
+            min-width: 65px;
+            text-align: center;
         }
 
-        .btn-download-small:hover {
-            background-color: rgba(10, 132, 255, 0.25);
+        .btn-download-small:active {
+            background-color: rgba(10, 132, 255, 0.3);
         }
 
-        /* ส่วนฟอร์มโหลดหลายไฟล์ */
+        .btn-download-small:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
         .batch-section {
             background-color: var(--ios-card);
             padding: 20px;
@@ -146,13 +151,17 @@
             background-color: var(--ios-blue-active);
         }
 
+        .btn-primary:disabled {
+            background-color: var(--ios-subtext);
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
     <h1>ดาวน์โหลด MP3</h1>
-    <p class="subtitle">ระบบโหลดเพลงความเร็วสูง</p>
+    <p class="subtitle">เพื่อการศึกษา - ข้ามข้อจำกัด CORS</p>
 
     <div class="section-title">เพลงแนะนำ</div>
     <div class="recommend-list">
@@ -161,7 +170,7 @@
                 <span class="song-title">Cinematic Ambient</span>
                 <span class="song-artist">NoCopyrightSounds</span>
             </div>
-            <button class="btn-download-small" onclick="downloadSingle('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', 'Cinematic_Ambient')">รับ</button>
+            <button id="btn-song-1" class="btn-download-small" onclick="downloadSingle('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', 'Cinematic_Ambient', 'btn-song-1')">รับ</button>
         </div>
         
         <div class="song-item">
@@ -169,15 +178,7 @@
                 <span class="song-title">Electronic Pop</span>
                 <span class="song-artist">Vlog Music</span>
             </div>
-            <button class="btn-download-small" onclick="downloadSingle('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3', 'Electronic_Pop')">รับ</button>
-        </div>
-
-        <div class="song-item">
-            <div class="song-info">
-                <span class="song-title">Lofi Chill Vibes</span>
-                <span class="song-artist">Free BGM</span>
-            </div>
-            <button class="btn-download-small" onclick="downloadSingle('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3', 'Lofi_Chill')">รับ</button>
+            <button id="btn-song-2" class="btn-download-small" onclick="downloadSingle('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3', 'Electronic_Pop', 'btn-song-2')">รับ</button>
         </div>
     </div>
 
@@ -189,45 +190,65 @@ https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3
         </textarea>
     </div>
     
-    <button class="btn-primary" onclick="downloadAll()">ดาวน์โหลดทั้งหมด</button>
+    <button id="btn-batch" class="btn-primary" onclick="downloadAll()">ดาวน์โหลดทั้งหมด</button>
 </div>
 
 <script>
-    // ฟังก์ชันบังคับดาวน์โหลด (แก้ปัญหาเบราว์เซอร์เปิดแท็บใหม่แทนการโหลด)
-    async function forceDownload(url, filename) {
+    // ฟังก์ชันหลักดึงไฟล์ผ่าน Proxy เพื่อหลบ CORS และบังคับโหลด
+    async function forceDownload(url, filename, buttonId) {
+        let btn = document.getElementById(buttonId);
+        
         try {
-            const response = await fetch(url);
+            // ปิดปุ่มและเปลี่ยนข้อความระหว่างโหลด
+            if (btn) {
+                btn.disabled = true;
+                btn.innerText = "กำลังโหลด...";
+            }
+
+            // ใช้ CORS Proxy เพื่อดึงข้อมูลไฟล์ข้ามโดเมน
+            const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(url);
+            
+            const response = await fetch(proxyUrl);
+            if (!response.ok) throw new Error('Network response was not ok');
+            
+            // แปลงข้อมูลที่ได้เป็น Blob (ก้อนข้อมูลไฟล์)
             const blob = await response.blob();
             const blobUrl = URL.createObjectURL(blob);
             
+            // สร้างลิงก์ชั่วคราวแล้วสั่งคลิกเพื่อโหลด
             let a = document.createElement("a");
             a.href = blobUrl;
-            a.download = filename || "download.mp3";
+            a.download = filename;
             document.body.appendChild(a);
             a.click();
             a.remove();
             
-            // ลบ Blob URL ออกจากหน่วยความจำหลังจากโหลดเสร็จ
+            // ล้างหน่วยความจำ
             setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
+
+            // คืนค่าปุ่มกลับมาเมื่อโหลดเสร็จ
+            if (btn) {
+                btn.innerText = "เสร็จสิ้น";
+                setTimeout(() => { btn.innerText = "รับ"; btn.disabled = false; }, 2000);
+            }
+
         } catch (error) {
-            // สำรองในกรณีที่ติด CORS ให้ใช้วิธีเปิดแท็บ/หน้าต่างใหม่
-            let a = document.createElement("a");
-            a.href = url;
-            a.download = filename || "download.mp3";
-            a.target = "_blank";
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
+            console.error(error);
+            alert("ดาวน์โหลดล้มเหลว: " + filename);
+            if (btn) {
+                btn.innerText = "รับ";
+                btn.disabled = false;
+            }
         }
     }
 
-    // ฟังก์ชันดาวน์โหลดเพลงแนะนำทีละเพลง
-    function downloadSingle(url, filename) {
-        forceDownload(url, filename + ".mp3");
+    // ฟังก์ชันสำหรับโหลดเพลงแนะนำ
+    function downloadSingle(url, filename, buttonId) {
+        forceDownload(url, filename + ".mp3", buttonId);
     }
 
-    // ฟังก์ชันดาวน์โหลดแบบ Batch
-    function downloadAll() {
+    // ฟังก์ชันสำหรับโหลดแบบเหมา (Batch)
+    async function downloadAll() {
         let list = document.getElementById("links").value
             .split("\n")
             .map(x => x.trim())
@@ -238,15 +259,24 @@ https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3
             return;
         }
 
-        let delay = 0;
+        let mainBtn = document.getElementById("btn-batch");
+        mainBtn.disabled = true;
+        mainBtn.innerText = "กำลังดำเนินการ...";
 
-        list.forEach((link, index) => {
-            setTimeout(() => {
-                forceDownload(link, "Song_" + (index + 1) + ".mp3");
-            }, delay);
+        // โหลดทีละไฟล์ตามลำดับ (รอให้ไฟล์แรกเสร็จก่อนค่อยโหลดไฟล์ต่อไป)
+        for (let i = 0; i < list.length; i++) {
+            mainBtn.innerText = `กำลังโหลดไฟล์ที่ ${i + 1}/${list.length}...`;
+            await forceDownload(list[i], `Song_Batch_${i + 1}.mp3`, null);
             
-            delay += 1500; // หน่วงเวลา 1.5 วินาทีต่อไฟล์เพื่อป้องกันเบราว์เซอร์บล็อก
-        });
+            // หน่วงเวลาเล็กน้อยระหว่างไฟล์ ป้องกัน Proxy แบนคำขอรัวๆ
+            await new Promise(resolve => setTimeout(resolve, 1000)); 
+        }
+
+        mainBtn.innerText = "ดาวน์โหลดทั้งหมดเสร็จสิ้น!";
+        setTimeout(() => { 
+            mainBtn.innerText = "ดาวน์โหลดทั้งหมด"; 
+            mainBtn.disabled = false; 
+        }, 3000);
     }
 </script>
 
