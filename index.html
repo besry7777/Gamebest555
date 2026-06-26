@@ -2,283 +2,53 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MP3 Downloader</title>
-
     <style>
-        :root {
-            --ios-bg: #000000;
-            --ios-card: #1c1c1e;
-            --ios-blue: #0a84ff;
-            --ios-blue-active: #0070e0;
-            --ios-text: #ffffff;
-            --ios-subtext: #8e8e93;
-            --ios-border: #38383a;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "San Francisco", "Helvetica Neue", Helvetica, Arial, sans-serif;
-            background-color: var(--ios-bg);
-            color: var(--ios-text);
-            margin: 0;
-            padding: 20px;
-            -webkit-font-smoothing: antialiased;
-        }
-
-        .container {
-            max-width: 500px;
-            margin: 0 auto;
-            padding-bottom: 40px;
-        }
-
-        h1 {
-            font-size: 32px;
-            font-weight: 700;
-            margin-bottom: 5px;
-            letter-spacing: -0.5px;
-        }
-
-        p.subtitle {
-            color: var(--ios-subtext);
-            font-size: 15px;
-            margin-top: 0;
-            margin-bottom: 25px;
-        }
-
-        .section-title {
-            font-size: 20px;
-            font-weight: 600;
-            margin-bottom: 15px;
-            margin-top: 30px;
-        }
-
-        .recommend-list {
-            background-color: var(--ios-card);
-            border-radius: 14px;
-            overflow: hidden;
-            margin-bottom: 30px;
-        }
-
-        .song-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 16px 20px;
-            border-bottom: 1px solid var(--ios-border);
-        }
-
-        .song-item:last-child {
-            border-bottom: none;
-        }
-
-        .song-info {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .song-title {
-            font-size: 17px;
-            font-weight: 500;
-        }
-
-        .song-artist {
-            font-size: 13px;
-            color: var(--ios-subtext);
-            margin-top: 4px;
-        }
-
-        .btn-download-small {
-            background-color: rgba(10, 132, 255, 0.15);
-            color: var(--ios-blue);
-            border: none;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background-color 0.2s;
-            min-width: 65px;
-            text-align: center;
-        }
-
-        .btn-download-small:active {
-            background-color: rgba(10, 132, 255, 0.3);
-        }
-
-        .btn-download-small:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .batch-section {
-            background-color: var(--ios-card);
-            padding: 20px;
-            border-radius: 14px;
-        }
-
-        textarea {
-            width: 100%;
-            height: 150px;
-            background-color: transparent;
-            color: var(--ios-text);
-            border: none;
-            font-size: 16px;
-            line-height: 1.5;
-            resize: none;
-            outline: none;
-            box-sizing: border-box;
-        }
-
-        textarea::placeholder {
-            color: var(--ios-subtext);
-        }
-
-        .btn-primary {
-            background-color: var(--ios-blue);
-            color: white;
-            border: none;
-            width: 100%;
-            padding: 16px;
-            border-radius: 14px;
-            font-size: 17px;
-            font-weight: 600;
-            margin-top: 15px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-
-        .btn-primary:active {
-            background-color: var(--ios-blue-active);
-        }
-
-        .btn-primary:disabled {
-            background-color: var(--ios-subtext);
-            cursor: not-allowed;
-        }
+        :root { --ios-bg: #000000; --ios-card: #1c1c1e; --ios-blue: #0a84ff; --ios-text: #ffffff; }
+        body { font-family: -apple-system, sans-serif; background-color: var(--ios-bg); color: var(--ios-text); text-align: center; padding: 20px; }
+        .container { max-width: 500px; margin: 0 auto; }
+        textarea { width: 100%; height: 150px; background-color: var(--ios-card); border-radius: 14px; color: white; padding: 15px; border: none; outline: none; }
+        .btn-primary { background-color: var(--ios-blue); color: white; border: none; width: 100%; padding: 16px; border-radius: 14px; font-weight: 600; cursor: pointer; margin-top: 15px; }
     </style>
 </head>
 <body>
-
-<div class="container">
-    <h1>ดาวน์โหลด MP3</h1>
-    <p class="subtitle">เพื่อการศึกษา - ข้ามข้อจำกัด CORS</p>
-
-    <div class="section-title">เพลงแนะนำ</div>
-    <div class="recommend-list">
-        <div class="song-item">
-            <div class="song-info">
-                <span class="song-title">Cinematic Ambient</span>
-                <span class="song-artist">NoCopyrightSounds</span>
-            </div>
-            <button id="btn-song-1" class="btn-download-small" onclick="downloadSingle('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', 'Cinematic_Ambient', 'btn-song-1')">รับ</button>
-        </div>
-        
-        <div class="song-item">
-            <div class="song-info">
-                <span class="song-title">Electronic Pop</span>
-                <span class="song-artist">Vlog Music</span>
-            </div>
-            <button id="btn-song-2" class="btn-download-small" onclick="downloadSingle('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3', 'Electronic_Pop', 'btn-song-2')">รับ</button>
-        </div>
+    <div class="container">
+        <h1>ดาวน์โหลด MP3</h1>
+        <p>วางลิงก์วิดีโอ (YouTube) เพื่อแปลงเป็น MP3</p>
+        <textarea id="links" placeholder="วางลิงก์ที่นี่..."></textarea>
+        <button id="mainBtn" class="btn-primary" onclick="startDownload()">ดาวน์โหลดทั้งหมด</button>
     </div>
 
-    <div class="section-title">โหลดทีละหลายไฟล์</div>
-    <div class="batch-section">
-        <textarea id="links" placeholder="วางลิงก์ MP3 ที่นี่ (บรรทัดละ 1 ลิงก์)...">
-https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3
-https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3
-        </textarea>
-    </div>
-    
-    <button id="btn-batch" class="btn-primary" onclick="downloadAll()">ดาวน์โหลดทั้งหมด</button>
-</div>
-
-<script>
-    // ฟังก์ชันหลักดึงไฟล์ผ่าน Proxy เพื่อหลบ CORS และบังคับโหลด
-    async function forceDownload(url, filename, buttonId) {
-        let btn = document.getElementById(buttonId);
-        
-        try {
-            // ปิดปุ่มและเปลี่ยนข้อความระหว่างโหลด
-            if (btn) {
+    <script>
+        async function startDownload() {
+            const list = document.getElementById("links").value.split("\n").filter(x => x.trim() !== "");
+            const btn = document.getElementById("mainBtn");
+            
+            for (let url of list) {
+                btn.innerText = "กำลังประมวลผล...";
                 btn.disabled = true;
-                btn.innerText = "กำลังโหลด...";
+
+                const response = await fetch('convert', {
+                    method: 'POST',
+                    body: JSON.stringify({ url: url.trim() })
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const a = document.createElement("a");
+                    a.href = window.URL.createObjectURL(blob);
+                    a.download = "music.mp3";
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                } else {
+                    alert("เกิดข้อผิดพลาดกับลิงก์: " + url);
+                }
             }
-
-            // ใช้ CORS Proxy เพื่อดึงข้อมูลไฟล์ข้ามโดเมน
-            const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(url);
-            
-            const response = await fetch(proxyUrl);
-            if (!response.ok) throw new Error('Network response was not ok');
-            
-            // แปลงข้อมูลที่ได้เป็น Blob (ก้อนข้อมูลไฟล์)
-            const blob = await response.blob();
-            const blobUrl = URL.createObjectURL(blob);
-            
-            // สร้างลิงก์ชั่วคราวแล้วสั่งคลิกเพื่อโหลด
-            let a = document.createElement("a");
-            a.href = blobUrl;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            
-            // ล้างหน่วยความจำ
-            setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
-
-            // คืนค่าปุ่มกลับมาเมื่อโหลดเสร็จ
-            if (btn) {
-                btn.innerText = "เสร็จสิ้น";
-                setTimeout(() => { btn.innerText = "รับ"; btn.disabled = false; }, 2000);
-            }
-
-        } catch (error) {
-            console.error(error);
-            alert("ดาวน์โหลดล้มเหลว: " + filename);
-            if (btn) {
-                btn.innerText = "รับ";
-                btn.disabled = false;
-            }
+            btn.innerText = "ดาวน์โหลดทั้งหมด";
+            btn.disabled = false;
         }
-    }
-
-    // ฟังก์ชันสำหรับโหลดเพลงแนะนำ
-    function downloadSingle(url, filename, buttonId) {
-        forceDownload(url, filename + ".mp3", buttonId);
-    }
-
-    // ฟังก์ชันสำหรับโหลดแบบเหมา (Batch)
-    async function downloadAll() {
-        let list = document.getElementById("links").value
-            .split("\n")
-            .map(x => x.trim())
-            .filter(x => x !== "");
-
-        if (list.length === 0) {
-            alert("กรุณาใส่ลิงก์อย่างน้อย 1 ลิงก์");
-            return;
-        }
-
-        let mainBtn = document.getElementById("btn-batch");
-        mainBtn.disabled = true;
-        mainBtn.innerText = "กำลังดำเนินการ...";
-
-        // โหลดทีละไฟล์ตามลำดับ (รอให้ไฟล์แรกเสร็จก่อนค่อยโหลดไฟล์ต่อไป)
-        for (let i = 0; i < list.length; i++) {
-            mainBtn.innerText = `กำลังโหลดไฟล์ที่ ${i + 1}/${list.length}...`;
-            await forceDownload(list[i], `Song_Batch_${i + 1}.mp3`, null);
-            
-            // หน่วงเวลาเล็กน้อยระหว่างไฟล์ ป้องกัน Proxy แบนคำขอรัวๆ
-            await new Promise(resolve => setTimeout(resolve, 1000)); 
-        }
-
-        mainBtn.innerText = "ดาวน์โหลดทั้งหมดเสร็จสิ้น!";
-        setTimeout(() => { 
-            mainBtn.innerText = "ดาวน์โหลดทั้งหมด"; 
-            mainBtn.disabled = false; 
-        }, 3000);
-    }
-</script>
-
+    </script>
 </body>
 </html>
